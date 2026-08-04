@@ -32,7 +32,8 @@ html[data-theme="dark"] .preview-sub,
 html[data-theme="dark"] .icon-btn{
   color:var(--ink);
 }
-html[data-theme="dark"] input.field{
+html[data-theme="dark"] input.field,
+html[data-theme="dark"] select.field{
   background:rgba(255,255,255,.04);
 }
 *{box-sizing:border-box;}
@@ -112,6 +113,10 @@ header{padding:36px 0 26px;}
   font-size:10.5px;font-weight:600;padding:2px 9px;border-radius:20px;background:var(--sage);color:var(--forest);
   margin-left:6px;vertical-align:middle;display:inline-block;
 }
+.visibility-tag{
+  font-size:10.5px;font-weight:600;padding:2px 9px;border-radius:20px;background:var(--gold-l);color:#7A5A22;
+  margin-left:6px;vertical-align:middle;display:inline-block;
+}
 #profile-error{color:var(--danger);font-size:12px;margin:10px 0 0;min-height:14px;}
 
 /* aviso de erro do banco */
@@ -135,13 +140,14 @@ section{margin-top:38px;}
 .composer-top{display:flex;flex-direction:column;gap:8px;}
 .name-input{width:100%;}
 .msg-input{width:100%;}
-input.field{
+input.field,select.field{
   border:1px solid var(--border);border-radius:9px;padding:9px 12px;font-size:13.5px;
   background:var(--parchment);outline:none;width:100%;color:inherit;
 }
 input.field::placeholder{color:var(--text-3);opacity:1;}
-input.field:focus{border-color:var(--moss);}
-.composer-bottom{display:flex;justify-content:flex-end;}
+input.field:focus,select.field:focus{border-color:var(--moss);}
+.composer-bottom{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.composer-bottom select{flex:none;width:auto;max-width:190px;}
 .btn{
   border:1px solid var(--border);background:var(--paper);border-radius:9px;padding:9px 16px;
   font-size:13px;font-weight:500;color:var(--ink);
@@ -210,6 +216,18 @@ input.field:focus{border-color:var(--moss);}
 
 .empty{padding:22px 4px;color:var(--text-2);font-size:13px;text-align:center;}
 
+.mural-toolbar{display:flex;gap:8px;margin-bottom:12px;}
+.mural-toolbar input{flex:1;}
+.mural-toolbar select{flex:none;width:170px;}
+.post-edit-form{margin:0 0 8px 37px;display:flex;flex-direction:column;gap:8px;}
+.post-edit-form textarea{
+  border:1px solid var(--border);border-radius:9px;padding:9px 12px;font-size:13.5px;
+  background:var(--parchment);outline:none;width:100%;color:inherit;font-family:inherit;resize:vertical;min-height:60px;
+}
+.post-edit-form textarea:focus{border-color:var(--moss);}
+.post-edit-actions{display:flex;gap:8px;}
+.post-edited-tag{font-size:11px;color:var(--text-3);}
+
 /* itens de meta / demanda */
 .item{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--border);}
 .item:last-child{border-bottom:none;}
@@ -231,6 +249,7 @@ input.field:focus{border-color:var(--moss);}
 
 .add-inline{display:flex;gap:8px;margin-top:12px;}
 .add-inline input{flex:1;}
+.add-inline select{flex:none;width:150px;}
 
 footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
   display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-2);}
@@ -402,11 +421,20 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
           <input class="field msg-input" id="msg-input" placeholder="Escreva um recado, uma ideia ou o que precisa ser feito...">
         </div>
         <div class="composer-bottom">
+          <select class="field" id="msg-visibility">
+            <option value="">Visível para: Todos</option>
+          </select>
           <button class="btn btn-primary" id="post-btn">Postar</button>
         </div>
       </div>
     </div>
     <div class="card" style="margin-top:12px;">
+      <div class="mural-toolbar">
+        <input class="field" id="mural-search" type="text" placeholder="Buscar no mural...">
+        <select class="field" id="mural-sector-filter">
+          <option value="">Todos os setores</option>
+        </select>
+      </div>
       <div id="mural-list"></div>
     </div>
   </section>
@@ -417,6 +445,9 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
       <div id="meta-list"></div>
       <div class="add-inline">
         <input class="field" id="meta-add-input" placeholder="Adicionar meta diretamente...">
+        <select class="field" id="meta-add-visibility">
+          <option value="">Visível para: Todos</option>
+        </select>
         <button class="btn" id="meta-add-btn">Adicionar</button>
       </div>
     </div>
@@ -428,6 +459,9 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
       <div id="demanda-list"></div>
       <div class="add-inline">
         <input class="field" id="demanda-add-input" placeholder="Adicionar demanda diretamente...">
+        <select class="field" id="demanda-add-visibility">
+          <option value="">Visível para: Todos</option>
+        </select>
         <button class="btn" id="demanda-add-btn">Adicionar</button>
       </div>
     </div>
@@ -482,6 +516,9 @@ let listenersStarted = false;
 let currentUid = null;
 const openComments = new Set();
 const openReplies = new Set();
+const editingPosts = new Set();
+let muralSearch = '';
+let muralSectorFilter = '';
 
 /* ===== aviso de erro do banco =====
    Se uma escrita no Firebase falhar (regras, conexão, etc.), mostra
@@ -679,17 +716,44 @@ profileSaveBtn.addEventListener('click', ()=>{
 });
 
 /* ===== estado compartilhado (Firebase Realtime Database) =====
-   posts, metas, demandas e perfis (users) ficam no Firebase — todo
-   mundo que abrir o mural vê os mesmos dados, em tempo real. */
+   Itens públicos ficam em posts/metas/demandas (todo mundo lê).
+   Itens privados ficam em posts_private/{setor}/..., e só quem tem
+   aquele setor no perfil consegue ler — isso é reforçado pelas REGRAS
+   do Firebase (não só escondido na tela), então é privacidade de
+   verdade, aplicada no servidor. */
 let state = {
-  posts: [],
-  metas: [],
-  demandas: [],
+  posts: [], postsPrivate: [],
+  metas: [], metasPrivate: [],
+  demandas: [], demandasPrivate: [],
   users: {}
 };
+function allPosts(){ return [...state.posts, ...state.postsPrivate]; }
+function allMetas(){ return [...state.metas, ...state.metasPrivate]; }
+function allDemandas(){ return [...state.demandas, ...state.demandasPrivate]; }
+function postPath(item){ return item._sector ? `posts_private/${item._sector}/${item.id}` : `posts/${item.id}`; }
+function metaPath(item){ return item._sector ? `metas_private/${item._sector}/${item.id}` : `metas/${item.id}`; }
+function demandaPath(item){ return item._sector ? `demandas_private/${item._sector}/${item.id}` : `demandas/${item.id}`; }
 
-function objToArray(obj){
-  return obj ? Object.entries(obj).map(([id, v]) => ({ id, ...v })) : [];
+function objToArray(obj, sector){
+  return obj ? Object.entries(obj).map(([id, v]) => ({ id, ...v, _sector: sector || null })) : [];
+}
+
+let privateUnsub = { posts: null, metas: null, demandas: null };
+let mySubscribedSector = undefined;
+
+function syncPrivateSubscription(){
+  const sector = (myProfile() && myProfile().sector) || null;
+  if(sector === mySubscribedSector) return;
+  if(privateUnsub.posts) privateUnsub.posts();
+  if(privateUnsub.metas) privateUnsub.metas();
+  if(privateUnsub.demandas) privateUnsub.demandas();
+  privateUnsub = { posts: null, metas: null, demandas: null };
+  state.postsPrivate = []; state.metasPrivate = []; state.demandasPrivate = [];
+  mySubscribedSector = sector;
+  if(!sector) return;
+  privateUnsub.posts = onValue(ref(db, 'posts_private/'+sector), snap => { state.postsPrivate = objToArray(snap.val(), sector); render(); }, handleDbError);
+  privateUnsub.metas = onValue(ref(db, 'metas_private/'+sector), snap => { state.metasPrivate = objToArray(snap.val(), sector); render(); }, handleDbError);
+  privateUnsub.demandas = onValue(ref(db, 'demandas_private/'+sector), snap => { state.demandasPrivate = objToArray(snap.val(), sector); render(); }, handleDbError);
 }
 
 function startDataListeners(){
@@ -698,9 +762,39 @@ function startDataListeners(){
   onValue(ref(db, 'demandas'), snap => { state.demandas = objToArray(snap.val()); render(); }, handleDbError);
   onValue(ref(db, 'users'), snap => {
     state.users = snap.val() || {};
+    refreshSectorOptions();
+    syncPrivateSubscription();
     render();
     maybeOpenProfileOnboarding();
   }, handleDbError);
+}
+
+/* ===== busca e filtro por setor no mural ===== */
+const muralSearchInput = document.getElementById('mural-search');
+const muralSectorSelect = document.getElementById('mural-sector-filter');
+muralSearchInput.addEventListener('input', ()=>{
+  muralSearch = muralSearchInput.value.trim().toLowerCase();
+  render();
+});
+muralSectorSelect.addEventListener('change', ()=>{
+  muralSectorFilter = muralSectorSelect.value;
+  render();
+});
+function refreshSectorOptions(){
+  const sectors = [...new Set(Object.values(state.users).map(u=>u.sector).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const current = muralSectorSelect.value;
+  muralSectorSelect.innerHTML = `<option value="">Todos os setores</option>` +
+    sectors.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  if(sectors.includes(current)) muralSectorSelect.value = current;
+
+  const visibilitySelectIds = ['msg-visibility', 'meta-add-visibility', 'demanda-add-visibility'];
+  visibilitySelectIds.forEach(selId=>{
+    const sel = document.getElementById(selId);
+    const cur = sel.value;
+    sel.innerHTML = `<option value="">Visível para: Todos</option>` +
+      sectors.map(s=>`<option value="${escapeHtml(s)}">Visível para: ${escapeHtml(s)}</option>`).join('');
+    if(sectors.includes(cur)) sel.value = cur;
+  });
 }
 
 const CHECK_SVG = '<svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg>';
@@ -728,10 +822,22 @@ function authorInfo(item){
 function sectorTagHtml(sector){
   return sector ? `<span class="sector-tag">${escapeHtml(sector)}</span>` : '';
 }
+function visibilityTagHtml(sector){
+  return sector ? `<span class="visibility-tag" title="Visível só pro setor ${escapeHtml(sector)}">🔒 ${escapeHtml(sector)}</span>` : '';
+}
 
 function render(){
-  const posts = [...state.posts].sort((a,b)=>b.ts-a.ts);
-  document.getElementById('post-count').textContent = state.posts.length + (state.posts.length===1?' mensagem':' mensagens');
+  const allPostsList = allPosts();
+  let posts = [...allPostsList].sort((a,b)=>b.ts-a.ts);
+  const search = muralSearch;
+  const sectorFilter = muralSectorFilter;
+  if(search){
+    posts = posts.filter(p => p.text.toLowerCase().includes(search) || authorInfo(p).name.toLowerCase().includes(search));
+  }
+  if(sectorFilter){
+    posts = posts.filter(p => authorInfo(p).sector === sectorFilter);
+  }
+  document.getElementById('post-count').textContent = allPostsList.length + (allPostsList.length===1?' mensagem':' mensagens');
   document.getElementById('mural-list').innerHTML = posts.length ? posts.map(p=>{
     const likes = p.likes || {};
     const likeCount = Object.keys(likes).length;
@@ -739,15 +845,24 @@ function render(){
     const comments = objToArray(p.comments).sort((a,b)=>a.ts-b.ts);
     const commentsOpen = openComments.has(p.id);
     const pInfo = authorInfo(p);
+    const isEditing = editingPosts.has(p.id);
     return `
     <div class="post">
       <div class="post-head">
         <div class="avatar">${initials(pInfo.name)}</div>
         <div>
-          <div class="post-author">${escapeHtml(pInfo.name)}${sectorTagHtml(pInfo.sector)} <span class="post-time">· ${timeAgo(p.ts)}</span></div>
+          <div class="post-author">${escapeHtml(pInfo.name)}${sectorTagHtml(pInfo.sector)}${visibilityTagHtml(p._sector)} <span class="post-time">· ${timeAgo(p.ts)}</span></div>
         </div>
       </div>
-      <p class="post-text">${escapeHtml(p.text)}</p>
+      ${isEditing ? `
+      <div class="post-edit-form">
+        <textarea id="edit-post-textarea-${p.id}">${escapeHtml(p.text)}</textarea>
+        <div class="post-edit-actions">
+          <button class="btn btn-primary" data-action="save-post-edit" data-id="${p.id}">Salvar</button>
+          <button class="btn-ghost" data-action="cancel-post-edit" data-id="${p.id}">Cancelar</button>
+        </div>
+      </div>` : `
+      <p class="post-text">${escapeHtml(p.text)}${p.editedAt ? ' <span class="post-edited-tag">(editado)</span>' : ''}</p>
       <div class="post-actions">
         ${p.metaId ? `<button class="tag-done tag-meta" data-action="undo-meta" data-id="${p.id}" title="Clique para desfazer">virou meta ✕</button>` : `<button class="btn-ghost" data-action="to-meta" data-id="${p.id}">virar meta</button>`}
         ${p.demandaId ? `<button class="tag-done tag-demanda" data-action="undo-demanda" data-id="${p.id}" title="Clique para desfazer">virou demanda ✕</button>` : `<button class="btn-ghost" data-action="to-demanda" data-id="${p.id}">virar demanda</button>`}
@@ -756,8 +871,9 @@ function render(){
           ${likeCount>0?likeCount:'curtir'}
         </button>
         <button class="btn-ghost" data-action="toggle-comments" data-id="${p.id}">${commentsOpen?'fechar':'comentar'}${comments.length?` (${comments.length})`:''}</button>
+        <button class="btn-ghost" data-action="edit-post" data-id="${p.id}">editar</button>
         <button class="btn-ghost post-remove" data-action="remove-post" data-id="${p.id}">excluir</button>
-      </div>
+      </div>`}
       ${commentsOpen ? `
       <div class="post-comments">
         ${comments.length ? comments.map(c=>{
@@ -808,33 +924,35 @@ function render(){
         </div>
       </div>` : ''}
     </div>`;
-  }).join('') : `<div class="empty">Nenhuma mensagem ainda. Escreva a primeira ali em cima.</div>`;
+  }).join('') : `<div class="empty">${(search || sectorFilter) ? 'Nenhuma mensagem encontrada com esse filtro.' : 'Nenhuma mensagem ainda. Escreva a primeira ali em cima.'}</div>`;
 
 
-  const openMetas = state.metas.filter(m=>!m.done).length;
+  const visibleMetas = allMetas();
+  const openMetas = visibleMetas.filter(m=>!m.done).length;
   document.getElementById('meta-count').textContent = openMetas + (openMetas===1?' aberta':' abertas');
-  document.getElementById('meta-list').innerHTML = state.metas.length ? state.metas.map(m=>{
+  document.getElementById('meta-list').innerHTML = visibleMetas.length ? visibleMetas.map(m=>{
     const mInfo = authorInfo(m);
     return `
     <div class="item ${m.done?'done':''}">
       <div class="check ${m.done?'done':''}" data-action="toggle-meta" data-id="${m.id}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(m.text)}</div>
-        <div class="item-meta">${escapeHtml(mInfo.name)}${sectorTagHtml(mInfo.sector)} · ${timeAgo(m.ts)}</div>
+        <div class="item-meta">${escapeHtml(mInfo.name)}${sectorTagHtml(mInfo.sector)}${visibilityTagHtml(m._sector)} · ${timeAgo(m.ts)}</div>
       </div>
       <button class="item-remove" data-action="remove-meta" data-id="${m.id}">remover</button>
     </div>`;}).join('') : `<div class="empty">Nenhuma meta ainda.</div>`;
 
-  const openDemandas = state.demandas.filter(d=>!d.done).length;
+  const visibleDemandas = allDemandas();
+  const openDemandas = visibleDemandas.filter(d=>!d.done).length;
   document.getElementById('demanda-count').textContent = openDemandas + (openDemandas===1?' pendente':' pendentes');
-  document.getElementById('demanda-list').innerHTML = state.demandas.length ? state.demandas.map(d=>{
+  document.getElementById('demanda-list').innerHTML = visibleDemandas.length ? visibleDemandas.map(d=>{
     const dInfo = authorInfo(d);
     return `
     <div class="item ${d.done?'done':''}">
       <div class="check ${d.done?'done':''}" data-action="toggle-demanda" data-id="${d.id}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(d.text)}</div>
-        <div class="item-meta">${escapeHtml(dInfo.name)}${sectorTagHtml(dInfo.sector)} · ${timeAgo(d.ts)}</div>
+        <div class="item-meta">${escapeHtml(dInfo.name)}${sectorTagHtml(dInfo.sector)}${visibilityTagHtml(d._sector)} · ${timeAgo(d.ts)}</div>
       </div>
       <button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>
     </div>`;}).join('') : `<div class="empty">Nenhuma demanda ainda.</div>`;
@@ -855,36 +973,42 @@ document.getElementById('post-btn').addEventListener('click', ()=>{
   const msgInput = document.getElementById('msg-input');
   const text = msgInput.value.trim();
   if(!text) return;
+  const visibility = document.getElementById('msg-visibility').value || null;
   const id = uid();
-  set(ref(db, 'posts/'+id), { author: myProfile().name, uid: currentUid, text, ts: Date.now(), metaId: null, demandaId: null }).catch(handleDbError);
+  const path = visibility ? `posts_private/${visibility}/${id}` : `posts/${id}`;
+  set(ref(db, path), { author: myProfile().name, uid: currentUid, text, ts: Date.now(), metaId: null, demandaId: null }).catch(handleDbError);
   msgInput.value = '';
 });
 document.getElementById('msg-input').addEventListener('keydown', e=>{
   if(e.key==='Enter') document.getElementById('post-btn').click();
 });
 
-function addMeta(text, author, itemUid){
+function addMeta(text, author, itemUid, visibility){
   if(!text.trim()) return null;
   const id = uid();
-  set(ref(db, 'metas/'+id), { text: text.trim(), author, uid: itemUid || null, ts: Date.now(), done:false }).catch(handleDbError);
+  const path = visibility ? `metas_private/${visibility}/${id}` : `metas/${id}`;
+  set(ref(db, path), { text: text.trim(), author, uid: itemUid || null, ts: Date.now(), done:false }).catch(handleDbError);
   return id;
 }
-function addDemanda(text, author, itemUid){
+function addDemanda(text, author, itemUid, visibility){
   if(!text.trim()) return null;
   const id = uid();
-  set(ref(db, 'demandas/'+id), { text: text.trim(), author, uid: itemUid || null, ts: Date.now(), done:false }).catch(handleDbError);
+  const path = visibility ? `demandas_private/${visibility}/${id}` : `demandas/${id}`;
+  set(ref(db, path), { text: text.trim(), author, uid: itemUid || null, ts: Date.now(), done:false }).catch(handleDbError);
   return id;
 }
 
 document.getElementById('meta-add-btn').addEventListener('click', ()=>{
   if(!ensureProfileBeforeAction()) return;
   const input = document.getElementById('meta-add-input');
-  if(addMeta(input.value, myProfile().name, currentUid)){ input.value=''; }
+  const visibility = document.getElementById('meta-add-visibility').value || null;
+  if(addMeta(input.value, myProfile().name, currentUid, visibility)){ input.value=''; }
 });
 document.getElementById('demanda-add-btn').addEventListener('click', ()=>{
   if(!ensureProfileBeforeAction()) return;
   const input = document.getElementById('demanda-add-input');
-  if(addDemanda(input.value, myProfile().name, currentUid)){ input.value=''; }
+  const visibility = document.getElementById('demanda-add-visibility').value || null;
+  if(addDemanda(input.value, myProfile().name, currentUid, visibility)){ input.value=''; }
 });
 
 document.addEventListener('click', (e)=>{
@@ -893,50 +1017,73 @@ document.addEventListener('click', (e)=>{
   const action = t.dataset.action, id = t.dataset.id;
 
   if(action === 'to-meta'){
-    const post = state.posts.find(p=>p.id===id);
+    const post = allPosts().find(p=>p.id===id);
     if(post && !post.metaId){
-      const metaId = addMeta(post.text, post.author, post.uid);
-      update(ref(db, 'posts/'+id), { metaId }).catch(handleDbError);
+      const metaId = addMeta(post.text, post.author, post.uid, post._sector);
+      update(ref(db, postPath(post)), { metaId }).catch(handleDbError);
     }
   } else if(action === 'to-demanda'){
-    const post = state.posts.find(p=>p.id===id);
+    const post = allPosts().find(p=>p.id===id);
     if(post && !post.demandaId){
-      const demandaId = addDemanda(post.text, post.author, post.uid);
-      update(ref(db, 'posts/'+id), { demandaId }).catch(handleDbError);
+      const demandaId = addDemanda(post.text, post.author, post.uid, post._sector);
+      update(ref(db, postPath(post)), { demandaId }).catch(handleDbError);
     }
   } else if(action === 'undo-meta'){
-    const post = state.posts.find(p=>p.id===id);
+    const post = allPosts().find(p=>p.id===id);
     if(post && post.metaId){
-      remove(ref(db, 'metas/'+post.metaId)).catch(handleDbError);
-      update(ref(db, 'posts/'+id), { metaId: null }).catch(handleDbError);
+      const meta = allMetas().find(m=>m.id===post.metaId);
+      if(meta) remove(ref(db, metaPath(meta))).catch(handleDbError);
+      update(ref(db, postPath(post)), { metaId: null }).catch(handleDbError);
     }
   } else if(action === 'undo-demanda'){
-    const post = state.posts.find(p=>p.id===id);
+    const post = allPosts().find(p=>p.id===id);
     if(post && post.demandaId){
-      remove(ref(db, 'demandas/'+post.demandaId)).catch(handleDbError);
-      update(ref(db, 'posts/'+id), { demandaId: null }).catch(handleDbError);
+      const demanda = allDemandas().find(d=>d.id===post.demandaId);
+      if(demanda) remove(ref(db, demandaPath(demanda))).catch(handleDbError);
+      update(ref(db, postPath(post)), { demandaId: null }).catch(handleDbError);
     }
   } else if(action === 'toggle-meta'){
-    const m = state.metas.find(x=>x.id===id);
-    if(m) update(ref(db, 'metas/'+id), { done: !m.done }).catch(handleDbError);
+    const m = allMetas().find(x=>x.id===id);
+    if(m) update(ref(db, metaPath(m)), { done: !m.done }).catch(handleDbError);
   } else if(action === 'toggle-demanda'){
-    const d = state.demandas.find(x=>x.id===id);
-    if(d) update(ref(db, 'demandas/'+id), { done: !d.done }).catch(handleDbError);
+    const d = allDemandas().find(x=>x.id===id);
+    if(d) update(ref(db, demandaPath(d)), { done: !d.done }).catch(handleDbError);
   } else if(action === 'remove-meta'){
-    remove(ref(db, 'metas/'+id)).catch(handleDbError);
-    const linkedPost = state.posts.find(p=>p.metaId===id);
-    if(linkedPost) update(ref(db, 'posts/'+linkedPost.id), { metaId: null }).catch(handleDbError);
+    const m = allMetas().find(x=>x.id===id);
+    if(m) remove(ref(db, metaPath(m))).catch(handleDbError);
+    const linkedPost = allPosts().find(p=>p.metaId===id);
+    if(linkedPost) update(ref(db, postPath(linkedPost)), { metaId: null }).catch(handleDbError);
   } else if(action === 'remove-demanda'){
-    remove(ref(db, 'demandas/'+id)).catch(handleDbError);
-    const linkedPost = state.posts.find(p=>p.demandaId===id);
-    if(linkedPost) update(ref(db, 'posts/'+linkedPost.id), { demandaId: null }).catch(handleDbError);
+    const d = allDemandas().find(x=>x.id===id);
+    if(d) remove(ref(db, demandaPath(d))).catch(handleDbError);
+    const linkedPost = allPosts().find(p=>p.demandaId===id);
+    if(linkedPost) update(ref(db, postPath(linkedPost)), { demandaId: null }).catch(handleDbError);
   } else if(action === 'remove-post'){
-    remove(ref(db, 'posts/'+id)).catch(handleDbError);
+    const post = allPosts().find(p=>p.id===id);
+    if(post) remove(ref(db, postPath(post))).catch(handleDbError);
+    editingPosts.delete(id);
+  } else if(action === 'edit-post'){
+    editingPosts.add(id);
+    render();
+    const ta = document.getElementById('edit-post-textarea-'+id);
+    if(ta){ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+  } else if(action === 'cancel-post-edit'){
+    editingPosts.delete(id);
+    render();
+  } else if(action === 'save-post-edit'){
+    const ta = document.getElementById('edit-post-textarea-'+id);
+    const text = ta ? ta.value.trim() : '';
+    if(!text) return;
+    const post = allPosts().find(p=>p.id===id);
+    editingPosts.delete(id);
+    if(post) update(ref(db, postPath(post)), { text, editedAt: Date.now() }).catch(handleDbError);
+    render();
   } else if(action === 'like-post'){
     if(!currentUid) return;
-    const post = state.posts.find(p=>p.id===id);
-    const liked = !!(post && post.likes && post.likes[currentUid]);
-    const likeRef = ref(db, 'posts/'+id+'/likes/'+currentUid);
+    const post = allPosts().find(p=>p.id===id);
+    if(!post) return;
+    const liked = !!(post.likes && post.likes[currentUid]);
+    const likeRef = ref(db, postPath(post)+'/likes/'+currentUid);
     (liked ? remove(likeRef) : set(likeRef, true)).catch(handleDbError);
   } else if(action === 'toggle-comments'){
     if(openComments.has(id)) openComments.delete(id); else openComments.add(id);
@@ -946,23 +1093,27 @@ document.addEventListener('click', (e)=>{
     const text = input ? input.value.trim() : '';
     if(!text) return;
     if(!ensureProfileBeforeAction()) return;
+    const post = allPosts().find(p=>p.id===id);
+    if(!post) return;
     const commentId = uid();
-    set(ref(db, 'posts/'+id+'/comments/'+commentId), { author: myProfile().name, uid: currentUid, text, ts: Date.now() }).catch(handleDbError);
+    set(ref(db, postPath(post)+'/comments/'+commentId), { author: myProfile().name, uid: currentUid, text, ts: Date.now() }).catch(handleDbError);
     openComments.add(id);
   } else if(action === 'like-comment'){
     if(!currentUid) return;
     const postId = t.dataset.post, commentId = id;
-    const post = state.posts.find(p=>p.id===postId);
-    const comment = post && post.comments ? post.comments[commentId] : null;
+    const post = allPosts().find(p=>p.id===postId);
+    if(!post) return;
+    const comment = post.comments ? post.comments[commentId] : null;
     const liked = !!(comment && comment.likes && comment.likes[currentUid]);
-    const likeRef = ref(db, 'posts/'+postId+'/comments/'+commentId+'/likes/'+currentUid);
+    const likeRef = ref(db, postPath(post)+'/comments/'+commentId+'/likes/'+currentUid);
     (liked ? remove(likeRef) : set(likeRef, true)).catch(handleDbError);
   } else if(action === 'toggle-reply'){
     if(openReplies.has(id)) openReplies.delete(id); else openReplies.add(id);
     render();
   } else if(action === 'remove-comment'){
     const postId = t.dataset.post;
-    remove(ref(db, 'posts/'+postId+'/comments/'+id)).catch(handleDbError);
+    const post = allPosts().find(p=>p.id===postId);
+    if(post) remove(ref(db, postPath(post)+'/comments/'+id)).catch(handleDbError);
     openReplies.delete(id);
   } else if(action === 'send-reply'){
     const postId = t.dataset.post, commentId = id;
@@ -970,8 +1121,10 @@ document.addEventListener('click', (e)=>{
     const text = input ? input.value.trim() : '';
     if(!text) return;
     if(!ensureProfileBeforeAction()) return;
+    const post = allPosts().find(p=>p.id===postId);
+    if(!post) return;
     const replyId = uid();
-    set(ref(db, 'posts/'+postId+'/comments/'+commentId+'/replies/'+replyId), { author: myProfile().name, uid: currentUid, text, ts: Date.now() }).catch(handleDbError);
+    set(ref(db, postPath(post)+'/comments/'+commentId+'/replies/'+replyId), { author: myProfile().name, uid: currentUid, text, ts: Date.now() }).catch(handleDbError);
     openReplies.add(commentId);
   }
 });
@@ -987,6 +1140,17 @@ document.addEventListener('keydown', (e)=>{
     e.preventDefault();
     const commentId = e.target.dataset.replyInput;
     const btn = document.querySelector(`[data-action="send-reply"][data-id="${commentId}"]`);
+    if(btn) btn.click();
+  }
+  if(e.key === 'Enter' && (e.metaKey || e.ctrlKey) && e.target.matches('[id^="edit-post-textarea-"]')){
+    e.preventDefault();
+    const id = e.target.id.replace('edit-post-textarea-', '');
+    const btn = document.querySelector(`[data-action="save-post-edit"][data-id="${id}"]`);
+    if(btn) btn.click();
+  }
+  if(e.key === 'Escape' && e.target.matches('[id^="edit-post-textarea-"]')){
+    const id = e.target.id.replace('edit-post-textarea-', '');
+    const btn = document.querySelector(`[data-action="cancel-post-edit"][data-id="${id}"]`);
     if(btn) btn.click();
   }
 });
