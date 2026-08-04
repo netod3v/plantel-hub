@@ -160,9 +160,46 @@ input.field:focus{border-color:var(--moss);}
 .post-actions{display:flex;gap:6px;margin-left:37px;flex-wrap:wrap;}
 .tag-done{
   font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:4px;
+  border:none;cursor:pointer;opacity:.9;transition:opacity .15s;
 }
+.tag-done:hover{opacity:1;filter:brightness(0.95);}
 .tag-meta{background:var(--gold-l);color:#7A5A22;}
 .tag-demanda{background:var(--sage);color:var(--forest);}
+.post-like{display:inline-flex;align-items:center;gap:4px;}
+.post-like svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;}
+.post-like.is-liked{color:var(--danger);}
+.post-like.is-liked svg{fill:var(--danger);stroke:var(--danger);}
+.post-remove{margin-left:auto;}
+.post-remove:hover{background:#F6E4E0;color:var(--danger);}
+
+.post-comments{margin:10px 0 0 37px;padding-top:10px;border-top:1px dashed var(--border);display:flex;flex-direction:column;gap:10px;}
+.comment{display:flex;gap:9px;}
+.avatar-sm{width:22px;height:22px;font-size:9.5px;border-radius:6px;}
+.comment-body{flex:1;min-width:0;}
+.comment-author{font-size:12px;font-weight:600;}
+.comment-text{font-size:12.5px;margin-top:1px;}
+.empty-small{font-size:12px;color:var(--text-2);padding:2px 0;}
+.comment-form{display:flex;gap:8px;}
+.comment-form input{flex:1;padding:7px 10px;font-size:12.5px;}
+.comment-form button{flex:none;}
+
+.comment-actions{display:flex;gap:12px;align-items:center;margin-top:4px;}
+.comment-like{display:inline-flex;align-items:center;gap:4px;background:none;border:none;color:var(--text-3);font-size:11px;font-weight:600;cursor:pointer;padding:2px 4px;border-radius:6px;}
+.comment-like:hover{background:var(--sage);color:var(--forest);}
+.comment-like svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.8;}
+.comment-like.is-liked{color:var(--danger);}
+.comment-like.is-liked svg{fill:var(--danger);stroke:var(--danger);}
+.comment-reply-btn,.comment-remove{background:none;border:none;color:var(--text-3);font-size:11px;font-weight:600;cursor:pointer;padding:2px 4px;border-radius:6px;}
+.comment-reply-btn:hover{background:var(--sage);color:var(--forest);}
+.comment-remove:hover{background:#F6E4E0;color:var(--danger);}
+.reply-list{margin:8px 0 0 31px;display:flex;flex-direction:column;gap:8px;}
+.reply{display:flex;gap:8px;}
+.reply-body{flex:1;min-width:0;}
+.reply-author{font-size:11.5px;font-weight:600;}
+.reply-text{font-size:12px;margin-top:1px;}
+.reply-form{display:flex;gap:8px;margin:8px 0 0 31px;}
+.reply-form input{flex:1;padding:6px 9px;font-size:12px;}
+.reply-form button{flex:none;}
 
 .empty{padding:22px 4px;color:var(--text-2);font-size:13px;text-align:center;}
 
@@ -359,7 +396,7 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
 
   <footer>
     <span>Plantel Hub · comunidade de estudos</span>
-    <span>contato@plantel.com</span>
+    <span>planteldeduvidas@gmail.com</span>
   </footer>
 
 </div>
@@ -403,6 +440,9 @@ const loginSubtitle = document.getElementById('login-subtitle');
 const loginSubmit = document.getElementById('login-submit');
 const loginToggle = document.getElementById('login-toggle');
 let listenersStarted = false;
+let currentUid = null;
+const openComments = new Set();
+const openReplies = new Set();
 
 /* ===== aviso de erro do banco =====
    Se uma escrita no Firebase falhar (regras, conexão, etc.), mostra
@@ -471,10 +511,12 @@ document.getElementById('logout-btn').addEventListener('click', ()=>{
 
 onAuthStateChanged(auth, (user)=>{
   if(user){
+    currentUid = user.uid;
     loginScreen.classList.add('hidden');
     wrapApp.classList.remove('hidden');
     if(!listenersStarted){ listenersStarted = true; startDataListeners(); }
   } else {
+    currentUid = null;
     wrapApp.classList.add('hidden');
     loginScreen.classList.remove('hidden');
   }
@@ -588,7 +630,13 @@ function render(){
 
   const posts = [...state.posts].sort((a,b)=>b.ts-a.ts);
   document.getElementById('post-count').textContent = state.posts.length + (state.posts.length===1?' mensagem':' mensagens');
-  document.getElementById('mural-list').innerHTML = posts.length ? posts.map(p=>`
+  document.getElementById('mural-list').innerHTML = posts.length ? posts.map(p=>{
+    const likes = p.likes || {};
+    const likeCount = Object.keys(likes).length;
+    const liked = !!(currentUid && likes[currentUid]);
+    const comments = objToArray(p.comments).sort((a,b)=>a.ts-b.ts);
+    const commentsOpen = openComments.has(p.id);
+    return `
     <div class="post">
       <div class="post-head">
         <div class="avatar">${initials(p.author)}</div>
@@ -598,10 +646,64 @@ function render(){
       </div>
       <p class="post-text">${escapeHtml(p.text)}</p>
       <div class="post-actions">
-        ${p.metaId ? `<span class="tag-done tag-meta">virou meta</span>` : `<button class="btn-ghost" data-action="to-meta" data-id="${p.id}">virar meta</button>`}
-        ${p.demandaId ? `<span class="tag-done tag-demanda">virou demanda</span>` : `<button class="btn-ghost" data-action="to-demanda" data-id="${p.id}">virar demanda</button>`}
+        ${p.metaId ? `<button class="tag-done tag-meta" data-action="undo-meta" data-id="${p.id}" title="Clique para desfazer">virou meta ✕</button>` : `<button class="btn-ghost" data-action="to-meta" data-id="${p.id}">virar meta</button>`}
+        ${p.demandaId ? `<button class="tag-done tag-demanda" data-action="undo-demanda" data-id="${p.id}" title="Clique para desfazer">virou demanda ✕</button>` : `<button class="btn-ghost" data-action="to-demanda" data-id="${p.id}">virar demanda</button>`}
+        <button class="btn-ghost post-like ${liked?'is-liked':''}" data-action="like-post" data-id="${p.id}">
+          <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.7 1.2 6 3.6C14.3 5.2 15.8 4 18 4c4 0 5.5 4 4 7.7C19.5 16.4 12 21 12 21z"/></svg>
+          ${likeCount>0?likeCount:'curtir'}
+        </button>
+        <button class="btn-ghost" data-action="toggle-comments" data-id="${p.id}">${commentsOpen?'fechar':'comentar'}${comments.length?` (${comments.length})`:''}</button>
+        <button class="btn-ghost post-remove" data-action="remove-post" data-id="${p.id}">excluir</button>
       </div>
-    </div>`).join('') : `<div class="empty">Nenhuma mensagem ainda. Escreva a primeira ali em cima.</div>`;
+      ${commentsOpen ? `
+      <div class="post-comments">
+        ${comments.length ? comments.map(c=>{
+          const cLikes = c.likes || {};
+          const cLikeCount = Object.keys(cLikes).length;
+          const cLiked = !!(currentUid && cLikes[currentUid]);
+          const replies = objToArray(c.replies).sort((a,b)=>a.ts-b.ts);
+          const replyOpen = openReplies.has(c.id);
+          return `
+          <div class="comment">
+            <div class="avatar avatar-sm">${initials(c.author)}</div>
+            <div class="comment-body">
+              <div class="comment-author">${escapeHtml(c.author||'Alguém')} <span class="post-time">· ${timeAgo(c.ts)}</span></div>
+              <div class="comment-text">${escapeHtml(c.text)}</div>
+              <div class="comment-actions">
+                <button class="comment-like ${cLiked?'is-liked':''}" data-action="like-comment" data-post="${p.id}" data-id="${c.id}">
+                  <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.7 1.2 6 3.6C14.3 5.2 15.8 4 18 4c4 0 5.5 4 4 7.7C19.5 16.4 12 21 12 21z"/></svg>
+                  ${cLikeCount>0?cLikeCount:'curtir'}
+                </button>
+                <button class="comment-reply-btn" data-action="toggle-reply" data-post="${p.id}" data-id="${c.id}">${replyOpen?'fechar':'responder'}${replies.length?` (${replies.length})`:''}</button>
+                <button class="comment-remove" data-action="remove-comment" data-post="${p.id}" data-id="${c.id}">excluir</button>
+              </div>
+              ${replies.length ? `
+              <div class="reply-list">
+                ${replies.map(r=>`
+                  <div class="reply">
+                    <div class="avatar avatar-sm">${initials(r.author)}</div>
+                    <div class="reply-body">
+                      <div class="reply-author">${escapeHtml(r.author||'Alguém')} <span class="post-time">· ${timeAgo(r.ts)}</span></div>
+                      <div class="reply-text">${escapeHtml(r.text)}</div>
+                    </div>
+                  </div>`).join('')}
+              </div>` : ''}
+              ${replyOpen ? `
+              <div class="reply-form">
+                <input class="field" type="text" placeholder="Escreva uma resposta..." data-reply-input="${c.id}">
+                <button class="btn-ghost" data-action="send-reply" data-post="${p.id}" data-id="${c.id}">enviar</button>
+              </div>` : ''}
+            </div>
+          </div>`;
+        }).join('') : `<div class="empty-small">Nenhum comentário ainda.</div>`}
+        <div class="comment-form">
+          <input class="field" type="text" placeholder="Escreva um comentário..." data-comment-input="${p.id}">
+          <button class="btn-ghost" data-action="send-comment" data-id="${p.id}">enviar</button>
+        </div>
+      </div>` : ''}
+    </div>`;
+  }).join('') : `<div class="empty">Nenhuma mensagem ainda. Escreva a primeira ali em cima.</div>`;
+
 
   const openMetas = state.metas.filter(m=>!m.done).length;
   document.getElementById('meta-count').textContent = openMetas + (openMetas===1?' aberta':' abertas');
@@ -684,6 +786,18 @@ document.addEventListener('click', (e)=>{
       const demandaId = addDemanda(post.text, post.author);
       update(ref(db, 'posts/'+id), { demandaId }).catch(handleDbError);
     }
+  } else if(action === 'undo-meta'){
+    const post = state.posts.find(p=>p.id===id);
+    if(post && post.metaId){
+      remove(ref(db, 'metas/'+post.metaId)).catch(handleDbError);
+      update(ref(db, 'posts/'+id), { metaId: null }).catch(handleDbError);
+    }
+  } else if(action === 'undo-demanda'){
+    const post = state.posts.find(p=>p.id===id);
+    if(post && post.demandaId){
+      remove(ref(db, 'demandas/'+post.demandaId)).catch(handleDbError);
+      update(ref(db, 'posts/'+id), { demandaId: null }).catch(handleDbError);
+    }
   } else if(action === 'toggle-meta'){
     const m = state.metas.find(x=>x.id===id);
     if(m) update(ref(db, 'metas/'+id), { done: !m.done }).catch(handleDbError);
@@ -692,8 +806,68 @@ document.addEventListener('click', (e)=>{
     if(d) update(ref(db, 'demandas/'+id), { done: !d.done }).catch(handleDbError);
   } else if(action === 'remove-meta'){
     remove(ref(db, 'metas/'+id)).catch(handleDbError);
+    const linkedPost = state.posts.find(p=>p.metaId===id);
+    if(linkedPost) update(ref(db, 'posts/'+linkedPost.id), { metaId: null }).catch(handleDbError);
   } else if(action === 'remove-demanda'){
     remove(ref(db, 'demandas/'+id)).catch(handleDbError);
+    const linkedPost = state.posts.find(p=>p.demandaId===id);
+    if(linkedPost) update(ref(db, 'posts/'+linkedPost.id), { demandaId: null }).catch(handleDbError);
+  } else if(action === 'remove-post'){
+    remove(ref(db, 'posts/'+id)).catch(handleDbError);
+  } else if(action === 'like-post'){
+    if(!currentUid) return;
+    const post = state.posts.find(p=>p.id===id);
+    const liked = !!(post && post.likes && post.likes[currentUid]);
+    const likeRef = ref(db, 'posts/'+id+'/likes/'+currentUid);
+    (liked ? remove(likeRef) : set(likeRef, true)).catch(handleDbError);
+  } else if(action === 'toggle-comments'){
+    if(openComments.has(id)) openComments.delete(id); else openComments.add(id);
+    render();
+  } else if(action === 'send-comment'){
+    const input = document.querySelector(`[data-comment-input="${id}"]`);
+    const text = input ? input.value.trim() : '';
+    if(!text) return;
+    const commentId = uid();
+    set(ref(db, 'posts/'+id+'/comments/'+commentId), { author: state.authorName || 'Alguém', text, ts: Date.now() }).catch(handleDbError);
+    openComments.add(id);
+  } else if(action === 'like-comment'){
+    if(!currentUid) return;
+    const postId = t.dataset.post, commentId = id;
+    const post = state.posts.find(p=>p.id===postId);
+    const comment = post && post.comments ? post.comments[commentId] : null;
+    const liked = !!(comment && comment.likes && comment.likes[currentUid]);
+    const likeRef = ref(db, 'posts/'+postId+'/comments/'+commentId+'/likes/'+currentUid);
+    (liked ? remove(likeRef) : set(likeRef, true)).catch(handleDbError);
+  } else if(action === 'toggle-reply'){
+    if(openReplies.has(id)) openReplies.delete(id); else openReplies.add(id);
+    render();
+  } else if(action === 'remove-comment'){
+    const postId = t.dataset.post;
+    remove(ref(db, 'posts/'+postId+'/comments/'+id)).catch(handleDbError);
+    openReplies.delete(id);
+  } else if(action === 'send-reply'){
+    const postId = t.dataset.post, commentId = id;
+    const input = document.querySelector(`[data-reply-input="${commentId}"]`);
+    const text = input ? input.value.trim() : '';
+    if(!text) return;
+    const replyId = uid();
+    set(ref(db, 'posts/'+postId+'/comments/'+commentId+'/replies/'+replyId), { author: state.authorName || 'Alguém', text, ts: Date.now() }).catch(handleDbError);
+    openReplies.add(commentId);
+  }
+});
+
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter' && e.target.matches('[data-comment-input]')){
+    e.preventDefault();
+    const id = e.target.dataset.commentInput;
+    const btn = document.querySelector(`[data-action="send-comment"][data-id="${id}"]`);
+    if(btn) btn.click();
+  }
+  if(e.key === 'Enter' && e.target.matches('[data-reply-input]')){
+    e.preventDefault();
+    const commentId = e.target.dataset.replyInput;
+    const btn = document.querySelector(`[data-action="send-reply"][data-id="${commentId}"]`);
+    if(btn) btn.click();
   }
 });
 
