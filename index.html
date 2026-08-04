@@ -209,6 +209,17 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 
 /* posts do mural */
 .post{padding:14px 0;border-bottom:1px solid var(--border);}
+.post.is-pinned{
+  padding:14px 14px;margin:0 -14px 4px;border-radius:12px;border-bottom:1px solid transparent;
+  background:color-mix(in srgb, var(--danger) 8%, transparent);
+  border:1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+}
+.pinned-banner{
+  display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--danger);
+  text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px;
+}
+.pinned-banner svg{width:13px;height:13px;stroke:currentColor;fill:var(--danger);stroke-width:1.5;}
+.pin-toggle.is-pinned{color:var(--danger);}
 .post:last-child{border-bottom:none;}
 .post-head{display:flex;align-items:center;gap:9px;margin-bottom:6px;}
 .avatar{
@@ -1212,7 +1223,7 @@ function visibilityTagHtml(sector){
 function render(){
   updateProfileBtnAvatar();
   const allPostsList = allPosts();
-  let posts = [...allPostsList].sort((a,b)=>b.ts-a.ts);
+  let posts = [...allPostsList].sort((a,b)=> (b.pinned?1:0) - (a.pinned?1:0) || b.ts-a.ts);
   const search = muralSearch;
   const sectorFilter = muralSectorFilter;
   if(search){
@@ -1231,7 +1242,12 @@ function render(){
     const pInfo = authorInfo(p);
     const isEditing = editingPosts.has(p.id);
     return `
-    <div class="post">
+    <div class="post ${p.pinned ? 'is-pinned' : ''}">
+      ${p.pinned ? `
+      <div class="pinned-banner">
+        <svg viewBox="0 0 24 24"><path d="M12 2l2.5 6.5L21 11l-6.5 2.5L12 20l-2.5-6.5L3 11l6.5-2.5L12 2z"/></svg>
+        Extremamente importante
+      </div>` : ''}
       <div class="post-head">
         ${avatarHtml(pInfo)}
         <div>
@@ -1255,6 +1271,7 @@ function render(){
           ${likeCount>0?likeCount:'curtir'}
         </button>
         <button class="btn-ghost" data-action="toggle-comments" data-id="${p.id}">${commentsOpen?'fechar':'comentar'}${comments.length?` (${comments.length})`:''}</button>
+        <button class="btn-ghost pin-toggle ${p.pinned?'is-pinned':''}" data-action="toggle-pin" data-id="${p.id}">${p.pinned ? 'desafixar' : 'fixar'}</button>
         <button class="btn-ghost" data-action="edit-post" data-id="${p.id}">editar</button>
         <button class="btn-ghost post-remove" data-action="remove-post" data-id="${p.id}">excluir</button>
       </div>`}
@@ -1451,6 +1468,9 @@ document.addEventListener('click', (e)=>{
     if(d) remove(ref(db, demandaPath(d))).catch(handleDbError);
     const linkedPost = allPosts().find(p=>p.demandaId===id);
     if(linkedPost) update(ref(db, postPath(linkedPost)), { demandaId: null }).catch(handleDbError);
+  } else if(action === 'toggle-pin'){
+    const post = allPosts().find(p=>p.id===id);
+    if(post) update(ref(db, postPath(post)), { pinned: !post.pinned }).catch(handleDbError);
   } else if(action === 'remove-post'){
     const post = allPosts().find(p=>p.id===id);
     if(post) remove(ref(db, postPath(post))).catch(handleDbError);
