@@ -107,6 +107,34 @@ header{padding:36px 0 26px;}
 .modal-frame-wrap iframe{width:100%;height:420px;display:block;border:none;}
 .modal-note{font-size:11.5px;color:var(--text-2);margin:10px 0 14px;line-height:1.5;}
 .modal-body .btn-primary{width:100%;text-align:center;display:block;text-decoration:none;}
+
+/* mensagens diretas (DM) */
+.dm-badge{
+  position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:var(--danger);
+}
+.dm-badge.hidden{display:none;}
+.dm-conversation-item{
+  display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:10px;cursor:pointer;
+  border:1px solid transparent;text-align:left;width:100%;background:transparent;
+}
+.dm-conversation-item:hover{background:var(--sage);}
+.dm-conversation-item .avatar{flex:none;}
+.dm-conversation-text{min-width:0;flex:1;}
+.dm-conversation-name{font-size:13px;font-weight:600;}
+.dm-conversation-last{font-size:12px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dm-conversation-time{font-size:10.5px;color:var(--text-3);flex:none;}
+.dm-thread-box{height:78vh;max-height:640px;}
+.dm-thread-box .modal-head{gap:8px;}
+.dm-thread-head-info{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
+.dm-thread-head-info strong{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dm-messages{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:8px;}
+.dm-bubble{max-width:75%;padding:8px 12px;border-radius:14px;font-size:13.5px;line-height:1.4;word-wrap:break-word;}
+.dm-bubble-mine{align-self:flex-end;background:var(--forest);color:#fff;border-bottom-right-radius:4px;}
+.dm-bubble-theirs{align-self:flex-start;background:var(--sage);color:var(--ink);border-bottom-left-radius:4px;}
+.dm-bubble-time{font-size:10px;opacity:.7;margin-top:3px;display:block;}
+.dm-composer{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border);flex:none;}
+.dm-composer input{flex:1;}
+.dm-empty{font-size:13px;color:var(--text-2);text-align:center;padding:30px 10px;}
 .field-label{font-size:12px;font-weight:600;color:var(--text-2);margin:0 0 6px;display:block;}
 .field-label + .field{margin-bottom:14px;}
 .sector-tag{
@@ -348,6 +376,10 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
           <svg class="icon-a" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
           <svg class="icon-b" viewBox="0 0 24 24"><path d="M9 3H6a3 3 0 0 0-3 3v3M15 3h3a3 3 0 0 1 3 3v3M9 21H6a3 3 0 0 1-3-3v-3M15 21h3a3 3 0 0 0 3-3v-3M9 9 4 4M15 9l5-5M9 15l-5 5M15 15l5 5"/></svg>
         </button>
+        <button class="icon-btn" id="dm-btn" aria-label="Mensagens" style="position:relative;">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16v11H7l-3 3V5z"/></svg>
+          <span id="dm-badge" class="dm-badge hidden"></span>
+        </button>
         <button class="icon-btn" id="profile-btn" aria-label="Meu perfil">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>
         </button>
@@ -464,6 +496,45 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
           </div>
         </div>
         <p class="view-profile-bio" id="view-profile-bio"></p>
+        <button class="btn btn-primary" id="view-profile-message-btn" type="button" style="margin-top:14px;">Mandar mensagem</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="dm-list-modal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <div>
+          <strong>Conversas</strong>
+          <span>Mensagens diretas com a equipe</span>
+        </div>
+        <button class="modal-close" id="dm-list-modal-close" type="button" aria-label="Fechar">
+          <svg viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="dm-list-body">
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="dm-thread-modal">
+    <div class="modal-box dm-thread-box">
+      <div class="modal-head">
+        <button class="modal-close" id="dm-thread-back" type="button" aria-label="Voltar" style="margin-right:2px;">
+          <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+        </button>
+        <div class="dm-thread-head-info">
+          <div class="avatar avatar-sm" id="dm-thread-avatar">?</div>
+          <strong id="dm-thread-name"></strong>
+        </div>
+        <button class="modal-close" id="dm-thread-close" type="button" aria-label="Fechar">
+          <svg viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/></svg>
+        </button>
+      </div>
+      <div class="dm-messages" id="dm-messages"></div>
+      <div class="dm-composer">
+        <input class="field" id="dm-input" placeholder="Escreva uma mensagem..." maxlength="1000">
+        <button class="btn btn-primary" id="dm-send-btn">Enviar</button>
       </div>
     </div>
   </div>
@@ -847,8 +918,10 @@ const viewProfilePhoto = document.getElementById('view-profile-photo');
 const viewProfileName = document.getElementById('view-profile-name');
 const viewProfileSector = document.getElementById('view-profile-sector');
 const viewProfileBio = document.getElementById('view-profile-bio');
+const viewProfileMessageBtn = document.getElementById('view-profile-message-btn');
 
 function openViewProfile(uid, fallbackName){
+  viewingProfileUid = uid;
   const profile = uid ? state.users[uid] : null;
   const name = (profile && profile.name) || fallbackName || 'Alguém';
   const sector = profile && profile.sector ? profile.sector : null;
@@ -861,11 +934,142 @@ function openViewProfile(uid, fallbackName){
   viewProfileName.textContent = name;
   viewProfileSector.innerHTML = sectorTagHtml(sector);
   viewProfileBio.textContent = bio;
+  viewProfileMessageBtn.style.display = uid ? '' : 'none';
   viewProfileModal.classList.remove('hidden');
 }
 function closeViewProfile(){ viewProfileModal.classList.add('hidden'); }
 viewProfileModalClose.addEventListener('click', closeViewProfile);
 viewProfileModal.addEventListener('click', (e)=>{ if(e.target === viewProfileModal) closeViewProfile(); });
+viewProfileMessageBtn.addEventListener('click', ()=>{
+  if(!viewingProfileUid) return;
+  closeViewProfile();
+  openDmThread(viewingProfileUid, viewProfileName.textContent, viewProfilePhoto.querySelector('img') ? viewProfilePhoto.querySelector('img').src : null);
+});
+
+/* ===== mensagens diretas (DM) =====
+   Cada conversa fica em dms/{chatId}/messages, onde chatId é os dois
+   uids ordenados e unidos por '__'. Também mantemos um índice
+   conversations/{meuUid}/{outroUid} pra listar as conversas de cada
+   pessoa sem precisar varrer todo o banco. */
+let viewingProfileUid = null;
+const dmListModal = document.getElementById('dm-list-modal');
+const dmListModalClose = document.getElementById('dm-list-modal-close');
+const dmListBody = document.getElementById('dm-list-body');
+const dmThreadModal = document.getElementById('dm-thread-modal');
+const dmThreadBack = document.getElementById('dm-thread-back');
+const dmThreadClose = document.getElementById('dm-thread-close');
+const dmThreadAvatar = document.getElementById('dm-thread-avatar');
+const dmThreadName = document.getElementById('dm-thread-name');
+const dmMessages = document.getElementById('dm-messages');
+const dmInput = document.getElementById('dm-input');
+const dmSendBtn = document.getElementById('dm-send-btn');
+const dmBtn = document.getElementById('dm-btn');
+const dmBadge = document.getElementById('dm-badge');
+let dmConversations = {};
+let dmThreadUid = null;
+let dmThreadUnsub = null;
+const DM_SEEN_KEY = 'plantel_dm_seen_ts';
+
+function chatId(a, b){ return [a, b].sort().join('__'); }
+
+function renderDmList(){
+  const entries = Object.entries(dmConversations).sort((a,b)=> (b[1].lastTs||0) - (a[1].lastTs||0));
+  dmListBody.innerHTML = entries.length ? entries.map(([otherUid, c])=>{
+    const av = c.photo
+      ? `<div class="avatar"><img src="${c.photo}" alt=""></div>`
+      : `<div class="avatar">${initials(c.name || 'Alguém')}</div>`;
+    return `
+    <button class="dm-conversation-item" data-action="open-dm" data-uid="${otherUid}">
+      ${av}
+      <div class="dm-conversation-text">
+        <div class="dm-conversation-name">${escapeHtml(c.name || 'Alguém')}</div>
+        <div class="dm-conversation-last">${escapeHtml(c.lastText || '')}</div>
+      </div>
+      <div class="dm-conversation-time">${c.lastTs ? timeAgo(c.lastTs) : ''}</div>
+    </button>`;
+  }).join('') : `<div class="dm-empty">Nenhuma conversa ainda. Abra o perfil de alguém e clique em "Mandar mensagem".</div>`;
+}
+
+function updateDmBadge(){
+  const seen = Number(localStorage.getItem(DM_SEEN_KEY) || 0);
+  const hasNew = Object.values(dmConversations).some(c => (c.lastTs||0) > seen && c.lastFrom && c.lastFrom !== currentUid);
+  dmBadge.classList.toggle('hidden', !hasNew);
+}
+
+function openDmList(){
+  renderDmList();
+  dmListModal.classList.remove('hidden');
+  localStorage.setItem(DM_SEEN_KEY, String(Date.now()));
+  updateDmBadge();
+}
+function closeDmList(){ dmListModal.classList.add('hidden'); }
+dmBtn.addEventListener('click', openDmList);
+dmListModalClose.addEventListener('click', closeDmList);
+dmListModal.addEventListener('click', (e)=>{ if(e.target === dmListModal) closeDmList(); });
+
+function openDmThread(otherUid, name, photo){
+  dmThreadUid = otherUid;
+  const known = dmConversations[otherUid];
+  const displayName = (known && known.name) || name || 'Alguém';
+  const displayPhoto = (known && known.photo) || photo || null;
+  dmThreadName.textContent = displayName;
+  dmThreadAvatar.innerHTML = displayPhoto ? `<img src="${displayPhoto}" alt="">` : initials(displayName);
+  dmMessages.innerHTML = '';
+  if(dmThreadUnsub) dmThreadUnsub();
+  const cid = chatId(currentUid, otherUid);
+  dmThreadUnsub = onValue(ref(db, 'dms/'+cid+'/messages'), snap => {
+    const msgs = objToArray(snap.val()).sort((a,b)=>a.ts-b.ts);
+    dmMessages.innerHTML = msgs.length ? msgs.map(m=>{
+      const mine = m.from === currentUid;
+      return `
+      <div class="dm-bubble ${mine?'dm-bubble-mine':'dm-bubble-theirs'}">
+        ${escapeHtml(m.text)}
+        <span class="dm-bubble-time">${timeAgo(m.ts)}</span>
+      </div>`;
+    }).join('') : `<div class="dm-empty">Nenhuma mensagem ainda. Diga oi!</div>`;
+    dmMessages.scrollTop = dmMessages.scrollHeight;
+  }, handleDbError);
+  dmListModal.classList.add('hidden');
+  dmThreadModal.classList.remove('hidden');
+  localStorage.setItem(DM_SEEN_KEY, String(Date.now()));
+  updateDmBadge();
+  setTimeout(()=> dmInput.focus(), 50);
+}
+function closeDmThread(){
+  dmThreadModal.classList.add('hidden');
+  if(dmThreadUnsub){ dmThreadUnsub(); dmThreadUnsub = null; }
+  dmThreadUid = null;
+}
+dmThreadClose.addEventListener('click', closeDmThread);
+dmThreadBack.addEventListener('click', ()=>{ closeDmThread(); openDmList(); });
+dmThreadModal.addEventListener('click', (e)=>{ if(e.target === dmThreadModal) closeDmThread(); });
+
+function sendDmMessage(){
+  const text = dmInput.value.trim();
+  if(!text || !dmThreadUid || !currentUid) return;
+  const cid = chatId(currentUid, dmThreadUid);
+  const mine = myProfile() || {};
+  set(ref(db, 'dms/'+cid+'/messages/'+uid()), { from: currentUid, text, ts: Date.now() }).catch(handleDbError);
+  const now = Date.now();
+  update(ref(db, 'conversations/'+currentUid+'/'+dmThreadUid), {
+    name: dmThreadName.textContent, photo: (dmThreadAvatar.querySelector('img')||{}).src || null,
+    lastText: text, lastTs: now, lastFrom: currentUid
+  }).catch(handleDbError);
+  update(ref(db, 'conversations/'+dmThreadUid+'/'+currentUid), {
+    name: mine.name || 'Alguém', photo: mine.photo || null,
+    lastText: text, lastTs: now, lastFrom: currentUid
+  }).catch(handleDbError);
+  dmInput.value = '';
+}
+dmSendBtn.addEventListener('click', sendDmMessage);
+dmInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ e.preventDefault(); sendDmMessage(); } });
+
+document.addEventListener('keydown', (e)=>{
+  if(e.key !== 'Escape') return;
+  if(!dmThreadModal.classList.contains('hidden')) closeDmThread();
+  else if(!dmListModal.classList.contains('hidden')) closeDmList();
+});
+
 
 /* ===== estado compartilhado (Firebase Realtime Database) =====
    Itens públicos ficam em posts/metas/demandas (todo mundo lê).
@@ -918,6 +1122,11 @@ function startDataListeners(){
     syncPrivateSubscription();
     render();
     maybeOpenProfileOnboarding();
+  }, handleDbError);
+  onValue(ref(db, 'conversations/'+currentUid), snap => {
+    dmConversations = snap.val() || {};
+    if(!dmListModal.classList.contains('hidden')) renderDmList();
+    updateDmBadge();
   }, handleDbError);
 }
 
@@ -1196,6 +1405,10 @@ document.addEventListener('click', (e)=>{
     const fallbackName = t.dataset.name || null;
     if(uid && uid === currentUid){ openProfileModal(false); }
     else { openViewProfile(uid, fallbackName); }
+  } else if(action === 'open-dm'){
+    const otherUid = t.dataset.uid;
+    const c = dmConversations[otherUid] || {};
+    openDmThread(otherUid, c.name, c.photo);
   } else if(action === 'to-meta'){
     const post = allPosts().find(p=>p.id===id);
     if(post && !post.metaId){
