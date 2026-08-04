@@ -118,6 +118,27 @@ header{padding:36px 0 26px;}
   margin-left:6px;vertical-align:middle;display:inline-block;
 }
 #profile-error{color:var(--danger);font-size:12px;margin:10px 0 0;min-height:14px;}
+.avatar-upload{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.avatar-upload-preview{
+  width:64px;height:64px;border-radius:16px;background:var(--sage);color:var(--forest);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;flex:none;
+  font-family:'Space Grotesk',sans-serif;overflow:hidden;position:relative;
+}
+.avatar-upload-preview img{width:100%;height:100%;object-fit:cover;display:block;}
+.avatar-upload-actions{display:flex;flex-direction:column;gap:6px;}
+.avatar-upload-actions .btn-ghost{border:1px solid var(--border);padding:6px 12px;}
+.avatar-upload-actions .btn-ghost:hover{border-color:var(--moss);}
+#profile-photo-remove{color:var(--danger);display:none;}
+.view-profile-head{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.view-profile-name{font-size:16px;font-weight:700;font-family:'Space Grotesk',sans-serif;}
+.view-profile-bio{font-size:13px;color:var(--text-2);line-height:1.5;margin:0;white-space:pre-wrap;}
+.view-profile-bio:empty::before{content:'Essa pessoa ainda não escreveu uma descrição.';color:var(--text-3);font-style:italic;}
+textarea.field{
+  border:1px solid var(--border);border-radius:9px;padding:9px 12px;font-size:13.5px;
+  background:var(--paper);outline:none;width:100%;color:inherit;font-family:inherit;resize:vertical;min-height:64px;
+}
+textarea.field:focus{border-color:var(--moss);}
+.char-count{font-size:11px;color:var(--text-3);text-align:right;margin:4px 0 14px;}
 
 /* aviso de erro do banco */
 #db-error-toast{
@@ -165,8 +186,9 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .avatar{
   width:28px;height:28px;border-radius:8px;background:var(--sage);color:var(--forest);
   display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex:none;
-  font-family:'Space Grotesk',sans-serif;
+  font-family:'Space Grotesk',sans-serif;overflow:hidden;
 }
+.avatar img{width:100%;height:100%;object-fit:cover;display:block;}
 .post-author{font-size:13px;font-weight:600;}
 .post-time{font-size:11px;color:var(--text-3);}
 .post-text{font-size:13.5px;margin:0 0 8px 37px;}
@@ -393,6 +415,14 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
         </button>
       </div>
       <div class="modal-body">
+        <div class="avatar-upload">
+          <div class="avatar-upload-preview" id="profile-photo-preview">?</div>
+          <div class="avatar-upload-actions">
+            <input type="file" id="profile-photo-input" accept="image/*" style="display:none;">
+            <button type="button" class="btn-ghost" id="profile-photo-pick">Escolher foto</button>
+            <button type="button" class="btn-ghost" id="profile-photo-remove">Remover foto</button>
+          </div>
+        </div>
         <label class="field-label" for="profile-name-input">Nome</label>
         <input class="field" id="profile-name-input" placeholder="Seu nome">
         <label class="field-label" for="profile-sector-input">Setor / time</label>
@@ -405,8 +435,35 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
           <option value="Parceiros">
           <option value="Membro">
         </datalist>
+        <label class="field-label" for="profile-bio-input">Descrição</label>
+        <textarea class="field" id="profile-bio-input" maxlength="160" placeholder="Conte um pouco sobre você..."></textarea>
+        <div class="char-count" id="profile-bio-count">0/160</div>
         <button class="btn btn-primary" id="profile-save-btn" type="button" style="margin-top:4px;">Salvar</button>
         <p class="modal-note" id="profile-error"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="view-profile-modal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <div>
+          <strong>Perfil</strong>
+          <span>Como essa pessoa aparece no mural</span>
+        </div>
+        <button class="modal-close" id="view-profile-modal-close" type="button" aria-label="Fechar">
+          <svg viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="view-profile-head">
+          <div class="avatar-upload-preview" id="view-profile-photo">?</div>
+          <div>
+            <div class="view-profile-name" id="view-profile-name"></div>
+            <div id="view-profile-sector"></div>
+          </div>
+        </div>
+        <p class="view-profile-bio" id="view-profile-bio"></p>
       </div>
     </div>
   </div>
@@ -663,6 +720,7 @@ document.querySelectorAll('.social-link[data-insta-user]').forEach(link=>{
 instaModalClose.addEventListener('click', closeInstaModal);
 instaModal.addEventListener('click', (e)=>{ if(e.target === instaModal) closeInstaModal(); });
 document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !instaModal.classList.contains('hidden')) closeInstaModal(); });
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !viewProfileModal.classList.contains('hidden')) closeViewProfile(); });
 
 /* ===== perfil (nome + setor/time) =====
    Fica salvo em users/{uid} e é usado pra identificar a pessoa em
@@ -671,18 +729,39 @@ document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !instaModal
 const profileModal = document.getElementById('profile-modal');
 const profileNameInput = document.getElementById('profile-name-input');
 const profileSectorInput = document.getElementById('profile-sector-input');
+const profileBioInput = document.getElementById('profile-bio-input');
+const profileBioCount = document.getElementById('profile-bio-count');
 const profileSaveBtn = document.getElementById('profile-save-btn');
 const profileModalClose = document.getElementById('profile-modal-close');
 const profileError = document.getElementById('profile-error');
 const profileBtn = document.getElementById('profile-btn');
+const profilePhotoPreview = document.getElementById('profile-photo-preview');
+const profilePhotoInput = document.getElementById('profile-photo-input');
+const profilePhotoPick = document.getElementById('profile-photo-pick');
+const profilePhotoRemove = document.getElementById('profile-photo-remove');
 let profileOnboarding = false;
 let profileOnboardingShown = false;
+let pendingPhoto; // undefined = sem alteração, null = remover, string = nova foto (base64)
+
+function renderPhotoPreview(name, photo){
+  if(photo){
+    profilePhotoPreview.innerHTML = `<img src="${photo}" alt="">`;
+    profilePhotoRemove.style.display = '';
+  } else {
+    profilePhotoPreview.textContent = initials(name || '?');
+    profilePhotoRemove.style.display = 'none';
+  }
+}
 
 function openProfileModal(forced){
   profileOnboarding = !!forced;
   const mine = (currentUid && state.users[currentUid]) || {};
   profileNameInput.value = mine.name || '';
   profileSectorInput.value = mine.sector || '';
+  profileBioInput.value = mine.bio || '';
+  profileBioCount.textContent = (mine.bio || '').length + '/160';
+  pendingPhoto = undefined;
+  renderPhotoPreview(mine.name, mine.photo);
   profileError.textContent = '';
   profileModalClose.style.display = forced ? 'none' : '';
   profileModal.classList.remove('hidden');
@@ -701,19 +780,92 @@ function maybeOpenProfileOnboarding(){
 profileBtn.addEventListener('click', ()=> openProfileModal(false));
 profileModalClose.addEventListener('click', closeProfileModal);
 profileModal.addEventListener('click', (e)=>{ if(e.target === profileModal) closeProfileModal(); });
+profileBioInput.addEventListener('input', ()=>{
+  profileBioCount.textContent = profileBioInput.value.length + '/160';
+});
+
+profilePhotoPick.addEventListener('click', ()=> profilePhotoInput.click());
+profilePhotoRemove.addEventListener('click', ()=>{
+  pendingPhoto = null;
+  profilePhotoInput.value = '';
+  renderPhotoPreview(profileNameInput.value, null);
+});
+profilePhotoInput.addEventListener('change', ()=>{
+  const file = profilePhotoInput.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){
+    profileError.textContent = 'Escolha um arquivo de imagem.';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      // redimensiona/comprime pra caber num registro pequeno do banco
+      const size = 200;
+      const canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      const scale = Math.max(size / img.width, size / img.height);
+      const w = img.width * scale, h = img.height * scale;
+      const offsetX = (size - w) / 2;
+      // horizontal sempre centralizado; vertical favorece a parte de cima
+      // da foto (onde normalmente está o rosto), pra não cortar a cabeça
+      const offsetY = (size - h) * 0.3;
+      ctx.drawImage(img, offsetX, offsetY, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      pendingPhoto = dataUrl;
+      profileError.textContent = '';
+      renderPhotoPreview(profileNameInput.value, dataUrl);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+});
 
 profileSaveBtn.addEventListener('click', ()=>{
   const name = profileNameInput.value.trim();
   const sector = profileSectorInput.value.trim();
+  const bio = profileBioInput.value.trim();
   if(!name){ profileError.textContent = 'Digite seu nome pra continuar.'; return; }
-  set(ref(db, 'users/'+currentUid), { name, sector: sector || null }).then(()=>{
+  const mine = (currentUid && state.users[currentUid]) || {};
+  const photo = pendingPhoto === undefined ? (mine.photo || null) : pendingPhoto;
+  set(ref(db, 'users/'+currentUid), { name, sector: sector || null, bio: bio || null, photo }).then(()=>{
     profileOnboarding = false;
+    pendingPhoto = undefined;
     profileModal.classList.add('hidden');
   }).catch(err=>{
     profileError.textContent = 'Não foi possível salvar. Tente de novo.';
     handleDbError(err);
   });
 });
+
+/* ===== ver perfil de outra pessoa (somente leitura) ===== */
+const viewProfileModal = document.getElementById('view-profile-modal');
+const viewProfileModalClose = document.getElementById('view-profile-modal-close');
+const viewProfilePhoto = document.getElementById('view-profile-photo');
+const viewProfileName = document.getElementById('view-profile-name');
+const viewProfileSector = document.getElementById('view-profile-sector');
+const viewProfileBio = document.getElementById('view-profile-bio');
+
+function openViewProfile(uid, fallbackName){
+  const profile = uid ? state.users[uid] : null;
+  const name = (profile && profile.name) || fallbackName || 'Alguém';
+  const sector = profile && profile.sector ? profile.sector : null;
+  const photo = profile && profile.photo ? profile.photo : null;
+  const bio = profile && profile.bio
+    ? profile.bio
+    : 'Essa pessoa ainda não personalizou o perfil por aqui (sem foto ou descrição salvas).';
+  if(photo){ viewProfilePhoto.innerHTML = `<img src="${photo}" alt="">`; }
+  else { viewProfilePhoto.textContent = initials(name); }
+  viewProfileName.textContent = name;
+  viewProfileSector.innerHTML = sectorTagHtml(sector);
+  viewProfileBio.textContent = bio;
+  viewProfileModal.classList.remove('hidden');
+}
+function closeViewProfile(){ viewProfileModal.classList.add('hidden'); }
+viewProfileModalClose.addEventListener('click', closeViewProfile);
+viewProfileModal.addEventListener('click', (e)=>{ if(e.target === viewProfileModal) closeViewProfile(); });
 
 /* ===== estado compartilhado (Firebase Realtime Database) =====
    Itens públicos ficam em posts/metas/demandas (todo mundo lê).
@@ -813,11 +965,33 @@ function escapeHtml(s){
   return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 function authorInfo(item){
-  const profile = item && item.uid ? state.users[item.uid] : null;
+  const uid = item && item.uid ? item.uid : null;
+  const profile = uid ? state.users[uid] : null;
   return {
+    uid,
     name: (profile && profile.name) || (item && item.author) || 'Alguém',
-    sector: profile && profile.sector ? profile.sector : null
+    sector: profile && profile.sector ? profile.sector : null,
+    bio: profile && profile.bio ? profile.bio : null,
+    photo: profile && profile.photo ? profile.photo : null
   };
+}
+function avatarHtml(info, sm){
+  const cls = sm ? 'avatar avatar-sm' : 'avatar';
+  const clickable = ` data-action="view-profile" data-uid="${info.uid || ''}" data-name="${escapeHtml(info.name)}" style="cursor:pointer;"`;
+  return info.photo
+    ? `<div class="${cls}"${clickable}><img src="${info.photo}" alt=""></div>`
+    : `<div class="${cls}"${clickable}>${initials(info.name)}</div>`;
+}
+function authorNameAttr(info){
+  return ` data-action="view-profile" data-uid="${info.uid || ''}" data-name="${escapeHtml(info.name)}" style="cursor:pointer;"`;
+}
+function updateProfileBtnAvatar(){
+  const mine = (currentUid && state.users[currentUid]) || null;
+  if(mine && mine.photo){
+    profileBtn.innerHTML = `<img src="${mine.photo}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">`;
+  } else {
+    profileBtn.innerHTML = `<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>`;
+  }
 }
 function sectorTagHtml(sector){
   return sector ? `<span class="sector-tag">${escapeHtml(sector)}</span>` : '';
@@ -827,6 +1001,7 @@ function visibilityTagHtml(sector){
 }
 
 function render(){
+  updateProfileBtnAvatar();
   const allPostsList = allPosts();
   let posts = [...allPostsList].sort((a,b)=>b.ts-a.ts);
   const search = muralSearch;
@@ -849,9 +1024,9 @@ function render(){
     return `
     <div class="post">
       <div class="post-head">
-        <div class="avatar">${initials(pInfo.name)}</div>
+        ${avatarHtml(pInfo)}
         <div>
-          <div class="post-author">${escapeHtml(pInfo.name)}${sectorTagHtml(pInfo.sector)}${visibilityTagHtml(p._sector)} <span class="post-time">· ${timeAgo(p.ts)}</span></div>
+          <div class="post-author"><span${authorNameAttr(pInfo)}>${escapeHtml(pInfo.name)}</span>${sectorTagHtml(pInfo.sector)}${visibilityTagHtml(p._sector)} <span class="post-time">· ${timeAgo(p.ts)}</span></div>
         </div>
       </div>
       ${isEditing ? `
@@ -885,9 +1060,9 @@ function render(){
           const cInfo = authorInfo(c);
           return `
           <div class="comment">
-            <div class="avatar avatar-sm">${initials(cInfo.name)}</div>
+            ${avatarHtml(cInfo, true)}
             <div class="comment-body">
-              <div class="comment-author">${escapeHtml(cInfo.name)}${sectorTagHtml(cInfo.sector)} <span class="post-time">· ${timeAgo(c.ts)}</span></div>
+              <div class="comment-author"><span${authorNameAttr(cInfo)}>${escapeHtml(cInfo.name)}</span>${sectorTagHtml(cInfo.sector)} <span class="post-time">· ${timeAgo(c.ts)}</span></div>
               <div class="comment-text">${escapeHtml(c.text)}</div>
               <div class="comment-actions">
                 <button class="comment-like ${cLiked?'is-liked':''}" data-action="like-comment" data-post="${p.id}" data-id="${c.id}">
@@ -903,9 +1078,9 @@ function render(){
                   const rInfo = authorInfo(r);
                   return `
                   <div class="reply">
-                    <div class="avatar avatar-sm">${initials(rInfo.name)}</div>
+                    ${avatarHtml(rInfo, true)}
                     <div class="reply-body">
-                      <div class="reply-author">${escapeHtml(rInfo.name)}${sectorTagHtml(rInfo.sector)} <span class="post-time">· ${timeAgo(r.ts)}</span></div>
+                      <div class="reply-author"><span${authorNameAttr(rInfo)}>${escapeHtml(rInfo.name)}</span>${sectorTagHtml(rInfo.sector)} <span class="post-time">· ${timeAgo(r.ts)}</span></div>
                       <div class="reply-text">${escapeHtml(r.text)}</div>
                     </div>
                   </div>`;}).join('')}
@@ -937,7 +1112,7 @@ function render(){
       <div class="check ${m.done?'done':''}" data-action="toggle-meta" data-id="${m.id}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(m.text)}</div>
-        <div class="item-meta">${escapeHtml(mInfo.name)}${sectorTagHtml(mInfo.sector)}${visibilityTagHtml(m._sector)} · ${timeAgo(m.ts)}</div>
+        <div class="item-meta"><span${authorNameAttr(mInfo)}>${escapeHtml(mInfo.name)}</span>${sectorTagHtml(mInfo.sector)}${visibilityTagHtml(m._sector)} · ${timeAgo(m.ts)}</div>
       </div>
       <button class="item-remove" data-action="remove-meta" data-id="${m.id}">remover</button>
     </div>`;}).join('') : `<div class="empty">Nenhuma meta ainda.</div>`;
@@ -952,7 +1127,7 @@ function render(){
       <div class="check ${d.done?'done':''}" data-action="toggle-demanda" data-id="${d.id}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(d.text)}</div>
-        <div class="item-meta">${escapeHtml(dInfo.name)}${sectorTagHtml(dInfo.sector)}${visibilityTagHtml(d._sector)} · ${timeAgo(d.ts)}</div>
+        <div class="item-meta"><span${authorNameAttr(dInfo)}>${escapeHtml(dInfo.name)}</span>${sectorTagHtml(dInfo.sector)}${visibilityTagHtml(d._sector)} · ${timeAgo(d.ts)}</div>
       </div>
       <button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>
     </div>`;}).join('') : `<div class="empty">Nenhuma demanda ainda.</div>`;
@@ -1016,7 +1191,12 @@ document.addEventListener('click', (e)=>{
   if(!t) return;
   const action = t.dataset.action, id = t.dataset.id;
 
-  if(action === 'to-meta'){
+  if(action === 'view-profile'){
+    const uid = t.dataset.uid || null;
+    const fallbackName = t.dataset.name || null;
+    if(uid && uid === currentUid){ openProfileModal(false); }
+    else { openViewProfile(uid, fallbackName); }
+  } else if(action === 'to-meta'){
     const post = allPosts().find(p=>p.id===id);
     if(post && !post.metaId){
       const metaId = addMeta(post.text, post.author, post.uid, post._sector);
