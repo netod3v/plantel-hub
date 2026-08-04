@@ -106,6 +106,13 @@ header{padding:36px 0 26px;}
 .modal-frame-wrap iframe{width:100%;height:420px;display:block;border:none;}
 .modal-note{font-size:11.5px;color:var(--text-2);margin:10px 0 14px;line-height:1.5;}
 .modal-body .btn-primary{width:100%;text-align:center;display:block;text-decoration:none;}
+.field-label{font-size:12px;font-weight:600;color:var(--text-2);margin:0 0 6px;display:block;}
+.field-label + .field{margin-bottom:14px;}
+.sector-tag{
+  font-size:10.5px;font-weight:600;padding:2px 9px;border-radius:20px;background:var(--sage);color:var(--forest);
+  margin-left:6px;vertical-align:middle;display:inline-block;
+}
+#profile-error{color:var(--danger);font-size:12px;margin:10px 0 0;min-height:14px;}
 
 /* aviso de erro do banco */
 #db-error-toast{
@@ -300,6 +307,9 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
           <svg class="icon-a" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
           <svg class="icon-b" viewBox="0 0 24 24"><path d="M9 3H6a3 3 0 0 0-3 3v3M15 3h3a3 3 0 0 1 3 3v3M9 21H6a3 3 0 0 1-3-3v-3M15 21h3a3 3 0 0 0 3-3v-3M9 9 4 4M15 9l5-5M9 15l-5 5M15 15l5 5"/></svg>
         </button>
+        <button class="icon-btn" id="profile-btn" aria-label="Meu perfil">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>
+        </button>
         <button class="icon-btn" id="logout-btn" aria-label="Sair">
           <svg viewBox="0 0 24 24"><path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3M16 17l5-5-5-5M21 12H9"/></svg>
         </button>
@@ -352,6 +362,36 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
     </div>
   </div>
 
+  <div class="modal-overlay hidden" id="profile-modal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <div>
+          <strong>Seu perfil</strong>
+          <span>Como a equipe vai te ver no mural</span>
+        </div>
+        <button class="modal-close" id="profile-modal-close" type="button" aria-label="Fechar">
+          <svg viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="field-label" for="profile-name-input">Nome</label>
+        <input class="field" id="profile-name-input" placeholder="Seu nome">
+        <label class="field-label" for="profile-sector-input">Setor / time</label>
+        <input class="field" id="profile-sector-input" list="sector-options" placeholder="Ex: Marketing, Professores, Monitoria...">
+        <datalist id="sector-options">
+          <option value="Administração">
+          <option value="Marketing">
+          <option value="Professores">
+          <option value="Monitoria">
+          <option value="Parceiros">
+          <option value="Membro">
+        </datalist>
+        <button class="btn btn-primary" id="profile-save-btn" type="button" style="margin-top:4px;">Salvar</button>
+        <p class="modal-note" id="profile-error"></p>
+      </div>
+    </div>
+  </div>
+
   <div id="db-error-toast" class="hidden"></div>
 
   <section>
@@ -359,7 +399,6 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
     <div class="card">
       <div class="composer">
         <div class="composer-top">
-          <input class="field name-input" id="author-input" placeholder="Seu nome">
           <input class="field msg-input" id="msg-input" placeholder="Escreva um recado, uma ideia ou o que precisa ser feito...">
         </div>
         <div class="composer-bottom">
@@ -517,6 +556,7 @@ onAuthStateChanged(auth, (user)=>{
     if(!listenersStarted){ listenersStarted = true; startDataListeners(); }
   } else {
     currentUid = null;
+    profileOnboardingShown = false;
     wrapApp.classList.add('hidden');
     loginScreen.classList.remove('hidden');
   }
@@ -587,16 +627,65 @@ instaModalClose.addEventListener('click', closeInstaModal);
 instaModal.addEventListener('click', (e)=>{ if(e.target === instaModal) closeInstaModal(); });
 document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !instaModal.classList.contains('hidden')) closeInstaModal(); });
 
+/* ===== perfil (nome + setor/time) =====
+   Fica salvo em users/{uid} e é usado pra identificar a pessoa em
+   todo lugar do mural (posts, comentários, respostas, metas e
+   demandas), em vez de digitar o nome toda vez. */
+const profileModal = document.getElementById('profile-modal');
+const profileNameInput = document.getElementById('profile-name-input');
+const profileSectorInput = document.getElementById('profile-sector-input');
+const profileSaveBtn = document.getElementById('profile-save-btn');
+const profileModalClose = document.getElementById('profile-modal-close');
+const profileError = document.getElementById('profile-error');
+const profileBtn = document.getElementById('profile-btn');
+let profileOnboarding = false;
+let profileOnboardingShown = false;
+
+function openProfileModal(forced){
+  profileOnboarding = !!forced;
+  const mine = (currentUid && state.users[currentUid]) || {};
+  profileNameInput.value = mine.name || '';
+  profileSectorInput.value = mine.sector || '';
+  profileError.textContent = '';
+  profileModalClose.style.display = forced ? 'none' : '';
+  profileModal.classList.remove('hidden');
+}
+function closeProfileModal(){
+  if(profileOnboarding && !(currentUid && state.users[currentUid])) return; // obrigatório na primeira vez
+  profileModal.classList.add('hidden');
+}
+function maybeOpenProfileOnboarding(){
+  if(profileOnboardingShown || !currentUid) return;
+  if(!state.users[currentUid]){
+    profileOnboardingShown = true;
+    openProfileModal(true);
+  }
+}
+profileBtn.addEventListener('click', ()=> openProfileModal(false));
+profileModalClose.addEventListener('click', closeProfileModal);
+profileModal.addEventListener('click', (e)=>{ if(e.target === profileModal) closeProfileModal(); });
+
+profileSaveBtn.addEventListener('click', ()=>{
+  const name = profileNameInput.value.trim();
+  const sector = profileSectorInput.value.trim();
+  if(!name){ profileError.textContent = 'Digite seu nome pra continuar.'; return; }
+  set(ref(db, 'users/'+currentUid), { name, sector: sector || null }).then(()=>{
+    profileOnboarding = false;
+    profileModal.classList.add('hidden');
+  }).catch(err=>{
+    profileError.textContent = 'Não foi possível salvar. Tente de novo.';
+    handleDbError(err);
+  });
+});
+
 /* ===== estado compartilhado (Firebase Realtime Database) =====
-   posts, metas e demandas ficam no Firebase — todo mundo que abrir o
-   mural ve os mesmos dados, em tempo real. Só o nome do autor (pra
-   pre-preencher o campo) fica salvo localmente no seu navegador. */
-const AUTHOR_KEY = 'plantel_author';
+   posts, metas, demandas e perfis (users) ficam no Firebase — todo
+   mundo que abrir o mural vê os mesmos dados, em tempo real. */
 let state = {
   posts: [],
   metas: [],
   demandas: [],
-  authorName: localStorage.getItem(AUTHOR_KEY) || ''
+  users: {}
 };
 
 function objToArray(obj){
@@ -607,6 +696,11 @@ function startDataListeners(){
   onValue(ref(db, 'posts'), snap => { state.posts = objToArray(snap.val()); render(); }, handleDbError);
   onValue(ref(db, 'metas'), snap => { state.metas = objToArray(snap.val()); render(); }, handleDbError);
   onValue(ref(db, 'demandas'), snap => { state.demandas = objToArray(snap.val()); render(); }, handleDbError);
+  onValue(ref(db, 'users'), snap => {
+    state.users = snap.val() || {};
+    render();
+    maybeOpenProfileOnboarding();
+  }, handleDbError);
 }
 
 const CHECK_SVG = '<svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg>';
@@ -624,10 +718,18 @@ function timeAgo(ts){
 function escapeHtml(s){
   return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+function authorInfo(item){
+  const profile = item && item.uid ? state.users[item.uid] : null;
+  return {
+    name: (profile && profile.name) || (item && item.author) || 'Alguém',
+    sector: profile && profile.sector ? profile.sector : null
+  };
+}
+function sectorTagHtml(sector){
+  return sector ? `<span class="sector-tag">${escapeHtml(sector)}</span>` : '';
+}
 
 function render(){
-  document.getElementById('author-input').value = state.authorName || '';
-
   const posts = [...state.posts].sort((a,b)=>b.ts-a.ts);
   document.getElementById('post-count').textContent = state.posts.length + (state.posts.length===1?' mensagem':' mensagens');
   document.getElementById('mural-list').innerHTML = posts.length ? posts.map(p=>{
@@ -636,12 +738,13 @@ function render(){
     const liked = !!(currentUid && likes[currentUid]);
     const comments = objToArray(p.comments).sort((a,b)=>a.ts-b.ts);
     const commentsOpen = openComments.has(p.id);
+    const pInfo = authorInfo(p);
     return `
     <div class="post">
       <div class="post-head">
-        <div class="avatar">${initials(p.author)}</div>
+        <div class="avatar">${initials(pInfo.name)}</div>
         <div>
-          <div class="post-author">${escapeHtml(p.author||'Alguém')} <span class="post-time">· ${timeAgo(p.ts)}</span></div>
+          <div class="post-author">${escapeHtml(pInfo.name)}${sectorTagHtml(pInfo.sector)} <span class="post-time">· ${timeAgo(p.ts)}</span></div>
         </div>
       </div>
       <p class="post-text">${escapeHtml(p.text)}</p>
@@ -663,11 +766,12 @@ function render(){
           const cLiked = !!(currentUid && cLikes[currentUid]);
           const replies = objToArray(c.replies).sort((a,b)=>a.ts-b.ts);
           const replyOpen = openReplies.has(c.id);
+          const cInfo = authorInfo(c);
           return `
           <div class="comment">
-            <div class="avatar avatar-sm">${initials(c.author)}</div>
+            <div class="avatar avatar-sm">${initials(cInfo.name)}</div>
             <div class="comment-body">
-              <div class="comment-author">${escapeHtml(c.author||'Alguém')} <span class="post-time">· ${timeAgo(c.ts)}</span></div>
+              <div class="comment-author">${escapeHtml(cInfo.name)}${sectorTagHtml(cInfo.sector)} <span class="post-time">· ${timeAgo(c.ts)}</span></div>
               <div class="comment-text">${escapeHtml(c.text)}</div>
               <div class="comment-actions">
                 <button class="comment-like ${cLiked?'is-liked':''}" data-action="like-comment" data-post="${p.id}" data-id="${c.id}">
@@ -679,14 +783,16 @@ function render(){
               </div>
               ${replies.length ? `
               <div class="reply-list">
-                ${replies.map(r=>`
+                ${replies.map(r=>{
+                  const rInfo = authorInfo(r);
+                  return `
                   <div class="reply">
-                    <div class="avatar avatar-sm">${initials(r.author)}</div>
+                    <div class="avatar avatar-sm">${initials(rInfo.name)}</div>
                     <div class="reply-body">
-                      <div class="reply-author">${escapeHtml(r.author||'Alguém')} <span class="post-time">· ${timeAgo(r.ts)}</span></div>
+                      <div class="reply-author">${escapeHtml(rInfo.name)}${sectorTagHtml(rInfo.sector)} <span class="post-time">· ${timeAgo(r.ts)}</span></div>
                       <div class="reply-text">${escapeHtml(r.text)}</div>
                     </div>
-                  </div>`).join('')}
+                  </div>`;}).join('')}
               </div>` : ''}
               ${replyOpen ? `
               <div class="reply-form">
@@ -707,66 +813,78 @@ function render(){
 
   const openMetas = state.metas.filter(m=>!m.done).length;
   document.getElementById('meta-count').textContent = openMetas + (openMetas===1?' aberta':' abertas');
-  document.getElementById('meta-list').innerHTML = state.metas.length ? state.metas.map(m=>`
+  document.getElementById('meta-list').innerHTML = state.metas.length ? state.metas.map(m=>{
+    const mInfo = authorInfo(m);
+    return `
     <div class="item ${m.done?'done':''}">
       <div class="check ${m.done?'done':''}" data-action="toggle-meta" data-id="${m.id}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(m.text)}</div>
-        <div class="item-meta">${escapeHtml(m.author||'Alguém')} · ${timeAgo(m.ts)}</div>
+        <div class="item-meta">${escapeHtml(mInfo.name)}${sectorTagHtml(mInfo.sector)} · ${timeAgo(m.ts)}</div>
       </div>
       <button class="item-remove" data-action="remove-meta" data-id="${m.id}">remover</button>
-    </div>`).join('') : `<div class="empty">Nenhuma meta ainda.</div>`;
+    </div>`;}).join('') : `<div class="empty">Nenhuma meta ainda.</div>`;
 
   const openDemandas = state.demandas.filter(d=>!d.done).length;
   document.getElementById('demanda-count').textContent = openDemandas + (openDemandas===1?' pendente':' pendentes');
-  document.getElementById('demanda-list').innerHTML = state.demandas.length ? state.demandas.map(d=>`
+  document.getElementById('demanda-list').innerHTML = state.demandas.length ? state.demandas.map(d=>{
+    const dInfo = authorInfo(d);
+    return `
     <div class="item ${d.done?'done':''}">
       <div class="check ${d.done?'done':''}" data-action="toggle-demanda" data-id="${d.id}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(d.text)}</div>
-        <div class="item-meta">${escapeHtml(d.author||'Alguém')} · ${timeAgo(d.ts)}</div>
+        <div class="item-meta">${escapeHtml(dInfo.name)}${sectorTagHtml(dInfo.sector)} · ${timeAgo(d.ts)}</div>
       </div>
       <button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>
-    </div>`).join('') : `<div class="empty">Nenhuma demanda ainda.</div>`;
+    </div>`;}).join('') : `<div class="empty">Nenhuma demanda ainda.</div>`;
 }
 
 function uid(){ return Date.now()+'-'+Math.random().toString(36).slice(2,7); }
 
+function myProfile(){
+  return (currentUid && state.users[currentUid]) || null;
+}
+function ensureProfileBeforeAction(){
+  if(!myProfile()){ openProfileModal(true); return false; }
+  return true;
+}
+
 document.getElementById('post-btn').addEventListener('click', ()=>{
+  if(!ensureProfileBeforeAction()) return;
   const msgInput = document.getElementById('msg-input');
-  const authorInput = document.getElementById('author-input');
   const text = msgInput.value.trim();
   if(!text) return;
-  state.authorName = authorInput.value.trim();
-  localStorage.setItem(AUTHOR_KEY, state.authorName);
   const id = uid();
-  set(ref(db, 'posts/'+id), { author: state.authorName, text, ts: Date.now(), metaId: null, demandaId: null }).catch(handleDbError);
+  set(ref(db, 'posts/'+id), { author: myProfile().name, uid: currentUid, text, ts: Date.now(), metaId: null, demandaId: null }).catch(handleDbError);
   msgInput.value = '';
 });
 document.getElementById('msg-input').addEventListener('keydown', e=>{
   if(e.key==='Enter') document.getElementById('post-btn').click();
 });
 
-function addMeta(text, author){
+function addMeta(text, author, itemUid){
   if(!text.trim()) return null;
   const id = uid();
-  set(ref(db, 'metas/'+id), { text: text.trim(), author, ts: Date.now(), done:false }).catch(handleDbError);
+  set(ref(db, 'metas/'+id), { text: text.trim(), author, uid: itemUid || null, ts: Date.now(), done:false }).catch(handleDbError);
   return id;
 }
-function addDemanda(text, author){
+function addDemanda(text, author, itemUid){
   if(!text.trim()) return null;
   const id = uid();
-  set(ref(db, 'demandas/'+id), { text: text.trim(), author, ts: Date.now(), done:false }).catch(handleDbError);
+  set(ref(db, 'demandas/'+id), { text: text.trim(), author, uid: itemUid || null, ts: Date.now(), done:false }).catch(handleDbError);
   return id;
 }
 
 document.getElementById('meta-add-btn').addEventListener('click', ()=>{
+  if(!ensureProfileBeforeAction()) return;
   const input = document.getElementById('meta-add-input');
-  if(addMeta(input.value, state.authorName || 'Alguém')){ input.value=''; }
+  if(addMeta(input.value, myProfile().name, currentUid)){ input.value=''; }
 });
 document.getElementById('demanda-add-btn').addEventListener('click', ()=>{
+  if(!ensureProfileBeforeAction()) return;
   const input = document.getElementById('demanda-add-input');
-  if(addDemanda(input.value, state.authorName || 'Alguém')){ input.value=''; }
+  if(addDemanda(input.value, myProfile().name, currentUid)){ input.value=''; }
 });
 
 document.addEventListener('click', (e)=>{
@@ -777,13 +895,13 @@ document.addEventListener('click', (e)=>{
   if(action === 'to-meta'){
     const post = state.posts.find(p=>p.id===id);
     if(post && !post.metaId){
-      const metaId = addMeta(post.text, post.author);
+      const metaId = addMeta(post.text, post.author, post.uid);
       update(ref(db, 'posts/'+id), { metaId }).catch(handleDbError);
     }
   } else if(action === 'to-demanda'){
     const post = state.posts.find(p=>p.id===id);
     if(post && !post.demandaId){
-      const demandaId = addDemanda(post.text, post.author);
+      const demandaId = addDemanda(post.text, post.author, post.uid);
       update(ref(db, 'posts/'+id), { demandaId }).catch(handleDbError);
     }
   } else if(action === 'undo-meta'){
@@ -827,8 +945,9 @@ document.addEventListener('click', (e)=>{
     const input = document.querySelector(`[data-comment-input="${id}"]`);
     const text = input ? input.value.trim() : '';
     if(!text) return;
+    if(!ensureProfileBeforeAction()) return;
     const commentId = uid();
-    set(ref(db, 'posts/'+id+'/comments/'+commentId), { author: state.authorName || 'Alguém', text, ts: Date.now() }).catch(handleDbError);
+    set(ref(db, 'posts/'+id+'/comments/'+commentId), { author: myProfile().name, uid: currentUid, text, ts: Date.now() }).catch(handleDbError);
     openComments.add(id);
   } else if(action === 'like-comment'){
     if(!currentUid) return;
@@ -850,8 +969,9 @@ document.addEventListener('click', (e)=>{
     const input = document.querySelector(`[data-reply-input="${commentId}"]`);
     const text = input ? input.value.trim() : '';
     if(!text) return;
+    if(!ensureProfileBeforeAction()) return;
     const replyId = uid();
-    set(ref(db, 'posts/'+postId+'/comments/'+commentId+'/replies/'+replyId), { author: state.authorName || 'Alguém', text, ts: Date.now() }).catch(handleDbError);
+    set(ref(db, 'posts/'+postId+'/comments/'+commentId+'/replies/'+replyId), { author: myProfile().name, uid: currentUid, text, ts: Date.now() }).catch(handleDbError);
     openReplies.add(commentId);
   }
 });
