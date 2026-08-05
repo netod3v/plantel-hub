@@ -676,7 +676,10 @@ const dbErrorToast = document.getElementById('db-error-toast');
 let dbErrorTimer = null;
 function handleDbError(err){
   console.error('Erro no Firebase:', err);
-  dbErrorToast.textContent = 'Não foi possível salvar: ' + (err && err.message ? err.message : err);
+  showDbError('Não foi possível salvar: ' + (err && err.message ? err.message : err));
+}
+function showDbError(message){
+  dbErrorToast.textContent = message;
   dbErrorToast.classList.remove('hidden');
   clearTimeout(dbErrorTimer);
   dbErrorTimer = setTimeout(()=> dbErrorToast.classList.add('hidden'), 6000);
@@ -1272,7 +1275,7 @@ function render(){
           <button class="btn-ghost" data-action="cancel-post-edit" data-id="${p.id}">Cancelar</button>
         </div>
       </div>` : `
-      <p class="post-text">${escapeHtml(p.text)}${p.editedAt ? ' <span class="post-edited-tag">(editado)</span>' : ''}</p>
+      ${p.text ? `<p class="post-text">${escapeHtml(p.text)}${p.editedAt ? ' <span class="post-edited-tag">(editado)</span>' : ''}</p>` : ''}
       <div class="post-actions">
         ${p.metaId ? `<button class="tag-done tag-meta" data-action="undo-meta" data-id="${p.id}" title="Clique para desfazer">virou meta ✕</button>` : `<button class="btn-ghost" data-action="to-meta" data-id="${p.id}">virar meta</button>`}
         ${p.demandaId ? `<button class="tag-done tag-demanda" data-action="undo-demanda" data-id="${p.id}" title="Clique para desfazer">virou demanda ✕</button>` : `<button class="btn-ghost" data-action="to-demanda" data-id="${p.id}">virar demanda</button>`}
@@ -1282,8 +1285,9 @@ function render(){
         </button>
         <button class="btn-ghost" data-action="toggle-comments" data-id="${p.id}">${commentsOpen?'fechar':'comentar'}${comments.length?` (${comments.length})`:''}</button>
         <button class="btn-ghost pin-toggle ${p.pinned?'is-pinned':''}" data-action="toggle-pin" data-id="${p.id}">${p.pinned ? 'desafixar' : 'fixar'}</button>
+        ${p.uid === currentUid ? `
         <button class="btn-ghost" data-action="edit-post" data-id="${p.id}">editar</button>
-        <button class="btn-ghost post-remove" data-action="remove-post" data-id="${p.id}">excluir</button>
+        <button class="btn-ghost post-remove" data-action="remove-post" data-id="${p.id}">excluir</button>` : ''}
       </div>`}
       ${commentsOpen ? `
       <div class="post-comments">
@@ -1483,9 +1487,11 @@ document.addEventListener('click', (e)=>{
     if(post) update(ref(db, postPath(post)), { pinned: !post.pinned }).catch(handleDbError);
   } else if(action === 'remove-post'){
     const post = allPosts().find(p=>p.id===id);
-    if(post) remove(ref(db, postPath(post))).catch(handleDbError);
+    if(post && post.uid === currentUid) remove(ref(db, postPath(post))).catch(handleDbError);
     editingPosts.delete(id);
   } else if(action === 'edit-post'){
+    const post = allPosts().find(p=>p.id===id);
+    if(!post || post.uid !== currentUid) return;
     editingPosts.add(id);
     render();
     const ta = document.getElementById('edit-post-textarea-'+id);
@@ -1499,7 +1505,7 @@ document.addEventListener('click', (e)=>{
     if(!text) return;
     const post = allPosts().find(p=>p.id===id);
     editingPosts.delete(id);
-    if(post) update(ref(db, postPath(post)), { text, editedAt: Date.now() }).catch(handleDbError);
+    if(post && post.uid === currentUid) update(ref(db, postPath(post)), { text, editedAt: Date.now() }).catch(handleDbError);
     render();
   } else if(action === 'like-post'){
     if(!currentUid) return;
