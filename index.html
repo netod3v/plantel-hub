@@ -1012,6 +1012,40 @@ function nicknameFor(otherUid, fallbackName){
   return (myNicknames && otherUid && myNicknames[otherUid]) || fallbackName || 'Alguém';
 }
 
+/* ===== som de notificação =====
+   Um "pling" curto gerado no próprio navegador (sem precisar de
+   arquivo de áudio). Navegadores só deixam tocar som depois de uma
+   primeira interação da pessoa na página, então o contexto de áudio
+   é criado/"destravado" no primeiro clique. */
+let audioCtx = null;
+function ensureAudioCtx(){
+  if(!audioCtx){
+    try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e){ return null; }
+  }
+  if(audioCtx.state === 'suspended'){ audioCtx.resume().catch(()=>{}); }
+  return audioCtx;
+}
+document.addEventListener('click', ()=> ensureAudioCtx(), { once: true });
+
+function playNotificationSound(){
+  const ctx = ensureAudioCtx();
+  if(!ctx) return;
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(880, now);
+  osc.frequency.setValueAtTime(1175, now + 0.09);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.22, now + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.26);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.3);
+}
+
 function renderDmList(){
   const entries = Object.entries(dmConversations).sort((a,b)=> (b[1].lastTs||0) - (a[1].lastTs||0));
   dmListBody.innerHTML = entries.length ? entries.map(([otherUid, c])=>{
@@ -1203,8 +1237,21 @@ function startDataListeners(){
     render();
     maybeOpenProfileOnboarding();
   }, handleDbError);
+  let dmConversationsLoaded = false;
+  const dmSeenLastTs = {};
   onValue(ref(db, 'conversations/'+currentUid), snap => {
-    dmConversations = snap.val() || {};
+    const data = snap.val() || {};
+    if(dmConversationsLoaded){
+      Object.entries(data).forEach(([otherUid, c])=>{
+        const prevTs = dmSeenLastTs[otherUid] || 0;
+        if(c.lastTs && c.lastTs > prevTs && c.lastFrom && c.lastFrom !== currentUid){
+          playNotificationSound();
+        }
+      });
+    }
+    Object.entries(data).forEach(([otherUid, c])=>{ dmSeenLastTs[otherUid] = c.lastTs || 0; });
+    dmConversationsLoaded = true;
+    dmConversations = data;
     if(!dmListModal.classList.contains('hidden')) renderDmList();
     updateDmBadge();
   }, handleDbError);
