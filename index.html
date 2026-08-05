@@ -551,6 +551,12 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
           <div class="avatar avatar-sm" id="dm-thread-avatar">?</div>
           <strong id="dm-thread-name"></strong>
         </div>
+        <button class="modal-close" id="dm-nickname-btn" type="button" aria-label="Dar um apelido" title="Dar um apelido">
+          <svg viewBox="0 0 24 24"><path d="M17 3l4 4-11 11H6v-4L17 3z"/></svg>
+        </button>
+        <button class="modal-close" id="dm-delete-btn" type="button" aria-label="Apagar conversa" title="Apagar conversa">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+        </button>
         <button class="modal-close" id="dm-thread-close" type="button" aria-label="Fechar">
           <svg viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/></svg>
         </button>
@@ -988,6 +994,8 @@ const dmThreadBack = document.getElementById('dm-thread-back');
 const dmThreadClose = document.getElementById('dm-thread-close');
 const dmThreadAvatar = document.getElementById('dm-thread-avatar');
 const dmThreadName = document.getElementById('dm-thread-name');
+const dmNicknameBtn = document.getElementById('dm-nickname-btn');
+const dmDeleteBtn = document.getElementById('dm-delete-btn');
 const dmMessages = document.getElementById('dm-messages');
 const dmInput = document.getElementById('dm-input');
 const dmSendBtn = document.getElementById('dm-send-btn');
@@ -996,21 +1004,26 @@ const dmBadge = document.getElementById('dm-badge');
 let dmConversations = {};
 let dmThreadUid = null;
 let dmThreadUnsub = null;
+let myNicknames = {};
 const DM_SEEN_KEY = 'plantel_dm_seen_ts';
 
 function chatId(a, b){ return [a, b].sort().join('__'); }
+function nicknameFor(otherUid, fallbackName){
+  return (myNicknames && otherUid && myNicknames[otherUid]) || fallbackName || 'Alguém';
+}
 
 function renderDmList(){
   const entries = Object.entries(dmConversations).sort((a,b)=> (b[1].lastTs||0) - (a[1].lastTs||0));
   dmListBody.innerHTML = entries.length ? entries.map(([otherUid, c])=>{
+    const displayName = nicknameFor(otherUid, c.name);
     const av = c.photo
       ? `<div class="avatar"><img src="${c.photo}" alt=""></div>`
-      : `<div class="avatar">${initials(c.name || 'Alguém')}</div>`;
+      : `<div class="avatar">${initials(displayName)}</div>`;
     return `
     <button class="dm-conversation-item" data-action="open-dm" data-uid="${otherUid}">
       ${av}
       <div class="dm-conversation-text">
-        <div class="dm-conversation-name">${escapeHtml(c.name || 'Alguém')}</div>
+        <div class="dm-conversation-name">${escapeHtml(displayName)}</div>
         <div class="dm-conversation-last">${escapeHtml(c.lastText || '')}</div>
       </div>
       <div class="dm-conversation-time">${c.lastTs ? timeAgo(c.lastTs) : ''}</div>
@@ -1035,10 +1048,19 @@ dmBtn.addEventListener('click', openDmList);
 dmListModalClose.addEventListener('click', closeDmList);
 dmListModal.addEventListener('click', (e)=>{ if(e.target === dmListModal) closeDmList(); });
 
+function updateDmThreadHeader(){
+  if(!dmThreadUid) return;
+  const known = dmConversations[dmThreadUid];
+  const displayName = nicknameFor(dmThreadUid, known && known.name);
+  dmThreadName.textContent = displayName;
+  const displayPhoto = known && known.photo;
+  if(!dmThreadAvatar.querySelector('img')){ dmThreadAvatar.textContent = initials(displayName); }
+}
+
 function openDmThread(otherUid, name, photo){
   dmThreadUid = otherUid;
   const known = dmConversations[otherUid];
-  const displayName = (known && known.name) || name || 'Alguém';
+  const displayName = nicknameFor(otherUid, (known && known.name) || name);
   const displayPhoto = (known && known.photo) || photo || null;
   dmThreadName.textContent = displayName;
   dmThreadAvatar.innerHTML = displayPhoto ? `<img src="${displayPhoto}" alt="">` : initials(displayName);
@@ -1071,6 +1093,36 @@ function closeDmThread(){
 dmThreadClose.addEventListener('click', closeDmThread);
 dmThreadBack.addEventListener('click', ()=>{ closeDmThread(); openDmList(); });
 dmThreadModal.addEventListener('click', (e)=>{ if(e.target === dmThreadModal) closeDmThread(); });
+
+dmNicknameBtn.addEventListener('click', ()=>{
+  if(!dmThreadUid || !currentUid) return;
+  const current = myNicknames[dmThreadUid] || '';
+  const value = prompt('Apelido pra essa pessoa (só você vê, em vez do nome real):', current);
+  if(value === null) return; // cancelou
+  const trimmed = value.trim();
+  const nickRef = ref(db, 'contactNicknames/'+currentUid+'/'+dmThreadUid);
+  (trimmed ? set(nickRef, trimmed) : remove(nickRef)).then(()=>{
+    myNicknames[dmThreadUid] = trimmed || undefined;
+    updateDmThreadHeader();
+    if(!dmListModal.classList.contains('hidden')) renderDmList();
+  }).catch(handleDbError);
+});
+
+dmDeleteBtn.addEventListener('click', ()=>{
+  if(!dmThreadUid || !currentUid) return;
+  const ok = confirm('Apagar essa conversa inteira? As mensagens somem pra você e pra essa pessoa, e não dá pra desfazer.');
+  if(!ok) return;
+  const otherUid = dmThreadUid;
+  const cid = chatId(currentUid, otherUid);
+  Promise.allSettled([
+    remove(ref(db, 'dms/'+cid)),
+    remove(ref(db, 'conversations/'+currentUid+'/'+otherUid)),
+    remove(ref(db, 'conversations/'+otherUid+'/'+currentUid))
+  ]).then(()=>{
+    closeDmThread();
+    openDmList();
+  }).catch(handleDbError);
+});
 
 function sendDmMessage(){
   const text = dmInput.value.trim();
@@ -1155,6 +1207,11 @@ function startDataListeners(){
     dmConversations = snap.val() || {};
     if(!dmListModal.classList.contains('hidden')) renderDmList();
     updateDmBadge();
+  }, handleDbError);
+  onValue(ref(db, 'contactNicknames/'+currentUid), snap => {
+    myNicknames = snap.val() || {};
+    if(!dmListModal.classList.contains('hidden')) renderDmList();
+    updateDmThreadHeader();
   }, handleDbError);
 }
 
