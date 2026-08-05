@@ -290,6 +290,9 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .mural-toolbar{display:flex;gap:8px;margin-bottom:12px;}
 .mural-toolbar input{flex:1;}
 .mural-toolbar select{flex:none;width:170px;}
+.btn-danger{background:var(--danger);border-color:var(--danger);color:#fff;flex:none;}
+.btn-danger:hover{background:#9C4231;border-color:#9C4231;}
+#clear-mural-btn.hidden{display:none;}
 .post-edit-form{margin:0 0 8px 37px;display:flex;flex-direction:column;gap:8px;}
 .post-edit-form textarea{
   border:1px solid var(--border);border-radius:9px;padding:9px 12px;font-size:13.5px;
@@ -583,6 +586,7 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
         <select class="field" id="mural-sector-filter">
           <option value="">Todos os setores</option>
         </select>
+        <button class="btn btn-danger hidden" id="clear-mural-btn" title="Apaga todas as mensagens do mural">Limpar mural</button>
       </div>
       <div id="mural-list"></div>
     </div>
@@ -627,7 +631,7 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
 import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics.js';
 import {
-  getDatabase, ref, onValue, set, update, remove
+  getDatabase, ref, onValue, get, set, update, remove
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js';
 import {
   getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut
@@ -1165,8 +1169,10 @@ muralSectorSelect.addEventListener('change', ()=>{
   muralSectorFilter = muralSectorSelect.value;
   render();
 });
+const FIXED_SECTORS = ['Administração', 'Marketing', 'Professores', 'Monitoria', 'Parceiros', 'Membro'];
 function refreshSectorOptions(){
-  const sectors = [...new Set(Object.values(state.users).map(u=>u.sector).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const fromUsers = Object.values(state.users).map(u=>u.sector).filter(Boolean);
+  const sectors = [...new Set([...FIXED_SECTORS, ...fromUsers])].sort((a,b)=>a.localeCompare(b));
   const current = muralSectorSelect.value;
   muralSectorSelect.innerHTML = `<option value="">Todos os setores</option>` +
     sectors.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
@@ -1235,6 +1241,8 @@ function visibilityTagHtml(sector){
 
 function render(){
   updateProfileBtnAvatar();
+  const clearMuralBtn = document.getElementById('clear-mural-btn');
+  clearMuralBtn.classList.toggle('hidden', !isAdmin());
   const allPostsList = allPosts();
   let posts = [...allPostsList].sort((a,b)=> (b.pinned?1:0) - (a.pinned?1:0) || b.ts-a.ts);
   const search = muralSearch;
@@ -1382,6 +1390,55 @@ function ensureProfileBeforeAction(){
   if(!myProfile()){ openProfileModal(true); return false; }
   return true;
 }
+function isAdmin(){
+  const p = myProfile();
+  return !!(p && p.isAdmin);
+}
+
+/* ===== limpar mural (só admin) =====
+   Apaga TODAS as mensagens do mural público e dos murais privados de
+   cada setor, uma por uma (em vez de derrubar o nó inteiro de uma
+   vez — apagar post a post usa o mesmo caminho/regra que o "excluir"
+   individual já validado, evitando falha de permissão do Firebase
+   em exclusões de nó inteiro). Só aparece pra quem tem "isAdmin: true"
+   no próprio perfil (users/{uid}/isAdmin) — e as REGRAS do Firebase
+   também exigem isso, então não dá pra burlar pelo app. */
+document.getElementById('clear-mural-btn').addEventListener('click', async ()=>{
+  if(!isAdmin()) return;
+  const total = allPosts().length;
+  if(!total){ return; }
+  const ok = confirm(`Isso vai apagar TODAS as mensagens do mural (pelo menos ${total}, incluindo comentários) e não pode ser desfeito. Continuar?`);
+  if(!ok) return;
+  const btn = document.getElementById('clear-mural-btn');
+  btn.disabled = true;
+  btn.textContent = 'Limpando...';
+  let failCount = 0;
+  try{
+    // posts públicos
+    const publicResults = await Promise.allSettled(
+      state.posts.map(post => remove(ref(db, 'posts/'+post.id)))
+    );
+    failCount += publicResults.filter(r=>r.status==='rejected').length;
+
+    // posts privados de cada setor (mesmo os que o app não tem carregado agora)
+    const sectors = [...new Set([...FIXED_SECTORS, ...Object.values(state.users).map(u=>u.sector).filter(Boolean)])];
+    for(const sector of sectors){
+      const snap = await get(ref(db, 'posts_private/'+sector));
+      const val = snap.val();
+      if(!val) continue;
+      const results = await Promise.allSettled(
+        Object.keys(val).map(postId => remove(ref(db, `posts_private/${sector}/${postId}`)))
+      );
+      failCount += results.filter(r=>r.status==='rejected').length;
+    }
+    if(failCount > 0) showDbError(`Mural limpo, mas ${failCount} mensagem(ns) não puderam ser apagadas.`);
+  }catch(err){
+    handleDbError(err);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Limpar mural';
+  }
+});
 
 document.getElementById('post-btn').addEventListener('click', ()=>{
   if(!ensureProfileBeforeAction()) return;
