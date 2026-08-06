@@ -931,12 +931,14 @@ onAuthStateChanged(auth, (user)=>{
     currentUid = user.uid;
     rememberAccount({ uid: user.uid, email: user.email });
     loginScreen.classList.add('hidden');
-    // loading-screen continua visível até os dados essenciais chegarem (ver markLoaded)
+    // mostra (ou mantém) a tela de carregamento até os dados essenciais chegarem
+    if(wrapApp.classList.contains('hidden')) loadingScreen.classList.remove('hidden');
     if(!listenersStarted){ listenersStarted = true; startDataListeners(); }
   } else {
     currentUid = null;
     profileOnboardingShown = false;
     banHandled = false;
+    if(listenersStarted) stopDataListeners();
     wrapApp.classList.add('hidden');
     loadingScreen.classList.add('hidden');
     loginScreen.classList.remove('hidden');
@@ -1025,7 +1027,7 @@ document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !viewProfil
    se a pessoa fechar a aba sem querer, sem internet, etc. */
 function startPresence(){
   const myPresenceRef = ref(db, 'presence/'+currentUid);
-  onValue(ref(db, '.info/connected'), (snap)=>{
+  return onValue(ref(db, '.info/connected'), (snap)=>{
     if(snap.val() === true){
       onDisconnect(myPresenceRef).set({ online: false, lastSeen: serverTimestamp() }).then(()=>{
         set(myPresenceRef, { online: true, lastSeen: serverTimestamp() });
@@ -1598,11 +1600,27 @@ setTimeout(()=>{
   wrapApp.classList.remove('hidden');
 }, 10000);
 
+let dataUnsubs = [];
+function stopDataListeners(){
+  dataUnsubs.forEach(u => { if(u) u(); });
+  dataUnsubs = [];
+  listenersStarted = false;
+  appLoaded = { posts: false, users: false };
+  if(privateUnsub.posts) privateUnsub.posts();
+  if(privateUnsub.metas) privateUnsub.metas();
+  if(privateUnsub.demandas) privateUnsub.demandas();
+  privateUnsub = { posts: null, metas: null, demandas: null };
+  mySubscribedKey = undefined;
+  state.posts = []; state.metas = []; state.demandas = []; state.users = {};
+  state.postsPrivate = []; state.metasPrivate = []; state.demandasPrivate = [];
+  dmConversations = {};
+}
+
 function startDataListeners(){
-  onValue(ref(db, 'posts'), snap => { state.posts = objToArray(snap.val()); markLoaded('posts'); render(); }, handleDbError);
-  onValue(ref(db, 'metas'), snap => { state.metas = objToArray(snap.val()); render(); }, handleDbError);
-  onValue(ref(db, 'demandas'), snap => { state.demandas = objToArray(snap.val()); render(); }, handleDbError);
-  onValue(ref(db, 'users'), snap => {
+  dataUnsubs.push(onValue(ref(db, 'posts'), snap => { state.posts = objToArray(snap.val()); markLoaded('posts'); render(); }, handleDbError));
+  dataUnsubs.push(onValue(ref(db, 'metas'), snap => { state.metas = objToArray(snap.val()); render(); }, handleDbError));
+  dataUnsubs.push(onValue(ref(db, 'demandas'), snap => { state.demandas = objToArray(snap.val()); render(); }, handleDbError));
+  dataUnsubs.push(onValue(ref(db, 'users'), snap => {
     state.users = snap.val() || {};
     refreshSectorOptions();
     syncPrivateSubscription();
@@ -1614,15 +1632,15 @@ function startDataListeners(){
       enrichRecentAccount(currentUid, { name: state.users[currentUid].name, photo: state.users[currentUid].photo || null });
     }
     markLoaded('users');
-  }, handleDbError);
-  onValue(ref(db, 'presence'), snap => {
+  }, handleDbError));
+  dataUnsubs.push(onValue(ref(db, 'presence'), snap => {
     state.presence = snap.val() || {};
     renderOnlineList();
-  }, handleDbError);
-  startPresence();
+  }, handleDbError));
+  dataUnsubs.push(startPresence());
   let dmConversationsLoaded = false;
   const dmSeenLastTs = {};
-  onValue(ref(db, 'conversations/'+currentUid), snap => {
+  dataUnsubs.push(onValue(ref(db, 'conversations/'+currentUid), snap => {
     const data = snap.val() || {};
     if(dmConversationsLoaded){
       Object.entries(data).forEach(([otherUid, c])=>{
@@ -1637,12 +1655,12 @@ function startDataListeners(){
     dmConversations = data;
     if(!dmListModal.classList.contains('hidden')) renderDmList();
     updateDmBadge();
-  }, handleDbError);
-  onValue(ref(db, 'contactNicknames/'+currentUid), snap => {
+  }, handleDbError));
+  dataUnsubs.push(onValue(ref(db, 'contactNicknames/'+currentUid), snap => {
     myNicknames = snap.val() || {};
     if(!dmListModal.classList.contains('hidden')) renderDmList();
     updateDmThreadHeader();
-  }, handleDbError);
+  }, handleDbError));
 }
 
 /* ===== busca e filtro por setor no mural ===== */
