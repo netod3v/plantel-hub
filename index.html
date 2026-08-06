@@ -218,10 +218,26 @@ textarea.field:focus{border-color:var(--moss);}
 .social-link span{font-size:11px;color:var(--text-2);} 
 
 section{margin-top:38px;}
-.section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;}
-.section-head h2{font-size:17px;}
+.section-head{display:flex;align-items:center;justify-content:flex-start;gap:8px;margin-bottom:14px;}
+.section-head h2{font-size:17px;margin-right:auto;}
 .section-head span{font-size:12px;color:var(--text-2);}
 .card{background:var(--paper);border:1px solid var(--border);border-radius:14px;padding:16px 18px;}
+
+#sections-container{position:relative;}
+.draggable-section.dragging{
+  opacity:.92;box-shadow:0 14px 30px rgba(0,0,0,.18);border-radius:14px;background:var(--parchment);
+  pointer-events:none;
+}
+.section-placeholder{
+  border:2px dashed var(--moss);border-radius:14px;background:var(--sage);opacity:.5;margin-top:38px;
+}
+.section-head .drag-handle{
+  width:26px;height:26px;flex:none;border-radius:7px;color:var(--text-3);
+  display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none;order:-1;
+}
+.section-head .drag-handle:hover{background:var(--sage);color:var(--forest);}
+.section-head .drag-handle:active{cursor:grabbing;}
+.section-head .drag-handle svg{width:16px;height:16px;fill:currentColor;}
 
 /* composer do mural */
 .composer{display:flex;flex-direction:column;gap:10px;}
@@ -239,12 +255,18 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .btn{
   border:1px solid var(--border);background:var(--paper);border-radius:9px;padding:9px 16px;
   font-size:13px;font-weight:500;color:var(--ink);
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
 }
+.btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;flex:none;}
 .btn:hover{border-color:var(--moss);}
 .btn-primary{background:var(--forest);border-color:var(--forest);color:#fff;}
 .btn-primary:hover{background:var(--forest-d);}
+.btn-outline-accent{background:transparent;border:1.5px solid var(--forest);color:var(--forest);}
+.btn-outline-accent:hover{background:var(--sage);}
 .btn-ghost{background:transparent;border:none;color:var(--text-2);padding:5px 8px;font-size:12px;font-weight:500;border-radius:7px;}
 .btn-ghost:hover{background:var(--sage);color:var(--forest);}
+.profile-actions-row{display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;}
+.profile-actions-row .btn{flex:1;min-width:150px;}
 
 /* posts do mural */
 .post{padding:14px 0;border-bottom:1px solid var(--border);}
@@ -584,7 +606,16 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
         <label class="field-label" for="profile-bio-input">Descrição</label>
         <textarea class="field" id="profile-bio-input" maxlength="160" placeholder="Conte um pouco sobre você..."></textarea>
         <div class="char-count" id="profile-bio-count">0/160</div>
-        <button class="btn btn-primary" id="profile-save-btn" type="button" style="margin-top:4px;">Salvar</button>
+        <div class="profile-actions-row">
+          <button class="btn btn-primary" id="profile-save-btn" type="button">
+            <svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h8V4"/><path d="M8 14h8v6H8z"/></svg>
+            Salvar alterações
+          </button>
+          <button class="btn btn-outline-accent" id="profile-view-btn" type="button">
+            <svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-8 8"/><path d="M9 4H5v16h16v-4"/></svg>
+            Ver meu perfil
+          </button>
+        </div>
         <p class="modal-note" id="profile-error"></p>
       </div>
     </div>
@@ -593,6 +624,9 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
   <div class="modal-overlay hidden" id="view-profile-modal">
     <div class="modal-box">
       <div class="modal-head">
+        <button class="modal-close" id="view-profile-back" type="button" aria-label="Voltar" style="display:none;margin-right:2px;">
+          <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+        </button>
         <div>
           <strong>Perfil</strong>
           <span>Como essa pessoa aparece no mural</span>
@@ -663,8 +697,12 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
 
   <div id="db-error-toast" class="hidden"></div>
 
-  <section>
-    <div class="section-head"><h2>Mural</h2><span id="post-count">0 mensagens</span></div>
+  <div id="sections-container">
+  <section class="draggable-section" data-section-id="mural">
+    <div class="section-head">
+      <span class="drag-handle" title="Arrastar pra reordenar"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></span>
+      <h2>Mural</h2><span id="post-count">0 mensagens</span>
+    </div>
     <div class="card">
       <div class="composer">
         <div class="composer-top">
@@ -690,8 +728,11 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
     </div>
   </section>
 
-  <section>
-    <div class="section-head"><h2>Metas</h2><span id="meta-count">0 abertas</span></div>
+  <section class="draggable-section" data-section-id="metas">
+    <div class="section-head">
+      <span class="drag-handle" title="Arrastar pra reordenar"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></span>
+      <h2>Metas</h2><span id="meta-count">0 abertas</span>
+    </div>
     <div class="card">
       <div id="meta-list"></div>
       <div class="add-inline">
@@ -704,8 +745,11 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
     </div>
   </section>
 
-  <section>
-    <div class="section-head"><h2>Demandas</h2><span id="demanda-count">0 pendentes</span></div>
+  <section class="draggable-section" data-section-id="demandas">
+    <div class="section-head">
+      <span class="drag-handle" title="Arrastar pra reordenar"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></span>
+      <h2>Demandas</h2><span id="demanda-count">0 pendentes</span>
+    </div>
     <div class="card">
       <div id="demanda-list"></div>
       <div class="add-inline">
@@ -717,6 +761,7 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
       </div>
     </div>
   </section>
+  </div>
 
   <footer>
     <span>Plantel Hub · comunidade de estudos</span>
@@ -954,6 +999,100 @@ setTimeout(()=>{
   loginScreen.classList.remove('hidden');
 }, 10000);
 
+/* ===== reordenar seções (arrastar e soltar) =====
+   Cada pessoa pode arrastar Mural/Metas/Demandas pra reordenar do
+   jeito que preferir. A ordem fica salva só no navegador dela
+   (localStorage) -- é uma preferência pessoal, não algo do grupo. */
+const SECTION_ORDER_KEY = 'plantel_section_order';
+const sectionsContainer = document.getElementById('sections-container');
+
+function applySavedSectionOrder(){
+  let order;
+  try{ order = JSON.parse(localStorage.getItem(SECTION_ORDER_KEY)); }catch(e){ order = null; }
+  if(!Array.isArray(order)) return;
+  order.forEach(id=>{
+    const el = sectionsContainer.querySelector(`[data-section-id="${id}"]`);
+    if(el) sectionsContainer.appendChild(el);
+  });
+}
+function saveSectionOrder(){
+  const order = Array.from(sectionsContainer.children)
+    .filter(el => el.classList.contains('draggable-section'))
+    .map(el => el.dataset.sectionId);
+  localStorage.setItem(SECTION_ORDER_KEY, JSON.stringify(order));
+}
+applySavedSectionOrder();
+
+let dragEl = null, dragPlaceholder = null;
+let dragStartX = 0, dragStartY = 0, pointerStartX = 0, pointerStartY = 0;
+
+sectionsContainer.addEventListener('pointerdown', (e)=>{
+  const handle = e.target.closest('.drag-handle');
+  if(!handle) return;
+  const section = handle.closest('.draggable-section');
+  if(!section) return;
+  e.preventDefault();
+
+  const rect = section.getBoundingClientRect();
+  dragStartX = rect.left; dragStartY = rect.top;
+  pointerStartX = e.clientX; pointerStartY = e.clientY;
+
+  dragPlaceholder = document.createElement('div');
+  dragPlaceholder.className = 'section-placeholder';
+  dragPlaceholder.style.height = rect.height + 'px';
+  section.parentNode.insertBefore(dragPlaceholder, section);
+
+  dragEl = section;
+  dragEl.style.position = 'fixed';
+  dragEl.style.top = rect.top + 'px';
+  dragEl.style.left = rect.left + 'px';
+  dragEl.style.width = rect.width + 'px';
+  dragEl.classList.add('dragging');
+  document.body.style.userSelect = 'none';
+
+  try{ handle.setPointerCapture(e.pointerId); }catch(err){}
+  document.addEventListener('pointermove', onSectionDragMove);
+  document.addEventListener('pointerup', onSectionDragEnd);
+});
+
+function onSectionDragMove(e){
+  if(!dragEl) return;
+  const dx = e.clientX - pointerStartX;
+  const dy = e.clientY - pointerStartY;
+  dragEl.style.left = (dragStartX + dx) + 'px';
+  dragEl.style.top = (dragStartY + dy) + 'px';
+
+  const dragCenterY = dragStartY + dy + dragEl.offsetHeight / 2;
+  const others = Array.from(sectionsContainer.children).filter(el => el !== dragEl && el !== dragPlaceholder);
+  let placed = false;
+  for(const other of others){
+    const r = other.getBoundingClientRect();
+    if(dragCenterY < r.top + r.height / 2){
+      sectionsContainer.insertBefore(dragPlaceholder, other);
+      placed = true;
+      break;
+    }
+  }
+  if(!placed) sectionsContainer.appendChild(dragPlaceholder);
+}
+
+function onSectionDragEnd(){
+  if(!dragEl) return;
+  sectionsContainer.insertBefore(dragEl, dragPlaceholder);
+  dragPlaceholder.remove();
+  dragEl.style.position = '';
+  dragEl.style.top = '';
+  dragEl.style.left = '';
+  dragEl.style.width = '';
+  dragEl.classList.remove('dragging');
+  document.body.style.userSelect = '';
+  document.removeEventListener('pointermove', onSectionDragMove);
+  document.removeEventListener('pointerup', onSectionDragEnd);
+  saveSectionOrder();
+  dragEl = null;
+  dragPlaceholder = null;
+}
+
 /* ===== tema (claro/escuro) ===== */
 const THEME_KEY = 'plantel_theme';
 const themeBtn = document.getElementById('theme-btn');
@@ -1137,6 +1276,11 @@ function maybeOpenProfileOnboarding(){
 profileBtn.addEventListener('click', ()=> openProfileModal(false));
 profileModalClose.addEventListener('click', closeProfileModal);
 profileModal.addEventListener('click', (e)=>{ if(e.target === profileModal) closeProfileModal(); });
+document.getElementById('profile-view-btn').addEventListener('click', ()=>{
+  if(!currentUid) return;
+  closeProfileModal();
+  openViewProfile(currentUid, (state.users[currentUid] && state.users[currentUid].name) || null, true);
+});
 profileBioInput.addEventListener('input', ()=>{
   profileBioCount.textContent = profileBioInput.value.length + '/160';
 });
@@ -1200,6 +1344,7 @@ profileSaveBtn.addEventListener('click', ()=>{
 /* ===== ver perfil de outra pessoa (somente leitura) ===== */
 const viewProfileModal = document.getElementById('view-profile-modal');
 const viewProfileModalClose = document.getElementById('view-profile-modal-close');
+const viewProfileBack = document.getElementById('view-profile-back');
 const viewProfilePhoto = document.getElementById('view-profile-photo');
 const viewProfileName = document.getElementById('view-profile-name');
 const viewProfileSector = document.getElementById('view-profile-sector');
@@ -1209,7 +1354,7 @@ const viewProfileBanBtn = document.getElementById('view-profile-ban-btn');
 const viewProfileDeleteBtn = document.getElementById('view-profile-delete-btn');
 const deleteUserAccountFn = httpsCallable(functionsInstance, 'deleteUserAccount');
 
-function openViewProfile(uid, fallbackName){
+function openViewProfile(uid, fallbackName, showBack){
   viewingProfileUid = uid;
   const profile = uid ? state.users[uid] : null;
   const name = (profile && profile.name) || fallbackName || 'Alguém';
@@ -1225,7 +1370,8 @@ function openViewProfile(uid, fallbackName){
   viewProfileName.textContent = name;
   viewProfileSector.innerHTML = sectorTagHtml(sector) + adminTagHtml(admin) + bannedTagHtml(banned);
   viewProfileBio.textContent = bio;
-  viewProfileMessageBtn.style.display = uid ? '' : 'none';
+  viewProfileMessageBtn.style.display = (uid && uid !== currentUid) ? '' : 'none';
+  viewProfileBack.style.display = showBack ? '' : 'none';
 
   const canModerate = isAdmin() && uid && uid !== currentUid && !admin;
   if(canModerate){
@@ -1243,6 +1389,10 @@ function openViewProfile(uid, fallbackName){
 }
 function closeViewProfile(){ viewProfileModal.classList.add('hidden'); }
 viewProfileModalClose.addEventListener('click', closeViewProfile);
+viewProfileBack.addEventListener('click', ()=>{
+  closeViewProfile();
+  openProfileModal(false);
+});
 viewProfileModal.addEventListener('click', (e)=>{ if(e.target === viewProfileModal) closeViewProfile(); });
 viewProfileMessageBtn.addEventListener('click', ()=>{
   if(!viewingProfileUid) return;
@@ -2002,8 +2152,7 @@ document.addEventListener('click', (e)=>{
   if(action === 'view-profile'){
     const uid = t.dataset.uid || null;
     const fallbackName = t.dataset.name || null;
-    if(uid && uid === currentUid){ openProfileModal(false); }
-    else { openViewProfile(uid, fallbackName); }
+    openViewProfile(uid, fallbackName);
   } else if(action === 'open-dm'){
     const otherUid = t.dataset.uid;
     const c = dmConversations[otherUid] || {};
