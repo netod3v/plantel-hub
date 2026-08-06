@@ -123,6 +123,14 @@ header{padding:36px 0 26px;}
   position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:var(--danger);
 }
 .dm-badge.hidden{display:none;}
+#online-badge{background:var(--forest);}
+.online-item{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--border);}
+.online-item:last-child{border-bottom:none;}
+.online-item-body{flex:1;min-width:0;}
+.online-item-name{font-size:13px;font-weight:600;}
+.online-item-status{font-size:11.5px;color:var(--text-2);display:flex;align-items:center;gap:5px;margin-top:1px;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--text-3);flex:none;}
+.status-dot.on{background:#3FAE5C;}
 .dm-conversation-item{
   display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:10px;cursor:pointer;
   border:1px solid transparent;text-align:left;width:100%;background:transparent;
@@ -153,6 +161,14 @@ header{padding:36px 0 26px;}
 }
 .visibility-tag{
   font-size:10.5px;font-weight:600;padding:2px 9px;border-radius:20px;background:var(--gold-l);color:#7A5A22;
+  margin-left:6px;vertical-align:middle;display:inline-block;
+}
+.admin-tag{
+  font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--forest);color:#fff;
+  margin-left:6px;vertical-align:middle;display:inline-block;
+}
+.banned-tag{
+  font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--danger);color:#fff;
   margin-left:6px;vertical-align:middle;display:inline-block;
 }
 #profile-error{color:var(--danger);font-size:12px;margin:10px 0 0;min-height:14px;}
@@ -342,6 +358,24 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
 .login-error{font-size:12.5px;color:var(--danger);margin-top:8px;display:none;}
 .login-error.show{display:block;}
 .login-toggle{display:block;width:100%;text-align:center;margin-top:14px;background:transparent;border:none;color:var(--text-2);font-size:12.5px;cursor:pointer;}
+.recent-accounts{display:none;margin-bottom:16px;}
+.recent-accounts-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-2);font-weight:600;margin-bottom:8px;}
+.recent-account-chip{
+  position:relative;display:flex;align-items:center;gap:9px;width:100%;padding:9px 10px;margin-bottom:6px;
+  border:1px solid var(--border);border-radius:10px;background:var(--paper);cursor:pointer;text-align:left;
+}
+.recent-account-chip:hover{border-color:var(--moss);}
+.recent-account-chip .avatar{width:30px;height:30px;flex:none;}
+.recent-account-info{min-width:0;flex:1;}
+.recent-account-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.recent-account-email{font-size:11px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.recent-account-remove{
+  flex:none;width:22px;height:22px;border-radius:6px;border:none;background:transparent;color:var(--text-3);
+  display:flex;align-items:center;justify-content:center;
+}
+.recent-account-remove:hover{background:var(--sage);color:var(--danger);}
+.recent-account-remove svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;}
+.recent-accounts-or{font-size:11.5px;color:var(--text-3);text-align:center;margin:2px 0 14px;}
 .login-toggle:hover{color:var(--forest);}
 #wrap-app.hidden{display:none;}
 .password-wrap{position:relative;}
@@ -364,6 +398,7 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
   <div class="card login-card">
     <h1>Plantel Hub</h1>
     <p id="login-subtitle">Entre com sua conta pra acessar o mural da equipe.</p>
+    <div class="recent-accounts" id="recent-accounts"></div>
     <form class="login-form" id="login-form">
       <input class="field" type="email" id="login-email" placeholder="E-mail" autocomplete="username" required>
       <div class="password-wrap">
@@ -399,6 +434,10 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
         <button class="icon-btn" id="fullscreen-btn" aria-label="Alternar tela cheia">
           <svg class="icon-a" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
           <svg class="icon-b" viewBox="0 0 24 24"><path d="M9 3H6a3 3 0 0 0-3 3v3M15 3h3a3 3 0 0 1 3 3v3M9 21H6a3 3 0 0 1-3-3v-3M15 21h3a3 3 0 0 0 3-3v-3M9 9 4 4M15 9l5-5M9 15l-5 5M15 15l5 5"/></svg>
+        </button>
+        <button class="icon-btn" id="online-btn" aria-label="Quem está online" style="position:relative;">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span id="online-badge" class="dm-badge hidden"></span>
         </button>
         <button class="icon-btn" id="dm-btn" aria-label="Mensagens" style="position:relative;">
           <svg viewBox="0 0 24 24"><path d="M4 5h16v11H7l-3 3V5z"/></svg>
@@ -437,6 +476,23 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
       </a>
     </div>
   </header>
+
+  <div class="modal-overlay hidden" id="online-modal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <div>
+          <strong>Quem está por aqui</strong>
+          <span id="online-modal-count">carregando...</span>
+        </div>
+        <button class="modal-close" id="online-modal-close" type="button" aria-label="Fechar">
+          <svg viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="online-list"></div>
+      </div>
+    </div>
+  </div>
 
   <div class="modal-overlay hidden" id="insta-modal">
     <div class="modal-box">
@@ -484,7 +540,6 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
         <label class="field-label" for="profile-sector-input">Setor / time</label>
         <input class="field" id="profile-sector-input" list="sector-options" placeholder="Ex: Marketing, Professores, Monitoria...">
         <datalist id="sector-options">
-          <option value="Administração">
           <option value="Marketing">
           <option value="Professores">
           <option value="Monitoria">
@@ -521,6 +576,8 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
         </div>
         <p class="view-profile-bio" id="view-profile-bio"></p>
         <button class="btn btn-primary" id="view-profile-message-btn" type="button" style="margin-top:14px;">Mandar mensagem</button>
+        <button class="btn" id="view-profile-ban-btn" type="button" style="margin-top:10px;width:100%;display:none;"></button>
+        <button class="btn btn-danger" id="view-profile-delete-btn" type="button" style="margin-top:10px;width:100%;display:none;">Apagar conta permanentemente</button>
       </div>
     </div>
   </div>
@@ -637,11 +694,14 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
 import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics.js';
 import {
-  getDatabase, ref, onValue, get, set, update, remove
+  getDatabase, ref, onValue, get, set, update, remove, onDisconnect, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js';
 import {
   getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
+import {
+  getFunctions, httpsCallable
+} from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-functions.js';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyALHCtVUCrdTw8rpp3iJOYlnK9KFfhKiic',
@@ -658,6 +718,7 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const db = getDatabase(app);
 const auth = getAuth(app);
+const functionsInstance = getFunctions(app);
 window.__firebaseApp = app;
 window.__firebaseAnalytics = analytics;
 
@@ -695,6 +756,70 @@ function showDbError(message){
   dbErrorTimer = setTimeout(()=> dbErrorToast.classList.add('hidden'), 6000);
 }
 let loginMode = 'login';
+
+/* ===== trocar de conta =====
+   Guarda (só neste navegador) e-mail + nome + foto das últimas contas
+   usadas pra logar -- NUNCA a senha. Ao sair, a tela de login mostra
+   essas contas como atalho: clicar já preenche o e-mail, só falta
+   digitar a senha de novo. */
+const RECENT_ACCOUNTS_KEY = 'plantel_recent_accounts';
+const recentAccountsEl = document.getElementById('recent-accounts');
+
+function getRecentAccounts(){
+  try{ return JSON.parse(localStorage.getItem(RECENT_ACCOUNTS_KEY)) || []; }
+  catch(e){ return []; }
+}
+function saveRecentAccounts(list){
+  localStorage.setItem(RECENT_ACCOUNTS_KEY, JSON.stringify(list.slice(0, 5)));
+}
+function rememberAccount(info){
+  const list = getRecentAccounts().filter(a => a.uid !== info.uid);
+  list.unshift(Object.assign({ uid: info.uid, email: info.email, name: null, photo: null }, info));
+  saveRecentAccounts(list);
+  renderRecentAccounts();
+}
+function enrichRecentAccount(uid, extra){
+  const list = getRecentAccounts();
+  const idx = list.findIndex(a => a.uid === uid);
+  if(idx === -1) return;
+  list[idx] = Object.assign({}, list[idx], extra);
+  saveRecentAccounts(list);
+  renderRecentAccounts();
+}
+function forgetAccount(uid){
+  saveRecentAccounts(getRecentAccounts().filter(a => a.uid !== uid));
+  renderRecentAccounts();
+}
+function renderRecentAccounts(){
+  const list = getRecentAccounts().filter(a => a.uid !== currentUid);
+  if(!list.length){ recentAccountsEl.style.display = 'none'; recentAccountsEl.innerHTML = ''; return; }
+  recentAccountsEl.style.display = '';
+  recentAccountsEl.innerHTML = `
+    <div class="recent-accounts-label">Trocar de conta</div>
+    ${list.map(a => `
+      <button type="button" class="recent-account-chip" data-email="${escapeHtml(a.email || '')}">
+        <div class="avatar">${a.photo ? `<img src="${a.photo}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:9px;">` : initials(a.name || a.email || '?')}</div>
+        <div class="recent-account-info">
+          <div class="recent-account-name">${escapeHtml(a.name || a.email || 'Conta')}</div>
+          ${a.name ? `<div class="recent-account-email">${escapeHtml(a.email || '')}</div>` : ''}
+        </div>
+        <span class="recent-account-remove" data-forget-uid="${a.uid}" title="Esquecer essa conta">
+          <svg viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/></svg>
+        </span>
+      </button>`).join('')}
+    <div class="recent-accounts-or">ou entre com outra conta</div>`;
+}
+recentAccountsEl.addEventListener('click', (e)=>{
+  const forgetBtn = e.target.closest('[data-forget-uid]');
+  if(forgetBtn){ e.stopPropagation(); forgetAccount(forgetBtn.dataset.forgetUid); return; }
+  const chip = e.target.closest('.recent-account-chip');
+  if(!chip) return;
+  setLoginMode('login');
+  document.getElementById('login-email').value = chip.dataset.email || '';
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-password').focus();
+});
+renderRecentAccounts();
 
 function setLoginMode(mode){
   loginMode = mode;
@@ -744,20 +869,39 @@ loginForm.addEventListener('submit', (e)=>{
 });
 
 document.getElementById('logout-btn').addEventListener('click', ()=>{
+  if(currentUid){ set(ref(db, 'presence/'+currentUid), { online: false, lastSeen: serverTimestamp() }).catch(()=>{}); }
   signOut(auth);
 });
+
+/* Se o próprio admin marcar minha conta como banida, isso me
+   desconecta na hora, em qualquer aba aberta. */
+let banHandled = false;
+function enforceBanCheck(){
+  if(!currentUid || banHandled) return;
+  const profile = state.users[currentUid];
+  if(profile && profile.isBanned){
+    banHandled = true;
+    set(ref(db, 'presence/'+currentUid), { online: false, lastSeen: serverTimestamp() }).catch(()=>{});
+    signOut(auth).finally(()=>{
+      alert('Sua conta foi removida do Plantel por um administrador. Se acha que isso foi um engano, fale com a equipe.');
+    });
+  }
+}
 
 onAuthStateChanged(auth, (user)=>{
   if(user){
     currentUid = user.uid;
+    rememberAccount({ uid: user.uid, email: user.email });
     loginScreen.classList.add('hidden');
     wrapApp.classList.remove('hidden');
     if(!listenersStarted){ listenersStarted = true; startDataListeners(); }
   } else {
     currentUid = null;
     profileOnboardingShown = false;
+    banHandled = false;
     wrapApp.classList.add('hidden');
     loginScreen.classList.remove('hidden');
+    renderRecentAccounts();
   }
 });
 
@@ -826,6 +970,65 @@ instaModalClose.addEventListener('click', closeInstaModal);
 instaModal.addEventListener('click', (e)=>{ if(e.target === instaModal) closeInstaModal(); });
 document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !instaModal.classList.contains('hidden')) closeInstaModal(); });
 document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !viewProfileModal.classList.contains('hidden')) closeViewProfile(); });
+
+/* ===== quem está online (presença) =====
+   Usa o recurso de presença do Firebase: cada pessoa logada escreve
+   em presence/{uid} que está online, e o Firebase (no servidor)
+   automaticamente marca como offline quando a conexão cai — mesmo
+   se a pessoa fechar a aba sem querer, sem internet, etc. */
+function startPresence(){
+  const myPresenceRef = ref(db, 'presence/'+currentUid);
+  onValue(ref(db, '.info/connected'), (snap)=>{
+    if(snap.val() === true){
+      onDisconnect(myPresenceRef).set({ online: false, lastSeen: serverTimestamp() }).then(()=>{
+        set(myPresenceRef, { online: true, lastSeen: serverTimestamp() });
+      });
+    }
+  });
+}
+
+const onlineBtn = document.getElementById('online-btn');
+const onlineBadge = document.getElementById('online-badge');
+const onlineModal = document.getElementById('online-modal');
+const onlineModalClose = document.getElementById('online-modal-close');
+const onlineModalCount = document.getElementById('online-modal-count');
+const onlineListEl = document.getElementById('online-list');
+
+function renderOnlineList(){
+  const entries = Object.entries(state.users)
+    .map(([uid, profile])=>{
+      const p = state.presence[uid];
+      return { uid, name: profile.name || 'Alguém', sector: profile.sector, photo: profile.photo, banned: !!profile.isBanned, online: !!(p && p.online), lastSeen: p && p.lastSeen };
+    })
+    .sort((a,b)=> (b.online - a.online) || a.name.localeCompare(b.name));
+
+  const onlineCount = entries.filter(e=>e.online).length;
+  onlineBadge.classList.toggle('hidden', onlineCount === 0);
+  onlineModalCount.textContent = onlineCount + (onlineCount===1 ? ' pessoa online' : ' pessoas online');
+
+  onlineListEl.innerHTML = entries.length ? entries.map(e=>{
+    const info = { name: e.name, sector: e.sector, photo: e.photo, uid: e.uid };
+    const statusText = e.online ? 'online agora' : (e.lastSeen ? 'visto por último ' + timeAgo(e.lastSeen) : 'offline');
+    return `
+    <div class="online-item" data-action="view-profile" data-uid="${e.uid}" data-name="${escapeHtml(e.name)}" style="cursor:pointer;">
+      ${avatarHtml(info, true)}
+      <div class="online-item-body">
+        <div class="online-item-name">${escapeHtml(e.name)}${sectorTagHtml(e.sector)}${bannedTagHtml(e.banned)}</div>
+        <div class="online-item-status"><span class="status-dot ${e.online?'on':''}"></span>${statusText}</div>
+      </div>
+    </div>`;
+  }).join('') : `<div class="empty">Ninguém com perfil criado ainda.</div>`;
+}
+
+function openOnlineModal(){
+  renderOnlineList();
+  onlineModal.classList.remove('hidden');
+}
+function closeOnlineModal(){ onlineModal.classList.add('hidden'); }
+onlineBtn.addEventListener('click', openOnlineModal);
+onlineModalClose.addEventListener('click', closeOnlineModal);
+onlineModal.addEventListener('click', (e)=>{ if(e.target === onlineModal) closeOnlineModal(); });
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !onlineModal.classList.contains('hidden')) closeOnlineModal(); });
 
 /* ===== perfil (nome + setor/time) =====
    Fica salvo em users/{uid} e é usado pra identificar a pessoa em
@@ -953,12 +1156,17 @@ const viewProfileName = document.getElementById('view-profile-name');
 const viewProfileSector = document.getElementById('view-profile-sector');
 const viewProfileBio = document.getElementById('view-profile-bio');
 const viewProfileMessageBtn = document.getElementById('view-profile-message-btn');
+const viewProfileBanBtn = document.getElementById('view-profile-ban-btn');
+const viewProfileDeleteBtn = document.getElementById('view-profile-delete-btn');
+const deleteUserAccountFn = httpsCallable(functionsInstance, 'deleteUserAccount');
 
 function openViewProfile(uid, fallbackName){
   viewingProfileUid = uid;
   const profile = uid ? state.users[uid] : null;
   const name = (profile && profile.name) || fallbackName || 'Alguém';
   const sector = profile && profile.sector ? profile.sector : null;
+  const admin = !!(profile && profile.isAdmin);
+  const banned = !!(profile && profile.isBanned);
   const photo = profile && profile.photo ? profile.photo : null;
   const bio = profile && profile.bio
     ? profile.bio
@@ -966,9 +1174,22 @@ function openViewProfile(uid, fallbackName){
   if(photo){ viewProfilePhoto.innerHTML = `<img src="${photo}" alt="">`; }
   else { viewProfilePhoto.textContent = initials(name); }
   viewProfileName.textContent = name;
-  viewProfileSector.innerHTML = sectorTagHtml(sector);
+  viewProfileSector.innerHTML = sectorTagHtml(sector) + adminTagHtml(admin) + bannedTagHtml(banned);
   viewProfileBio.textContent = bio;
   viewProfileMessageBtn.style.display = uid ? '' : 'none';
+
+  const canModerate = isAdmin() && uid && uid !== currentUid && !admin;
+  if(canModerate){
+    viewProfileBanBtn.style.display = '';
+    viewProfileBanBtn.textContent = banned ? 'Desbanir' : 'Banir da comunidade';
+    viewProfileBanBtn.className = banned ? 'btn' : 'btn btn-danger';
+    viewProfileDeleteBtn.style.display = '';
+    viewProfileDeleteBtn.disabled = false;
+    viewProfileDeleteBtn.textContent = 'Apagar conta permanentemente';
+  } else {
+    viewProfileBanBtn.style.display = 'none';
+    viewProfileDeleteBtn.style.display = 'none';
+  }
   viewProfileModal.classList.remove('hidden');
 }
 function closeViewProfile(){ viewProfileModal.classList.add('hidden'); }
@@ -978,6 +1199,47 @@ viewProfileMessageBtn.addEventListener('click', ()=>{
   if(!viewingProfileUid) return;
   closeViewProfile();
   openDmThread(viewingProfileUid, viewProfileName.textContent, viewProfilePhoto.querySelector('img') ? viewProfilePhoto.querySelector('img').src : null);
+});
+viewProfileBanBtn.addEventListener('click', ()=>{
+  if(!viewingProfileUid || !isAdmin()) return;
+  const profile = state.users[viewingProfileUid] || {};
+  const banned = !!profile.isBanned;
+  const name = viewProfileName.textContent || 'essa pessoa';
+  const ok = confirm(
+    banned
+      ? `Desbanir ${name}? A pessoa volta a conseguir entrar e usar o mural normalmente.`
+      : `Banir ${name}? Ela é desconectada na hora e não consegue mais entrar no Plantel até você desbanir.`
+  );
+  if(!ok) return;
+  update(ref(db, 'users/'+viewingProfileUid), { isBanned: !banned }).then(()=>{
+    closeViewProfile();
+  }).catch(handleDbError);
+});
+viewProfileDeleteBtn.addEventListener('click', async ()=>{
+  if(!viewingProfileUid || !isAdmin()) return;
+  const uidToDelete = viewingProfileUid;
+  const name = viewProfileName.textContent || 'essa pessoa';
+  const typed = prompt(
+    `Isso apaga o login e TODO o conteúdo de "${name}" pra sempre — posts, comentários, metas, demandas e conversas. Não tem como desfazer.\n\nPra confirmar, digite o nome exatamente como está escrito acima:`
+  );
+  if(typed === null) return;
+  if(typed.trim() !== name.trim()){
+    alert('O nome digitado não bateu com o da conta. Nada foi apagado.');
+    return;
+  }
+  viewProfileDeleteBtn.disabled = true;
+  viewProfileDeleteBtn.textContent = 'Apagando...';
+  try{
+    await deleteUserAccountFn({ uid: uidToDelete });
+    closeViewProfile();
+    alert(`Conta de ${name} apagada.`);
+  }catch(err){
+    console.error('Erro ao apagar conta:', err);
+    alert('Não foi possível apagar essa conta agora: ' + (err && err.message ? err.message : err));
+  }finally{
+    viewProfileDeleteBtn.disabled = false;
+    viewProfileDeleteBtn.textContent = 'Apagar conta permanentemente';
+  }
 });
 
 /* ===== mensagens diretas (DM) =====
@@ -1195,7 +1457,8 @@ let state = {
   posts: [], postsPrivate: [],
   metas: [], metasPrivate: [],
   demandas: [], demandasPrivate: [],
-  users: {}
+  users: {},
+  presence: {}
 };
 function allPosts(){ return [...state.posts, ...state.postsPrivate]; }
 function allMetas(){ return [...state.metas, ...state.metasPrivate]; }
@@ -1207,19 +1470,33 @@ function demandaPath(item){ return item._sector ? `demandas_private/${item._sect
 function objToArray(obj, sector){
   return obj ? Object.entries(obj).map(([id, v]) => ({ id, ...v, _sector: sector || null })) : [];
 }
+function flattenAllSectors(obj){
+  if(!obj) return [];
+  return Object.entries(obj).flatMap(([sector, items]) => objToArray(items, sector));
+}
 
 let privateUnsub = { posts: null, metas: null, demandas: null };
-let mySubscribedSector = undefined;
+let mySubscribedKey = undefined; // combina setor + modo admin
 
 function syncPrivateSubscription(){
   const sector = (myProfile() && myProfile().sector) || null;
-  if(sector === mySubscribedSector) return;
+  const admin = isAdmin();
+  const key = admin ? 'admin' : (sector || 'none');
+  if(key === mySubscribedKey) return;
   if(privateUnsub.posts) privateUnsub.posts();
   if(privateUnsub.metas) privateUnsub.metas();
   if(privateUnsub.demandas) privateUnsub.demandas();
   privateUnsub = { posts: null, metas: null, demandas: null };
   state.postsPrivate = []; state.metasPrivate = []; state.demandasPrivate = [];
-  mySubscribedSector = sector;
+  mySubscribedKey = key;
+
+  if(admin){
+    // admin enxerga o privado de todos os setores, pra poder moderar/apagar um a um
+    privateUnsub.posts = onValue(ref(db, 'posts_private'), snap => { state.postsPrivate = flattenAllSectors(snap.val()); render(); }, handleDbError);
+    privateUnsub.metas = onValue(ref(db, 'metas_private'), snap => { state.metasPrivate = flattenAllSectors(snap.val()); render(); }, handleDbError);
+    privateUnsub.demandas = onValue(ref(db, 'demandas_private'), snap => { state.demandasPrivate = flattenAllSectors(snap.val()); render(); }, handleDbError);
+    return;
+  }
   if(!sector) return;
   privateUnsub.posts = onValue(ref(db, 'posts_private/'+sector), snap => { state.postsPrivate = objToArray(snap.val(), sector); render(); }, handleDbError);
   privateUnsub.metas = onValue(ref(db, 'metas_private/'+sector), snap => { state.metasPrivate = objToArray(snap.val(), sector); render(); }, handleDbError);
@@ -1235,8 +1512,18 @@ function startDataListeners(){
     refreshSectorOptions();
     syncPrivateSubscription();
     render();
+    renderOnlineList();
     maybeOpenProfileOnboarding();
+    enforceBanCheck();
+    if(currentUid && state.users[currentUid]){
+      enrichRecentAccount(currentUid, { name: state.users[currentUid].name, photo: state.users[currentUid].photo || null });
+    }
   }, handleDbError);
+  onValue(ref(db, 'presence'), snap => {
+    state.presence = snap.val() || {};
+    renderOnlineList();
+  }, handleDbError);
+  startPresence();
   let dmConversationsLoaded = false;
   const dmSeenLastTs = {};
   onValue(ref(db, 'conversations/'+currentUid), snap => {
@@ -1273,7 +1560,7 @@ muralSectorSelect.addEventListener('change', ()=>{
   muralSectorFilter = muralSectorSelect.value;
   render();
 });
-const FIXED_SECTORS = ['Administração', 'Marketing', 'Professores', 'Monitoria', 'Parceiros', 'Membro'];
+const FIXED_SECTORS = ['Marketing', 'Professores', 'Monitoria', 'Parceiros', 'Membro'];
 function refreshSectorOptions(){
   const fromUsers = Object.values(state.users).map(u=>u.sector).filter(Boolean);
   const sectors = [...new Set([...FIXED_SECTORS, ...fromUsers])].sort((a,b)=>a.localeCompare(b));
@@ -1315,7 +1602,8 @@ function authorInfo(item){
     name: (profile && profile.name) || (item && item.author) || 'Alguém',
     sector: profile && profile.sector ? profile.sector : null,
     bio: profile && profile.bio ? profile.bio : null,
-    photo: profile && profile.photo ? profile.photo : null
+    photo: profile && profile.photo ? profile.photo : null,
+    isAdmin: !!(profile && profile.isAdmin)
   };
 }
 function avatarHtml(info, sm){
@@ -1338,6 +1626,12 @@ function updateProfileBtnAvatar(){
 }
 function sectorTagHtml(sector){
   return sector ? `<span class="sector-tag">${escapeHtml(sector)}</span>` : '';
+}
+function adminTagHtml(flag){
+  return flag ? `<span class="admin-tag" title="Admin: pode moderar e apagar conteúdo de qualquer setor">🛡 admin</span>` : '';
+}
+function bannedTagHtml(flag){
+  return flag ? `<span class="banned-tag" title="Essa conta foi banida e não consegue mais entrar">🚫 banido</span>` : '';
 }
 function visibilityTagHtml(sector){
   return sector ? `<span class="visibility-tag" title="Visível só pro setor ${escapeHtml(sector)}">🔒 ${escapeHtml(sector)}</span>` : '';
@@ -1376,7 +1670,7 @@ function render(){
       <div class="post-head">
         ${avatarHtml(pInfo)}
         <div>
-          <div class="post-author"><span${authorNameAttr(pInfo)}>${escapeHtml(pInfo.name)}</span>${sectorTagHtml(pInfo.sector)}${visibilityTagHtml(p._sector)} <span class="post-time">· ${timeAgo(p.ts)}</span></div>
+          <div class="post-author"><span${authorNameAttr(pInfo)}>${escapeHtml(pInfo.name)}</span>${sectorTagHtml(pInfo.sector)}${adminTagHtml(pInfo.isAdmin)}${visibilityTagHtml(p._sector)} <span class="post-time">· ${timeAgo(p.ts)}</span></div>
         </div>
       </div>
       ${isEditing ? `
@@ -1397,9 +1691,8 @@ function render(){
         </button>
         <button class="btn-ghost" data-action="toggle-comments" data-id="${p.id}">${commentsOpen?'fechar':'comentar'}${comments.length?` (${comments.length})`:''}</button>
         <button class="btn-ghost pin-toggle ${p.pinned?'is-pinned':''}" data-action="toggle-pin" data-id="${p.id}">${p.pinned ? 'desafixar' : 'fixar'}</button>
-        ${p.uid === currentUid ? `
-        <button class="btn-ghost" data-action="edit-post" data-id="${p.id}">editar</button>
-        <button class="btn-ghost post-remove" data-action="remove-post" data-id="${p.id}">excluir</button>` : ''}
+        ${p.uid === currentUid ? `<button class="btn-ghost" data-action="edit-post" data-id="${p.id}">editar</button>` : ''}
+        ${(p.uid === currentUid || isAdmin()) ? `<button class="btn-ghost post-remove" data-action="remove-post" data-id="${p.id}">excluir</button>` : ''}
       </div>`}
       ${commentsOpen ? `
       <div class="post-comments">
@@ -1414,7 +1707,7 @@ function render(){
           <div class="comment">
             ${avatarHtml(cInfo, true)}
             <div class="comment-body">
-              <div class="comment-author"><span${authorNameAttr(cInfo)}>${escapeHtml(cInfo.name)}</span>${sectorTagHtml(cInfo.sector)} <span class="post-time">· ${timeAgo(c.ts)}</span></div>
+              <div class="comment-author"><span${authorNameAttr(cInfo)}>${escapeHtml(cInfo.name)}</span>${sectorTagHtml(cInfo.sector)}${adminTagHtml(cInfo.isAdmin)} <span class="post-time">· ${timeAgo(c.ts)}</span></div>
               <div class="comment-text">${escapeHtml(c.text)}</div>
               <div class="comment-actions">
                 <button class="comment-like ${cLiked?'is-liked':''}" data-action="like-comment" data-post="${p.id}" data-id="${c.id}">
@@ -1432,7 +1725,7 @@ function render(){
                   <div class="reply">
                     ${avatarHtml(rInfo, true)}
                     <div class="reply-body">
-                      <div class="reply-author"><span${authorNameAttr(rInfo)}>${escapeHtml(rInfo.name)}</span>${sectorTagHtml(rInfo.sector)} <span class="post-time">· ${timeAgo(r.ts)}</span></div>
+                      <div class="reply-author"><span${authorNameAttr(rInfo)}>${escapeHtml(rInfo.name)}</span>${sectorTagHtml(rInfo.sector)}${adminTagHtml(rInfo.isAdmin)} <span class="post-time">· ${timeAgo(r.ts)}</span></div>
                       <div class="reply-text">${escapeHtml(r.text)}</div>
                     </div>
                   </div>`;}).join('')}
@@ -1464,7 +1757,7 @@ function render(){
       <div class="check ${m.done?'done':''}" data-action="toggle-meta" data-id="${m.id}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(m.text)}</div>
-        <div class="item-meta"><span${authorNameAttr(mInfo)}>${escapeHtml(mInfo.name)}</span>${sectorTagHtml(mInfo.sector)}${visibilityTagHtml(m._sector)} · ${timeAgo(m.ts)}</div>
+        <div class="item-meta"><span${authorNameAttr(mInfo)}>${escapeHtml(mInfo.name)}</span>${sectorTagHtml(mInfo.sector)}${adminTagHtml(mInfo.isAdmin)}${visibilityTagHtml(m._sector)} · ${timeAgo(m.ts)}</div>
       </div>
       <button class="item-remove" data-action="remove-meta" data-id="${m.id}">remover</button>
     </div>`;}).join('') : `<div class="empty">Nenhuma meta ainda.</div>`;
@@ -1479,7 +1772,7 @@ function render(){
       <div class="check ${d.done?'done':''}" data-action="toggle-demanda" data-id="${d.id}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(d.text)}</div>
-        <div class="item-meta"><span${authorNameAttr(dInfo)}>${escapeHtml(dInfo.name)}</span>${sectorTagHtml(dInfo.sector)}${visibilityTagHtml(d._sector)} · ${timeAgo(d.ts)}</div>
+        <div class="item-meta"><span${authorNameAttr(dInfo)}>${escapeHtml(dInfo.name)}</span>${sectorTagHtml(dInfo.sector)}${adminTagHtml(dInfo.isAdmin)}${visibilityTagHtml(d._sector)} · ${timeAgo(d.ts)}</div>
       </div>
       <button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>
     </div>`;}).join('') : `<div class="empty">Nenhuma demanda ainda.</div>`;
@@ -1648,7 +1941,7 @@ document.addEventListener('click', (e)=>{
     if(post) update(ref(db, postPath(post)), { pinned: !post.pinned }).catch(handleDbError);
   } else if(action === 'remove-post'){
     const post = allPosts().find(p=>p.id===id);
-    if(post && post.uid === currentUid) remove(ref(db, postPath(post))).catch(handleDbError);
+    if(post && (post.uid === currentUid || isAdmin())) remove(ref(db, postPath(post))).catch(handleDbError);
     editingPosts.delete(id);
   } else if(action === 'edit-post'){
     const post = allPosts().find(p=>p.id===id);
