@@ -123,6 +123,33 @@ header{padding:36px 0 26px;}
 .modal-head strong{font-size:14px;}
 .modal-head span{font-size:11.5px;color:var(--text-2);display:block;margin-top:1px;}
 .modal-close{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;}
+
+.progress-wrap{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.progress-bar{flex:1;height:8px;border-radius:20px;background:var(--sage);overflow:hidden;}
+.progress-fill{height:100%;background:var(--forest);border-radius:20px;transition:width .35s ease;width:0%;}
+.progress-fill.demanda{background:var(--gold);}
+.progress-label{font-size:11.5px;color:var(--text-2);font-weight:600;flex:none;white-space:nowrap;}
+
+#photo-viewer-modal{background:rgba(6,10,8,.92);z-index:260;overflow:hidden;}
+#photo-viewer-img{max-width:min(90vw,480px);max-height:80vh;border-radius:16px;object-fit:contain;box-shadow:0 20px 50px rgba(0,0,0,.4);cursor:zoom-in;touch-action:none;user-select:none;transition:transform .12s ease;}
+#photo-viewer-img.dragging{transition:none;}
+#photo-viewer-back{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25);color:#fff;}
+#photo-viewer-back:hover{background:rgba(255,255,255,.2);}
+.photo-viewer-zoom{
+  position:absolute;bottom:22px;left:50%;transform:translateX(-50%);z-index:2;
+  display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+  border-radius:30px;padding:5px;color:#fff;backdrop-filter:blur(6px);
+}
+.photo-viewer-zoom button{
+  width:34px;height:34px;border-radius:50%;border:none;background:transparent;color:#fff;
+  font-size:19px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;
+}
+.photo-viewer-zoom button:hover{background:rgba(255,255,255,.18);}
+.photo-viewer-zoom button:disabled{opacity:.35;cursor:default;}
+.photo-viewer-zoom button:disabled:hover{background:transparent;}
+#photo-zoom-level{font-size:12px;font-weight:600;min-width:42px;text-align:center;}
+#photo-zoom-reset{width:auto;padding:0 12px;font-size:12px;font-weight:600;border-left:1px solid rgba(255,255,255,.25);border-radius:0;margin-left:2px;}
+.view-profile-head .avatar-upload-preview.has-photo{cursor:pointer;}
 .modal-close:hover{border-color:var(--moss);color:var(--forest);}
 .modal-close svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;}
 .modal-body{padding:14px 16px 16px;overflow-y:auto;}
@@ -145,15 +172,25 @@ header{padding:36px 0 26px;}
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--text-3);flex:none;}
 .status-dot.on{background:#3FAE5C;}
 .dm-conversation-item{
-  display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:10px;cursor:pointer;
-  border:1px solid transparent;text-align:left;width:100%;background:transparent;
+  display:flex;align-items:center;gap:4px;border-radius:10px;
 }
 .dm-conversation-item:hover{background:var(--sage);}
+.dm-conversation-open{
+  display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:10px;cursor:pointer;
+  border:none;text-align:left;flex:1;min-width:0;background:transparent;
+}
 .dm-conversation-item .avatar{flex:none;}
 .dm-conversation-text{min-width:0;flex:1;}
 .dm-conversation-name{font-size:13px;font-weight:600;}
 .dm-conversation-last{font-size:12px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dm-conversation-time{font-size:10.5px;color:var(--text-3);flex:none;}
+.dm-conversation-remove{
+  flex:none;width:30px;height:30px;border-radius:8px;border:none;background:transparent;color:var(--text-3);
+  display:flex;align-items:center;justify-content:center;margin-right:6px;
+}
+.dm-conversation-remove:hover{background:#F6E4E0;color:var(--danger);}
+html[data-theme="dark"] .dm-conversation-remove:hover{background:rgba(224,121,106,.18);}
+.dm-conversation-remove svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;}
 .dm-thread-box{height:78vh;max-height:640px;}
 .dm-thread-box .modal-head{gap:8px;}
 .dm-thread-head-info{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
@@ -651,6 +688,19 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
     </div>
   </div>
 
+  <div class="modal-overlay hidden" id="photo-viewer-modal">
+    <button class="modal-close" id="photo-viewer-back" type="button" aria-label="Voltar" style="position:absolute;top:16px;left:16px;z-index:2;">
+      <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <img id="photo-viewer-img" src="" alt="Foto de perfil">
+    <div class="photo-viewer-zoom" id="photo-viewer-zoom">
+      <button type="button" id="photo-zoom-out" aria-label="Diminuir zoom">−</button>
+      <span id="photo-zoom-level">100%</span>
+      <button type="button" id="photo-zoom-in" aria-label="Aumentar zoom">+</button>
+      <button type="button" id="photo-zoom-reset" aria-label="Redefinir zoom">Redefinir</button>
+    </div>
+  </div>
+
   <div class="modal-overlay hidden" id="dm-list-modal">
     <div class="modal-box">
       <div class="modal-head">
@@ -734,6 +784,10 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
       <h2>Metas</h2><span id="meta-count">0 abertas</span>
     </div>
     <div class="card">
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="meta-progress-fill"></div></div>
+        <span class="progress-label" id="meta-progress-label">0/0 concluídas</span>
+      </div>
       <div id="meta-list"></div>
       <div class="add-inline">
         <input class="field" id="meta-add-input" placeholder="Adicionar meta diretamente...">
@@ -751,6 +805,10 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
       <h2>Demandas</h2><span id="demanda-count">0 pendentes</span>
     </div>
     <div class="card">
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill demanda" id="demanda-progress-fill"></div></div>
+        <span class="progress-label" id="demanda-progress-label">0/0 concluídas</span>
+      </div>
       <div id="demanda-list"></div>
       <div class="add-inline">
         <input class="field" id="demanda-add-input" placeholder="Adicionar demanda diretamente...">
@@ -1365,8 +1423,8 @@ function openViewProfile(uid, fallbackName, showBack){
   const bio = profile && profile.bio
     ? profile.bio
     : 'Essa pessoa ainda não personalizou o perfil por aqui (sem foto ou descrição salvas).';
-  if(photo){ viewProfilePhoto.innerHTML = `<img src="${photo}" alt="">`; }
-  else { viewProfilePhoto.textContent = initials(name); }
+  if(photo){ viewProfilePhoto.innerHTML = `<img src="${photo}" alt="">`; viewProfilePhoto.classList.add('has-photo'); }
+  else { viewProfilePhoto.textContent = initials(name); viewProfilePhoto.classList.remove('has-photo'); }
   viewProfileName.textContent = name;
   viewProfileSector.innerHTML = sectorTagHtml(sector) + adminTagHtml(admin) + bannedTagHtml(banned);
   viewProfileBio.textContent = bio;
@@ -1388,6 +1446,95 @@ function openViewProfile(uid, fallbackName, showBack){
   viewProfileModal.classList.remove('hidden');
 }
 function closeViewProfile(){ viewProfileModal.classList.add('hidden'); }
+
+/* ===== ver foto de perfil ampliada (com zoom) ===== */
+const photoViewerModal = document.getElementById('photo-viewer-modal');
+const photoViewerImg = document.getElementById('photo-viewer-img');
+const photoViewerBack = document.getElementById('photo-viewer-back');
+const photoZoomIn = document.getElementById('photo-zoom-in');
+const photoZoomOut = document.getElementById('photo-zoom-out');
+const photoZoomReset = document.getElementById('photo-zoom-reset');
+const photoZoomLevel = document.getElementById('photo-zoom-level');
+
+const PHOTO_ZOOM_MIN = 1, PHOTO_ZOOM_MAX = 4, PHOTO_ZOOM_STEP = 0.5;
+let photoZoom = 1, photoPanX = 0, photoPanY = 0;
+let photoDragging = false, photoDragStartX = 0, photoDragStartY = 0, photoPanStartX = 0, photoPanStartY = 0;
+
+function applyPhotoTransform(){
+  photoViewerImg.style.transform = `translate(${photoPanX}px, ${photoPanY}px) scale(${photoZoom})`;
+  photoViewerImg.style.cursor = photoZoom > PHOTO_ZOOM_MIN ? 'grab' : 'zoom-in';
+  photoZoomLevel.textContent = Math.round(photoZoom * 100) + '%';
+  photoZoomOut.disabled = photoZoom <= PHOTO_ZOOM_MIN;
+  photoZoomIn.disabled = photoZoom >= PHOTO_ZOOM_MAX;
+}
+function setPhotoZoom(z, cx, cy){
+  const next = Math.min(PHOTO_ZOOM_MAX, Math.max(PHOTO_ZOOM_MIN, z));
+  if(next === PHOTO_ZOOM_MIN){ photoPanX = 0; photoPanY = 0; }
+  photoZoom = next;
+  applyPhotoTransform();
+}
+function resetPhotoZoom(){ photoZoom = 1; photoPanX = 0; photoPanY = 0; applyPhotoTransform(); }
+
+function openPhotoViewer(src){
+  if(!src) return;
+  photoViewerImg.src = src;
+  resetPhotoZoom();
+  photoViewerModal.classList.remove('hidden');
+}
+function closePhotoViewer(){ photoViewerModal.classList.add('hidden'); photoViewerImg.src = ''; resetPhotoZoom(); }
+photoViewerBack.addEventListener('click', closePhotoViewer);
+photoViewerModal.addEventListener('click', (e)=>{ if(e.target === photoViewerModal) closePhotoViewer(); });
+document.addEventListener('keydown', (e)=>{
+  if(photoViewerModal.classList.contains('hidden')) return;
+  if(e.key === 'Escape') closePhotoViewer();
+  else if(e.key === '+' || e.key === '=') setPhotoZoom(photoZoom + PHOTO_ZOOM_STEP);
+  else if(e.key === '-') setPhotoZoom(photoZoom - PHOTO_ZOOM_STEP);
+});
+
+photoZoomIn.addEventListener('click', ()=> setPhotoZoom(photoZoom + PHOTO_ZOOM_STEP));
+photoZoomOut.addEventListener('click', ()=> setPhotoZoom(photoZoom - PHOTO_ZOOM_STEP));
+photoZoomReset.addEventListener('click', resetPhotoZoom);
+
+// roda do mouse pra dar zoom
+photoViewerImg.addEventListener('wheel', (e)=>{
+  e.preventDefault();
+  setPhotoZoom(photoZoom + (e.deltaY < 0 ? 0.25 : -0.25));
+}, { passive: false });
+
+// duplo clique alterna entre normal e 2x
+photoViewerImg.addEventListener('dblclick', ()=>{
+  setPhotoZoom(photoZoom > PHOTO_ZOOM_MIN ? 1 : 2);
+});
+
+// arrastar pra mover a foto quando estiver com zoom
+photoViewerImg.addEventListener('pointerdown', (e)=>{
+  if(photoZoom <= PHOTO_ZOOM_MIN) return;
+  photoDragging = true;
+  photoDragStartX = e.clientX; photoDragStartY = e.clientY;
+  photoPanStartX = photoPanX; photoPanStartY = photoPanY;
+  photoViewerImg.classList.add('dragging');
+  photoViewerImg.style.cursor = 'grabbing';
+  photoViewerImg.setPointerCapture(e.pointerId);
+});
+photoViewerImg.addEventListener('pointermove', (e)=>{
+  if(!photoDragging) return;
+  photoPanX = photoPanStartX + (e.clientX - photoDragStartX);
+  photoPanY = photoPanStartY + (e.clientY - photoDragStartY);
+  applyPhotoTransform();
+});
+function endPhotoDrag(){
+  photoDragging = false;
+  photoViewerImg.classList.remove('dragging');
+  if(photoZoom > PHOTO_ZOOM_MIN) photoViewerImg.style.cursor = 'grab';
+}
+photoViewerImg.addEventListener('pointerup', endPhotoDrag);
+photoViewerImg.addEventListener('pointerleave', endPhotoDrag);
+photoViewerImg.addEventListener('pointercancel', endPhotoDrag);
+
+viewProfilePhoto.addEventListener('click', ()=>{
+  const img = viewProfilePhoto.querySelector('img');
+  if(img) openPhotoViewer(img.src);
+});
 viewProfileModalClose.addEventListener('click', closeViewProfile);
 viewProfileBack.addEventListener('click', ()=>{
   closeViewProfile();
@@ -1515,14 +1662,19 @@ function renderDmList(){
       ? `<div class="avatar"><img src="${c.photo}" alt=""></div>`
       : `<div class="avatar">${initials(displayName)}</div>`;
     return `
-    <button class="dm-conversation-item" data-action="open-dm" data-uid="${otherUid}">
-      ${av}
-      <div class="dm-conversation-text">
-        <div class="dm-conversation-name">${escapeHtml(displayName)}</div>
-        <div class="dm-conversation-last">${escapeHtml(c.lastText || '')}</div>
-      </div>
-      <div class="dm-conversation-time">${c.lastTs ? timeAgo(c.lastTs) : ''}</div>
-    </button>`;
+    <div class="dm-conversation-item">
+      <button class="dm-conversation-open" data-action="open-dm" data-uid="${otherUid}">
+        ${av}
+        <div class="dm-conversation-text">
+          <div class="dm-conversation-name">${escapeHtml(displayName)}</div>
+          <div class="dm-conversation-last">${escapeHtml(c.lastText || '')}</div>
+        </div>
+        <div class="dm-conversation-time">${c.lastTs ? timeAgo(c.lastTs) : ''}</div>
+      </button>
+      <button class="dm-conversation-remove" data-action="delete-dm-list" data-uid="${otherUid}" title="Apagar conversa e contato">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+      </button>
+    </div>`;
   }).join('') : `<div class="dm-empty">Nenhuma conversa ainda. Abra o perfil de alguém e clique em "Mandar mensagem".</div>`;
 }
 
@@ -1592,7 +1744,7 @@ dmThreadModal.addEventListener('click', (e)=>{ if(e.target === dmThreadModal) cl
 dmNicknameBtn.addEventListener('click', ()=>{
   if(!dmThreadUid || !currentUid) return;
   const current = myNicknames[dmThreadUid] || '';
-  const value = prompt('Apelido pra essa pessoa (só você vê, em vez do nome real):', current);
+  const value = prompt('Apelido pra essa pessoa (só você vê, em vez do nome real).\nPra voltar ao nome normal, apague o texto e confirme:', current);
   if(value === null) return; // cancelou
   const trimmed = value.trim();
   const nickRef = ref(db, 'contactNicknames/'+currentUid+'/'+dmThreadUid);
@@ -1603,17 +1755,23 @@ dmNicknameBtn.addEventListener('click', ()=>{
   }).catch(handleDbError);
 });
 
-dmDeleteBtn.addEventListener('click', ()=>{
-  if(!dmThreadUid || !currentUid) return;
-  const ok = confirm('Apagar essa conversa inteira? As mensagens somem pra você e pra essa pessoa, e não dá pra desfazer.');
-  if(!ok) return;
-  const otherUid = dmThreadUid;
+function deleteConversation(otherUid, name){
+  if(!otherUid || !currentUid) return Promise.resolve();
+  const ok = confirm(`Apagar a conversa com ${name || 'essa pessoa'}? As mensagens somem pra você e pra essa pessoa, e não dá pra desfazer.`);
+  if(!ok) return Promise.resolve();
   const cid = chatId(currentUid, otherUid);
-  Promise.allSettled([
+  return Promise.allSettled([
     remove(ref(db, 'dms/'+cid)),
     remove(ref(db, 'conversations/'+currentUid+'/'+otherUid)),
     remove(ref(db, 'conversations/'+otherUid+'/'+currentUid))
-  ]).then(()=>{
+  ]);
+}
+
+dmDeleteBtn.addEventListener('click', ()=>{
+  if(!dmThreadUid) return;
+  const known = dmConversations[dmThreadUid];
+  const name = nicknameFor(dmThreadUid, known && known.name);
+  deleteConversation(dmThreadUid, name).then(()=>{
     closeDmThread();
     openDmList();
   }).catch(handleDbError);
@@ -2014,6 +2172,10 @@ function render(){
   const visibleMetas = allMetas();
   const openMetas = visibleMetas.filter(m=>!m.done).length;
   document.getElementById('meta-count').textContent = openMetas + (openMetas===1?' aberta':' abertas');
+  const metaDone = visibleMetas.length - openMetas;
+  const metaPct = visibleMetas.length ? Math.round((metaDone/visibleMetas.length)*100) : 0;
+  document.getElementById('meta-progress-fill').style.width = metaPct + '%';
+  document.getElementById('meta-progress-label').textContent = `${metaDone}/${visibleMetas.length} concluídas (${metaPct}%)`;
   document.getElementById('meta-list').innerHTML = visibleMetas.length ? visibleMetas.map(m=>{
     const mInfo = authorInfo(m);
     return `
@@ -2029,6 +2191,10 @@ function render(){
   const visibleDemandas = allDemandas();
   const openDemandas = visibleDemandas.filter(d=>!d.done).length;
   document.getElementById('demanda-count').textContent = openDemandas + (openDemandas===1?' pendente':' pendentes');
+  const demandaDone = visibleDemandas.length - openDemandas;
+  const demandaPct = visibleDemandas.length ? Math.round((demandaDone/visibleDemandas.length)*100) : 0;
+  document.getElementById('demanda-progress-fill').style.width = demandaPct + '%';
+  document.getElementById('demanda-progress-label').textContent = `${demandaDone}/${visibleDemandas.length} concluídas (${demandaPct}%)`;
   document.getElementById('demanda-list').innerHTML = visibleDemandas.length ? visibleDemandas.map(d=>{
     const dInfo = authorInfo(d);
     return `
@@ -2157,6 +2323,11 @@ document.addEventListener('click', (e)=>{
     const otherUid = t.dataset.uid;
     const c = dmConversations[otherUid] || {};
     openDmThread(otherUid, c.name, c.photo);
+  } else if(action === 'delete-dm-list'){
+    const otherUid = t.dataset.uid;
+    const c = dmConversations[otherUid] || {};
+    const name = nicknameFor(otherUid, c.name);
+    deleteConversation(otherUid, name).then(()=>{ renderDmList(); }).catch(handleDbError);
   } else if(action === 'to-meta'){
     const post = allPosts().find(p=>p.id===id);
     if(post && !post.metaId){
