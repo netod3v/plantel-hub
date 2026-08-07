@@ -275,6 +275,38 @@ textarea.field:focus{border-color:var(--moss);}
 
 section{margin-top:38px;}
 .section-head{display:flex;align-items:center;justify-content:flex-start;gap:8px;margin-bottom:14px;}
+
+.view-toggle{margin-left:auto;display:flex;background:var(--sage);border-radius:9px;padding:3px;flex:none;}
+.view-toggle-btn{border:none;background:transparent;color:var(--text-2);font-size:12px;font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer;}
+.view-toggle-btn.active{background:var(--paper);color:var(--forest);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+
+.kanban-board.hidden{display:none;}
+.kanban-board{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:start;}
+@media (max-width:720px){ .kanban-board{grid-template-columns:1fr;} }
+.kanban-col{background:var(--parchment);border:1px solid var(--border);border-radius:12px;padding:10px;min-height:70px;transition:background .12s ease,border-color .12s ease;}
+.kanban-col.drag-over{border-color:var(--moss);background:var(--sage);}
+.kanban-col-head{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 10px;font-size:12.5px;font-weight:700;color:var(--text-2);}
+.kanban-col-head .count{font-weight:600;color:var(--text-3);}
+.kanban-col-body{display:flex;flex-direction:column;gap:8px;min-height:40px;}
+.kanban-card{
+  background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:10px 11px;cursor:grab;
+}
+.kanban-card.dragging{opacity:.4;}
+.kanban-card-text{font-size:12.5px;line-height:1.4;margin-bottom:8px;}
+.kanban-card-meta{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
+.kanban-card-meta .avatar{width:20px;height:20px;font-size:9px;}
+.kanban-card-author{font-size:11.5px;color:var(--text-2);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.kanban-card-foot{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;}
+.kanban-card-move{display:flex;gap:3px;}
+.kanban-card-move button{
+  width:24px;height:24px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-2);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1;
+}
+.kanban-card-move button:disabled{opacity:.3;cursor:default;}
+.kanban-card-move button:not(:disabled):hover{border-color:var(--moss);color:var(--forest);}
+.kanban-card-remove{background:transparent;border:none;color:var(--text-3);cursor:pointer;font-size:11px;padding:2px 4px;}
+.kanban-card-remove:hover{color:var(--danger);}
+.kanban-empty{font-size:11.5px;color:var(--text-3);text-align:center;padding:10px 4px;}
 .section-head h2{font-size:17px;margin-right:auto;}
 .section-head span{font-size:12px;color:var(--text-2);}
 .card{background:var(--paper);border:1px solid var(--border);border-radius:14px;padding:16px 18px;}
@@ -834,6 +866,10 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
     <div class="section-head">
       <span class="drag-handle" title="Arrastar pra reordenar"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></span>
       <h2>Demandas</h2><span id="demanda-count">0 pendentes</span>
+      <div class="view-toggle" data-target="demanda">
+        <button type="button" class="view-toggle-btn active" data-view="list">Lista</button>
+        <button type="button" class="view-toggle-btn" data-view="board">Quadro</button>
+      </div>
     </div>
     <div class="card">
       <div class="progress-wrap">
@@ -841,6 +877,7 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
         <span class="progress-label" id="demanda-progress-label">0/0 concluídas</span>
       </div>
       <div id="demanda-list"></div>
+      <div id="demanda-board" class="kanban-board hidden"></div>
       <div class="add-inline">
         <input class="field" id="demanda-add-input" placeholder="Adicionar demanda diretamente...">
         <select class="field" id="demanda-add-visibility">
@@ -2327,7 +2364,111 @@ function render(){
       </div>
       <button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>
     </div>`;}).join('') : `<div class="empty">Nenhuma demanda ainda.</div>`;
+
+  renderKanbanBoard('demanda', visibleDemandas);
 }
+
+const KANBAN_COLUMNS = [
+  { key: 'todo', label: 'A fazer' },
+  { key: 'doing', label: 'Fazendo' },
+  { key: 'done', label: 'Concluído' }
+];
+function itemStatus(item){
+  return item.status || (item.done ? 'done' : 'todo');
+}
+function renderKanbanBoard(kind, items){
+  const board = document.getElementById(kind+'-board');
+  if(!board || board.classList.contains('hidden')) return; // não gasta trabalho escondido
+  const byStatus = { todo: [], doing: [], done: [] };
+  items.forEach(item => { (byStatus[itemStatus(item)] || byStatus.todo).push(item); });
+
+  board.innerHTML = KANBAN_COLUMNS.map(col=>{
+    const colItems = byStatus[col.key];
+    return `
+    <div class="kanban-col" data-status="${col.key}">
+      <div class="kanban-col-head"><span>${col.label}</span><span class="count">${colItems.length}</span></div>
+      <div class="kanban-col-body">
+        ${colItems.length ? colItems.map(item=>{
+          const info = authorInfo(item);
+          const idx = KANBAN_COLUMNS.findIndex(c=>c.key===col.key);
+          return `
+          <div class="kanban-card" draggable="true" data-id="${item.id}" data-kind="${kind}">
+            <div class="kanban-card-text">${escapeHtml(item.text)}</div>
+            <div class="kanban-card-meta">${avatarHtml(info, true)}<span class="kanban-card-author"${authorNameAttr(info)}>${escapeHtml(info.name)}</span></div>
+            <div class="kanban-card-foot">
+              ${visibilityTagHtml(item._sector)}
+              <div class="kanban-card-move">
+                <button type="button" data-action="kanban-move" data-kind="${kind}" data-id="${item.id}" data-dir="-1" ${idx===0?'disabled':''} aria-label="Mover pra trás">‹</button>
+                <button type="button" data-action="kanban-move" data-kind="${kind}" data-id="${item.id}" data-dir="1" ${idx===KANBAN_COLUMNS.length-1?'disabled':''} aria-label="Mover pra frente">›</button>
+              </div>
+              <button type="button" class="kanban-card-remove" data-action="remove-${kind}" data-id="${item.id}">remover</button>
+            </div>
+          </div>`;
+        }).join('') : `<div class="kanban-empty">Vazio</div>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+function setItemStatus(kind, id, status){
+  const item = (kind === 'meta' ? allMetas() : allDemandas()).find(x=>x.id===id);
+  if(!item) return;
+  const path = kind === 'meta' ? metaPath(item) : demandaPath(item);
+  update(ref(db, path), { status, done: status === 'done' }).catch(handleDbError);
+}
+
+/* ===== alternar Lista / Quadro (Metas e Demandas) =====
+   A preferência é só local (por navegador) — cada pessoa escolhe como
+   prefere ver, não é algo compartilhado com a equipe. */
+document.querySelectorAll('.view-toggle').forEach(toggle=>{
+  const target = toggle.dataset.target; // 'meta' | 'demanda'
+  const listEl = document.getElementById(target+'-list');
+  const boardEl = document.getElementById(target+'-board');
+  const saved = localStorage.getItem('plantel_view_'+target) || 'list';
+  function applyView(view){
+    toggle.querySelectorAll('.view-toggle-btn').forEach(b=> b.classList.toggle('active', b.dataset.view === view));
+    listEl.classList.toggle('hidden', view === 'board');
+    boardEl.classList.toggle('hidden', view !== 'board');
+    localStorage.setItem('plantel_view_'+target, view);
+    if(view === 'board') renderKanbanBoard(target, target === 'meta' ? allMetas() : allDemandas());
+  }
+  toggle.querySelectorAll('.view-toggle-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> applyView(btn.dataset.view));
+  });
+  applyView(saved);
+});
+
+// arrastar e soltar cartões entre colunas
+document.addEventListener('dragstart', (e)=>{
+  const card = e.target.closest('.kanban-card');
+  if(!card) return;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', JSON.stringify({ id: card.dataset.id, kind: card.dataset.kind }));
+  setTimeout(()=> card.classList.add('dragging'), 0);
+});
+document.addEventListener('dragend', (e)=>{
+  const card = e.target.closest('.kanban-card');
+  if(card) card.classList.remove('dragging');
+});
+document.addEventListener('dragover', (e)=>{
+  const col = e.target.closest('.kanban-col');
+  if(!col) return;
+  e.preventDefault();
+  col.classList.add('drag-over');
+});
+document.addEventListener('dragleave', (e)=>{
+  const col = e.target.closest('.kanban-col');
+  if(col && !col.contains(e.relatedTarget)) col.classList.remove('drag-over');
+});
+document.addEventListener('drop', (e)=>{
+  const col = e.target.closest('.kanban-col');
+  if(!col) return;
+  e.preventDefault();
+  col.classList.remove('drag-over');
+  let data;
+  try{ data = JSON.parse(e.dataTransfer.getData('text/plain') || '{}'); }catch(err){ return; }
+  if(!data.id || !data.kind) return;
+  setItemStatus(data.kind, data.id, col.dataset.status);
+});
 
 function uid(){ return Date.now()+'-'+Math.random().toString(36).slice(2,7); }
 
@@ -2477,10 +2618,17 @@ document.addEventListener('click', (e)=>{
     }
   } else if(action === 'toggle-meta'){
     const m = allMetas().find(x=>x.id===id);
-    if(m) update(ref(db, metaPath(m)), { done: !m.done }).catch(handleDbError);
+    if(m){ const newDone = !m.done; update(ref(db, metaPath(m)), { done: newDone, status: newDone ? 'done' : 'todo' }).catch(handleDbError); }
   } else if(action === 'toggle-demanda'){
     const d = allDemandas().find(x=>x.id===id);
-    if(d) update(ref(db, demandaPath(d)), { done: !d.done }).catch(handleDbError);
+    if(d){ const newDone = !d.done; update(ref(db, demandaPath(d)), { done: newDone, status: newDone ? 'done' : 'todo' }).catch(handleDbError); }
+  } else if(action === 'kanban-move'){
+    const kind = t.dataset.kind, dir = parseInt(t.dataset.dir, 10);
+    const item = (kind === 'meta' ? allMetas() : allDemandas()).find(x=>x.id===id);
+    if(!item) return;
+    const curIdx = KANBAN_COLUMNS.findIndex(c=>c.key === itemStatus(item));
+    const nextIdx = Math.min(KANBAN_COLUMNS.length-1, Math.max(0, curIdx + dir));
+    setItemStatus(kind, id, KANBAN_COLUMNS[nextIdx].key);
   } else if(action === 'remove-meta'){
     const m = allMetas().find(x=>x.id===id);
     if(m) remove(ref(db, metaPath(m))).catch(handleDbError);
