@@ -1366,7 +1366,8 @@ function openAccountDrawer(){
     // foco no campo de e-mail do login (se existir), senão no primeiro foco do drawer
     const emailEl = document.getElementById('login-email');
     setTimeout(()=>{
-      if(emailEl){ emailEl.focus(); emailEl.select(); }
+      // só força foco no e-mail quando estamos no modo de cadastro
+      if(emailEl && loginMode === 'signup'){ emailEl.focus(); emailEl.select(); }
         else { _updateDrawerFocusables(); if(_drawerFocusables[0]) _drawerFocusables[0].focus(); }
       // anima chips com stagger
       animateAccountChips();
