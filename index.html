@@ -124,6 +124,25 @@ header{padding:36px 0 26px;}
 .modal-head span{font-size:11.5px;color:var(--text-2);display:block;margin-top:1px;}
 .modal-close{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;}
 
+.hover-card{
+  position:fixed;z-index:400;width:290px;background:var(--paper);border:1px solid var(--border);
+  border-radius:14px;padding:16px;box-shadow:0 16px 40px rgba(0,0,0,.22);pointer-events:none;
+  opacity:0;transform:translateY(4px);transition:opacity .12s ease,transform .12s ease;
+}
+.hover-card.visible{opacity:1;transform:translateY(0);}
+.hover-card.hidden{display:none;}
+.hover-card-head{display:flex;align-items:center;gap:11px;}
+.hover-card-avatar{
+  width:48px;height:48px;border-radius:50%;flex:none;overflow:hidden;background:var(--sage);color:var(--forest);
+  display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;
+}
+.hover-card-avatar img{width:100%;height:100%;object-fit:cover;}
+.hover-card-nameblock{min-width:0;}
+.hover-card-name{font-size:14.5px;font-weight:700;display:flex;align-items:center;flex-wrap:wrap;gap:4px;}
+.hover-card-status{font-size:11.5px;color:var(--text-2);display:flex;align-items:center;gap:5px;margin-top:2px;}
+.hover-card-bio{font-size:12.5px;line-height:1.5;color:var(--ink);margin:11px 0 0;}
+.hover-card-sector{font-size:11.5px;color:var(--text-2);margin-top:9px;display:flex;align-items:center;gap:5px;}
+
 .progress-wrap{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
 .progress-bar{flex:1;height:8px;border-radius:20px;background:var(--sage);overflow:hidden;}
 .progress-fill{height:100%;background:var(--forest);border-radius:20px;transition:width .35s ease;width:0%;}
@@ -656,6 +675,18 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
         <p class="modal-note" id="profile-error"></p>
       </div>
     </div>
+  </div>
+
+  <div class="hover-card hidden" id="hover-profile-card">
+    <div class="hover-card-head">
+      <div class="hover-card-avatar" id="hover-card-avatar"></div>
+      <div class="hover-card-nameblock">
+        <div class="hover-card-name" id="hover-card-name"></div>
+        <div class="hover-card-status" id="hover-card-status"></div>
+      </div>
+    </div>
+    <p class="hover-card-bio" id="hover-card-bio"></p>
+    <div class="hover-card-sector" id="hover-card-sector"></div>
   </div>
 
   <div class="modal-overlay hidden" id="view-profile-modal">
@@ -1447,6 +1478,87 @@ function openViewProfile(uid, fallbackName, showBack){
 }
 function closeViewProfile(){ viewProfileModal.classList.add('hidden'); }
 
+/* ===== card de perfil ao passar o mouse (hover) =====
+   Igual ao balãozinho do GitHub quando você passa o mouse no @ de
+   alguém: mostra foto, nome, setor e bio sem precisar clicar. Só em
+   telas com mouse de verdade (hover:hover) — em touch, o toque já
+   abre o perfil completo direto, então o hover não faz sentido lá. */
+const hoverCard = document.getElementById('hover-profile-card');
+const hoverCardAvatar = document.getElementById('hover-card-avatar');
+const hoverCardName = document.getElementById('hover-card-name');
+const hoverCardStatus = document.getElementById('hover-card-status');
+const hoverCardBio = document.getElementById('hover-card-bio');
+const hoverCardSector = document.getElementById('hover-card-sector');
+const supportsHover = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+let hoverShowTimer = null, hoverHideTimer = null, hoverCardTargetEl = null;
+
+function fillHoverCard(uid, fallbackName){
+  const profile = uid ? state.users[uid] : null;
+  const name = (profile && profile.name) || fallbackName || 'Alguém';
+  const sector = profile && profile.sector ? profile.sector : null;
+  const admin = !!(profile && profile.isAdmin);
+  const banned = !!(profile && profile.isBanned);
+  const photo = profile && profile.photo ? profile.photo : null;
+  const bio = profile && profile.bio ? profile.bio : 'Ainda sem descrição no perfil.';
+  const online = !!(uid && state.presence[uid] && state.presence[uid].online);
+
+  hoverCardAvatar.innerHTML = photo ? `<img src="${photo}" alt="">` : '';
+  if(!photo) hoverCardAvatar.textContent = initials(name);
+  hoverCardName.innerHTML = `${escapeHtml(name)}${adminTagHtml(admin)}${bannedTagHtml(banned)}`;
+  hoverCardStatus.innerHTML = `<span class="status-dot ${online?'on':''}"></span>${online ? 'online agora' : 'offline'}`;
+  hoverCardBio.textContent = bio;
+  hoverCardSector.innerHTML = sector ? sectorTagHtml(sector) : '';
+  hoverCardSector.style.display = sector ? '' : 'none';
+}
+
+function positionHoverCard(targetEl){
+  const rect = targetEl.getBoundingClientRect();
+  const cardW = 290, cardH = hoverCard.offsetHeight || 160, margin = 10;
+  let left = rect.left;
+  let top = rect.bottom + 8;
+  if(left + cardW + margin > window.innerWidth) left = window.innerWidth - cardW - margin;
+  if(left < margin) left = margin;
+  if(top + cardH + margin > window.innerHeight) top = rect.top - cardH - 8;
+  if(top < margin) top = margin;
+  hoverCard.style.left = left + 'px';
+  hoverCard.style.top = top + 'px';
+}
+
+function showHoverCard(targetEl){
+  const uid = targetEl.dataset.uid || null;
+  const name = targetEl.dataset.name || '';
+  fillHoverCard(uid, name);
+  hoverCard.classList.remove('hidden');
+  positionHoverCard(targetEl);
+  requestAnimationFrame(()=> hoverCard.classList.add('visible'));
+}
+function hideHoverCardNow(){
+  hoverCard.classList.remove('visible');
+  hoverCard.classList.add('hidden');
+  hoverCardTargetEl = null;
+}
+
+if(supportsHover){
+  document.addEventListener('mouseover', (e)=>{
+    const el = e.target.closest('[data-action="view-profile"]');
+    if(!el || el === hoverCardTargetEl) return;
+    clearTimeout(hoverHideTimer);
+    clearTimeout(hoverShowTimer);
+    hoverCardTargetEl = el;
+    hoverShowTimer = setTimeout(()=>{
+      if(hoverCardTargetEl === el) showHoverCard(el);
+    }, 350);
+  });
+  document.addEventListener('mouseout', (e)=>{
+    const el = e.target.closest('[data-action="view-profile"]');
+    if(!el || el !== hoverCardTargetEl) return;
+    clearTimeout(hoverShowTimer);
+    hoverHideTimer = setTimeout(hideHoverCardNow, 150);
+  });
+  document.addEventListener('scroll', hideHoverCardNow, true);
+  document.addEventListener('click', hideHoverCardNow);
+}
+
 /* ===== ver foto de perfil ampliada (com zoom) ===== */
 const photoViewerModal = document.getElementById('photo-viewer-modal');
 const photoViewerImg = document.getElementById('photo-viewer-img');
@@ -1840,13 +1952,22 @@ let mySubscribedKey = undefined; // combina setor + modo admin
    nesse nível exato (posts_private/{setor}), então ler o nó raiz de
    uma vez só pode ser negado mesmo quando cada setor individualmente
    seria permitido. Junta tudo num só array e chama onUpdate a cada
-   mudança em qualquer setor. Retorna uma função pra cancelar tudo. */
+   mudança em qualquer setor. Retorna uma função pra cancelar tudo.
+   Importante: é ESPERADO que a maioria dos setores negue a leitura
+   (só o seu próprio setor ou admin tem acesso) — isso não é um erro
+   de verdade, então usamos um handler silencioso em vez do
+   handleDbError, que mostraria um aviso vermelho assustador toda
+   vez que a pessoa entrasse no site. */
 function subscribeSectorsMerged(basePath, sectors, onUpdate){
   const bucket = {};
+  const silentDenyHandler = (err)=>{
+    const isPermissionDenied = err && (err.code === 'PERMISSION_DENIED' || /permission_denied/i.test(err.message || ''));
+    if(!isPermissionDenied) handleDbError(err);
+  };
   const unsubs = sectors.map(sector => onValue(ref(db, basePath+'/'+sector), snap => {
     bucket[sector] = objToArray(snap.val(), sector);
     onUpdate(Object.values(bucket).flat());
-  }, handleDbError));
+  }, silentDenyHandler));
   return () => unsubs.forEach(u => u && u());
 }
 
