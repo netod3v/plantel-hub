@@ -19,34 +19,40 @@ html[data-theme="dark"]{
   --sage:#1C2E23; --parchment:#0F1813; --gold:#D9AE68; --gold-l:#3B2E17;
   --paper:#16241C; --danger:#E0796A; --border:#24352C; --text-2:#9DB3A4; --text-3:#6D8577;
 }
+html[data-theme="black"]{
+  color-scheme: dark;
+  --ink:#EAFBEF; --forest:#22C55E; --forest-d:#16A34A; --moss:#4ADE80;
+  --sage:#0B1F12; --parchment:#000000; --gold:#F2C265; --gold-l:#2A2210;
+  --paper:#0A0A0A; --danger:#FF6B5B; --border:#1C2620; --text-2:#7FA08C; --text-3:#4C6157;
+}
 /* corrige texto preto em modo escuro no autofill do navegador (login/cadastro) */
-html[data-theme="dark"] input:-webkit-autofill,
-html[data-theme="dark"] input:-webkit-autofill:hover,
-html[data-theme="dark"] input:-webkit-autofill:focus,
-html[data-theme="dark"] input:-webkit-autofill:active{
+html[data-theme="dark"], html[data-theme="black"] input:-webkit-autofill,
+html[data-theme="dark"], html[data-theme="black"] input:-webkit-autofill:hover,
+html[data-theme="dark"], html[data-theme="black"] input:-webkit-autofill:focus,
+html[data-theme="dark"], html[data-theme="black"] input:-webkit-autofill:active{
   -webkit-text-fill-color: var(--ink) !important;
   -webkit-box-shadow: 0 0 0px 1000px var(--paper) inset !important;
   box-shadow: 0 0 0px 1000px var(--paper) inset !important;
   caret-color: var(--ink);
   transition: background-color 9999s ease-in-out 0s;
 }
-html[data-theme="dark"] body,
-html[data-theme="dark"] .preview-card,
-html[data-theme="dark"] .card,
-html[data-theme="dark"] .social-link,
-html[data-theme="dark"] input.field,
-html[data-theme="dark"] .btn,
-html[data-theme="dark"] .post-text,
-html[data-theme="dark"] .post-author,
-html[data-theme="dark"] .item-text,
-html[data-theme="dark"] .item-meta,
-html[data-theme="dark"] .section-head span,
-html[data-theme="dark"] .preview-sub,
-html[data-theme="dark"] .icon-btn{
+html[data-theme="dark"], html[data-theme="black"] body,
+html[data-theme="dark"], html[data-theme="black"] .preview-card,
+html[data-theme="dark"], html[data-theme="black"] .card,
+html[data-theme="dark"], html[data-theme="black"] .social-link,
+html[data-theme="dark"], html[data-theme="black"] input.field,
+html[data-theme="dark"], html[data-theme="black"] .btn,
+html[data-theme="dark"], html[data-theme="black"] .post-text,
+html[data-theme="dark"], html[data-theme="black"] .post-author,
+html[data-theme="dark"], html[data-theme="black"] .item-text,
+html[data-theme="dark"], html[data-theme="black"] .item-meta,
+html[data-theme="dark"], html[data-theme="black"] .section-head span,
+html[data-theme="dark"], html[data-theme="black"] .preview-sub,
+html[data-theme="dark"], html[data-theme="black"] .icon-btn{
   color:var(--ink);
 }
-html[data-theme="dark"] input.field,
-html[data-theme="dark"] select.field{
+html[data-theme="dark"], html[data-theme="black"] input.field,
+html[data-theme="dark"], html[data-theme="black"] select.field{
   background:rgba(255,255,255,.04);
 }
 *{box-sizing:border-box;}
@@ -73,6 +79,10 @@ header{padding:36px 0 26px;}
 .icon-btn .icon-b{display:none;}
 .icon-btn.on .icon-a{display:none;}
 .icon-btn.on .icon-b{display:block;}
+#theme-btn .icon-c{display:none;}
+#theme-btn.theme-black .icon-a,
+#theme-btn.theme-black .icon-b{display:none;}
+#theme-btn.theme-black .icon-c{display:block;}
 
 .preview-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:24px;}
 .preview-card{
@@ -218,7 +228,7 @@ header{padding:36px 0 26px;}
   display:flex;align-items:center;justify-content:center;margin-right:6px;
 }
 .dm-conversation-remove:hover{background:#F6E4E0;color:var(--danger);}
-html[data-theme="dark"] .dm-conversation-remove:hover{background:rgba(224,121,106,.18);}
+html[data-theme="dark"], html[data-theme="black"] .dm-conversation-remove:hover{background:rgba(224,121,106,.18);}
 .dm-conversation-remove svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;}
 .dm-thread-box{height:78vh;max-height:640px;}
 .dm-thread-box .modal-head{gap:8px;}
@@ -690,9 +700,10 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
         </div>
       </div>
       <div class="header-actions">
-        <button class="icon-btn" id="theme-btn" aria-label="Alternar modo escuro">
+        <button class="icon-btn" id="theme-btn" aria-label="Alternar tema">
           <svg class="icon-a" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.5 0-1-.1-1.5A7 7 0 0 1 12 3z"/></svg>
           <svg class="icon-b" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8L6 18M18 6l1.8-1.8"/></svg>
+          <svg class="icon-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"/></svg>
         </button>
         <button class="icon-btn" id="fullscreen-btn" aria-label="Alternar tela cheia">
           <svg class="icon-a" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
@@ -708,6 +719,9 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
         </button>
         <button class="icon-btn" id="profile-btn" aria-label="Meu perfil">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>
+        </button>
+        <button class="icon-btn" id="support-btn" aria-label="Suporte / ajuda">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2 1.8-2 3.5"/><circle cx="12" cy="16.6" r="0.6" fill="currentColor" stroke="none"/></svg>
         </button>
         <button class="icon-btn" id="logout-btn" aria-label="Sair">
           <svg viewBox="0 0 24 24"><path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3M16 17l5-5-5-5M21 12H9"/></svg>
@@ -753,6 +767,30 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
       </div>
       <div class="modal-body">
         <div id="online-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="support-modal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <div>
+          <strong>Suporte</strong>
+          <span>Precisa de ajuda com o Plantel Hub?</span>
+        </div>
+        <button class="modal-close" id="support-modal-close" type="button" aria-label="Fechar">
+          <svg viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <a class="social-link" href="https://mail.google.com/mail/?view=cm&fs=1&to=plantelduvidas@gmail.com&su=Suporte%20Plantel%20Hub" target="_blank" rel="noopener">
+          <div><strong>E-mail</strong><span>plantelduvidas@gmail.com</span></div>
+          <span>↗</span>
+        </a>
+        <a class="social-link" href="https://www.instagram.com/planteldeduvidas/" target="_blank" rel="noopener" style="margin-top:8px;" data-insta-name="Plantel Dúvidas" data-insta-user="planteldeduvidas">
+          <div><strong>Instagram</strong><span>@planteldeduvidas</span></div>
+          <span>↗</span>
+        </a>
       </div>
     </div>
   </div>
@@ -1007,7 +1045,7 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
 
   <footer>
     <span>Plantel Hub · comunidade de estudos</span>
-    <span>planteldeduvidas@gmail.com</span>
+    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=plantelduvidas@gmail.com" target="_blank" rel="noopener" style="color:inherit;">plantelduvidas@gmail.com</a>
   </footer>
 
 </div>
@@ -1717,18 +1755,24 @@ function onSectionDragEnd(){
   dragPlaceholder = null;
 }
 
-/* ===== tema (claro/escuro) ===== */
+/* ===== tema (claro / escuro / preto) ===== */
 const THEME_KEY = 'plantel_theme';
+const THEME_CYCLE = ['light', 'dark', 'black'];
+const THEME_LABELS = { light: 'Modo claro', dark: 'Modo escuro', black: 'Modo preto' };
 const themeBtn = document.getElementById('theme-btn');
 function applyTheme(theme){
+  if(!THEME_CYCLE.includes(theme)) theme = 'light';
   document.documentElement.setAttribute('data-theme', theme);
-  themeBtn.classList.toggle('on', theme === 'dark');
+  themeBtn.classList.toggle('on', theme === 'dark' || theme === 'black');
+  themeBtn.classList.toggle('theme-black', theme === 'black');
+  themeBtn.setAttribute('aria-label', 'Tema: ' + THEME_LABELS[theme] + ' (clique pra trocar)');
   localStorage.setItem(THEME_KEY, theme);
 }
 applyTheme(localStorage.getItem(THEME_KEY) || 'light');
 themeBtn.addEventListener('click', ()=>{
   const current = document.documentElement.getAttribute('data-theme');
-  applyTheme(current === 'dark' ? 'light' : 'dark');
+  const idx = THEME_CYCLE.indexOf(current);
+  applyTheme(THEME_CYCLE[(idx + 1) % THEME_CYCLE.length]);
 });
 
 /* ===== tela cheia ===== */
@@ -1841,6 +1885,17 @@ onlineBtn.addEventListener('click', openOnlineModal);
 onlineModalClose.addEventListener('click', closeOnlineModal);
 onlineModal.addEventListener('click', (e)=>{ if(e.target === onlineModal) closeOnlineModal(); });
 document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !onlineModal.classList.contains('hidden')) closeOnlineModal(); });
+
+/* ===== suporte ===== */
+const supportBtn = document.getElementById('support-btn');
+const supportModal = document.getElementById('support-modal');
+const supportModalClose = document.getElementById('support-modal-close');
+function openSupportModal(){ supportModal.classList.remove('hidden'); }
+function closeSupportModal(){ supportModal.classList.add('hidden'); }
+supportBtn.addEventListener('click', openSupportModal);
+supportModalClose.addEventListener('click', closeSupportModal);
+supportModal.addEventListener('click', (e)=>{ if(e.target === supportModal) closeSupportModal(); });
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !supportModal.classList.contains('hidden')) closeSupportModal(); });
 
 /* ===== perfil (nome + setor/time) =====
    Fica salvo em users/{uid} e é usado pra identificar a pessoa em
