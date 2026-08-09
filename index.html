@@ -56,6 +56,9 @@ html[data-theme="dark"], html[data-theme="black"] select.field{
   background:rgba(255,255,255,.04);
 }
 *{box-sizing:border-box;}
+/* utilitário genérico: qualquer elemento com essa classe some,
+   independente de já ter uma regra própria de #id.hidden ou não */
+.hidden{display:none !important;}
 html{transition:background .15s ease;}
 body{margin:0;font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink);-webkit-font-smoothing:antialiased;transition:background .15s ease,color .15s ease;}
 h1,h2,h3{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.01em;margin:0;}
@@ -256,6 +259,10 @@ html[data-theme="dark"], html[data-theme="black"] .dm-conversation-remove:hover{
   font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--forest);color:#fff;
   margin-left:6px;vertical-align:middle;display:inline-block;
 }
+.support-tag{
+  font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:#F2C230;color:#5A4600;
+  margin-left:6px;vertical-align:middle;display:inline-block;
+}
 .banned-tag{
   font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--danger);color:#fff;
   margin-left:6px;vertical-align:middle;display:inline-block;
@@ -295,6 +302,14 @@ textarea.field:focus{border-color:var(--moss);}
   background:var(--paper);color:var(--ink);font-size:13px;font-weight:600;padding:10px 14px;border-radius:10px;border:1px solid var(--border);z-index:700;box-shadow:0 8px 26px rgba(0,0,0,.14);display:flex;gap:12px;align-items:center;
 }
 .forget-toast.hidden{display:none;}
+.success-toast{
+  position:fixed;left:50%;bottom:20px;transform:translate(-50%,0);max-width:90%;
+  background:var(--forest);color:#fff;font-size:13px;font-weight:700;padding:10px 16px;border-radius:10px;
+  z-index:700;box-shadow:0 8px 26px rgba(0,0,0,.18);display:flex;gap:9px;align-items:center;
+  animation:success-toast-in .18s ease;
+}
+.success-toast.hidden{display:none;}
+@keyframes success-toast-in{ from{opacity:0;transform:translate(-50%,6px);} to{opacity:1;transform:translate(-50%,0);} }
 .chip-pending{opacity:.45;filter:grayscale(.4);}
 .social-link strong{font-size:13px;display:block;}
 .social-link span{font-size:11px;color:var(--text-2);} 
@@ -687,6 +702,10 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
     <div id="preview-clear-msg">Preview limpo</div>
     <button id="preview-clear-undo" class="btn-ghost">Desfazer</button>
   </div>
+  <div id="success-toast" class="success-toast hidden" aria-live="polite">
+    <svg viewBox="0 0 24 24" width="16" height="16"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span id="success-toast-msg">Salvo!</span>
+  </div>
 
 <div class="wrap hidden" id="wrap-app">
 
@@ -783,8 +802,9 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
         </button>
       </div>
       <div class="modal-body">
-        <a class="social-link" href="https://mail.google.com/mail/?view=cm&fs=1&to=plantelduvidas@gmail.com&su=Suporte%20Plantel%20Hub" target="_blank" rel="noopener">
-          <div><strong>E-mail</strong><span>plantelduvidas@gmail.com</span></div>
+        <div id="support-people-list"></div>
+        <a class="social-link" href="https://mail.google.com/mail/?view=cm&fs=1&to=planteldeduvidas@gmail.com&su=Suporte%20Plantel%20Hub" target="_blank" rel="noopener" style="margin-top:8px;">
+          <div><strong>E-mail</strong><span>planteldeduvidas@gmail.com</span></div>
           <span>↗</span>
         </a>
         <a class="social-link" href="https://www.instagram.com/planteldeduvidas/" target="_blank" rel="noopener" style="margin-top:8px;" data-insta-name="Plantel Dúvidas" data-insta-user="planteldeduvidas">
@@ -901,6 +921,7 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
         </div>
         <p class="view-profile-bio" id="view-profile-bio"></p>
         <button class="btn btn-primary" id="view-profile-message-btn" type="button" style="margin-top:14px;">Mandar mensagem</button>
+        <button class="btn" id="view-profile-support-btn" type="button" style="margin-top:10px;width:100%;display:none;"></button>
         <button class="btn" id="view-profile-ban-btn" type="button" style="margin-top:10px;width:100%;display:none;"></button>
       </div>
     </div>
@@ -1045,7 +1066,7 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
 
   <footer>
     <span>Plantel Hub · comunidade de estudos</span>
-    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=plantelduvidas@gmail.com" target="_blank" rel="noopener" style="color:inherit;">plantelduvidas@gmail.com</a>
+    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=planteldeduvidas@gmail.com" target="_blank" rel="noopener" style="color:inherit;">planteldeduvidas@gmail.com</a>
   </footer>
 
 </div>
@@ -1113,6 +1134,15 @@ function showDbError(message){
   dbErrorToast.classList.remove('hidden');
   clearTimeout(dbErrorTimer);
   dbErrorTimer = setTimeout(()=> dbErrorToast.classList.add('hidden'), 6000);
+}
+const successToast = document.getElementById('success-toast');
+const successToastMsg = document.getElementById('success-toast-msg');
+let successToastTimer = null;
+function showSuccessToast(message){
+  successToastMsg.textContent = message || 'Salvo!';
+  successToast.classList.remove('hidden');
+  clearTimeout(successToastTimer);
+  successToastTimer = setTimeout(()=> successToast.classList.add('hidden'), 2500);
 }
 let loginMode = 'login';
 
@@ -1266,6 +1296,7 @@ function showSelectedAccountPreview(info){
   const avatar = document.getElementById('selected-account-avatar');
   const nameEl = document.getElementById('selected-account-name');
   const sectorEl = document.getElementById('selected-account-sector');
+  const emailEl = document.getElementById('login-email');
   // nome/foto do cache (dados locais) + tenta aprimorar com setor do estado se UID disponível
   // guarda dados no dataset para permitir undo/restore
   preview.dataset.uid = info.uid || '';
@@ -1279,6 +1310,9 @@ function showSelectedAccountPreview(info){
   if(info.uid && state && state.users && state.users[info.uid]) sector = state.users[info.uid].sector || '';
   sectorEl.textContent = sector || '';
   preview.style.display = 'flex';
+  // esconde o campo de e-mail enquanto o cartão da conta estiver visível,
+  // pra não sobrar aquela faixinha vazia espremida do lado do avatar
+  if(emailEl) emailEl.style.display = 'none';
 }
 
 function _ensurePreviewUndoHandler(){
@@ -1290,7 +1324,7 @@ function _ensurePreviewUndoHandler(){
     if(window._pendingPreviewUndo && window._pendingPreviewUndo.prev){
       const p = window._pendingPreviewUndo.prev;
       showSelectedAccountPreview(p);
-      const emailEl = document.getElementById('login-email'); if(emailEl) { emailEl.value = p.email || ''; emailEl.focus(); }
+      const emailEl = document.getElementById('login-email'); if(emailEl) { emailEl.value = p.email || ''; }
       clearTimeout(window._pendingPreviewUndo.timer);
       window._pendingPreviewUndo = null;
     }
@@ -1318,7 +1352,7 @@ function clearSelectedAccountPreview(silent){
   avatar.innerHTML = '?';
   nameEl.textContent = '';
   sectorEl.textContent = '';
-  if(emailEl){ emailEl.value = ''; }
+  if(emailEl){ emailEl.value = ''; emailEl.style.display = ''; }
   if(silent) return; // ex: ao trocar pro modo "criar conta" — não precisa de toast/desfazer aqui
   // mostra toast de desfazer
   const pToast = document.getElementById('preview-clear-toast');
@@ -1336,18 +1370,8 @@ function clearSelectedAccountPreview(silent){
 // wiring: botão de limpar preview
 const clearPreviewBtn = document.getElementById('selected-account-clear');
 if(clearPreviewBtn) clearPreviewBtn.addEventListener('click', () => clearSelectedAccountPreview());
-// desfazer limpeza do preview
-document.getElementById('preview-clear-undo')?.addEventListener('click', ()=>{
-  const t = document.getElementById('preview-clear-toast'); if(t) t.classList.add('hidden');
-  if(window._pendingPreviewUndo && window._pendingPreviewUndo.prev){
-    const p = window._pendingPreviewUndo.prev;
-    // restaura campos
-    showSelectedAccountPreview(p);
-    const emailEl = document.getElementById('login-email'); if(emailEl) { emailEl.value = p.email || ''; emailEl.focus(); }
-    clearTimeout(window._pendingPreviewUndo.timer);
-    window._pendingPreviewUndo = null;
-  }
-});
+// obs: o listener de "desfazer" já é conectado dentro de _ensurePreviewUndoHandler()
+// (chamada por clearSelectedAccountPreview), então não duplicamos aqui.
 
 function animateAccountChips(){
   const drawer = document.getElementById('account-drawer-list');
@@ -1890,7 +1914,23 @@ document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !onlineModa
 const supportBtn = document.getElementById('support-btn');
 const supportModal = document.getElementById('support-modal');
 const supportModalClose = document.getElementById('support-modal-close');
-function openSupportModal(){ supportModal.classList.remove('hidden'); }
+function renderSupportPeopleList(){
+  const list = document.getElementById('support-people-list');
+  const supportUsers = Object.entries(state.users).filter(([uid, p]) => p && p.isSupport);
+  if(!supportUsers.length){ list.innerHTML = ''; return; }
+  list.innerHTML = supportUsers.map(([uid, p])=>{
+    const info = { name: p.name || 'Alguém', sector: p.sector, photo: p.photo, uid };
+    return `
+    <button type="button" class="social-link" data-action="message-support" data-uid="${uid}" style="width:100%;text-align:left;cursor:pointer;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        ${avatarHtml(info, true)}
+        <div><strong>${escapeHtml(info.name)}</strong><span>Mandar mensagem direta</span></div>
+      </div>
+      <span>↗</span>
+    </button>`;
+  }).join('');
+}
+function openSupportModal(){ renderSupportPeopleList(); supportModal.classList.remove('hidden'); }
 function closeSupportModal(){ supportModal.classList.add('hidden'); }
 supportBtn.addEventListener('click', openSupportModal);
 supportModalClose.addEventListener('click', closeSupportModal);
@@ -2014,6 +2054,7 @@ profileSaveBtn.addEventListener('click', ()=>{
     profileOnboarding = false;
     pendingPhoto = undefined;
     profileModal.classList.add('hidden');
+    showSuccessToast('Perfil salvo!');
   }).catch(err=>{
     profileError.textContent = 'Não foi possível salvar. Tente de novo.';
     handleDbError(err);
@@ -2030,6 +2071,7 @@ const viewProfileSector = document.getElementById('view-profile-sector');
 const viewProfileBio = document.getElementById('view-profile-bio');
 const viewProfileMessageBtn = document.getElementById('view-profile-message-btn');
 const viewProfileBanBtn = document.getElementById('view-profile-ban-btn');
+const viewProfileSupportBtn = document.getElementById('view-profile-support-btn');
 
 function openViewProfile(uid, fallbackName, showBack){
   viewingProfileUid = uid;
@@ -2038,6 +2080,7 @@ function openViewProfile(uid, fallbackName, showBack){
   const sector = profile && profile.sector ? profile.sector : null;
   const admin = !!(profile && profile.isAdmin);
   const banned = !!(profile && profile.isBanned);
+  const support = !!(profile && profile.isSupport);
   const photo = profile && profile.photo ? profile.photo : null;
   const bio = profile && profile.bio
     ? profile.bio
@@ -2045,7 +2088,7 @@ function openViewProfile(uid, fallbackName, showBack){
   if(photo){ viewProfilePhoto.innerHTML = `<img src="${photo}" alt="">`; viewProfilePhoto.classList.add('has-photo'); }
   else { viewProfilePhoto.textContent = initials(name); viewProfilePhoto.classList.remove('has-photo'); }
   viewProfileName.textContent = name;
-  viewProfileSector.innerHTML = sectorTagHtml(sector) + adminTagHtml(admin) + bannedTagHtml(banned);
+  viewProfileSector.innerHTML = sectorTagHtml(sector) + adminTagHtml(admin) + supportTagHtml(support) + bannedTagHtml(banned);
   viewProfileBio.textContent = bio;
   viewProfileMessageBtn.style.display = (uid && uid !== currentUid) ? '' : 'none';
   viewProfileBack.style.display = showBack ? '' : 'none';
@@ -2057,6 +2100,15 @@ function openViewProfile(uid, fallbackName, showBack){
     viewProfileBanBtn.className = banned ? 'btn' : 'btn btn-danger';
   } else {
     viewProfileBanBtn.style.display = 'none';
+  }
+
+  const canManageSupport = isAdmin() && uid && uid !== currentUid;
+  if(canManageSupport){
+    viewProfileSupportBtn.style.display = '';
+    viewProfileSupportBtn.textContent = support ? 'Remover marca de suporte' : 'Marcar como suporte';
+    viewProfileSupportBtn.className = 'btn';
+  } else {
+    viewProfileSupportBtn.style.display = 'none';
   }
   viewProfileModal.classList.remove('hidden');
 }
@@ -2082,13 +2134,14 @@ function fillHoverCard(uid, fallbackName){
   const sector = profile && profile.sector ? profile.sector : null;
   const admin = !!(profile && profile.isAdmin);
   const banned = !!(profile && profile.isBanned);
+  const support = !!(profile && profile.isSupport);
   const photo = profile && profile.photo ? profile.photo : null;
   const bio = profile && profile.bio ? profile.bio : 'Ainda sem descrição no perfil.';
   const online = !!(uid && state.presence[uid] && state.presence[uid].online);
 
   hoverCardAvatar.innerHTML = photo ? `<img src="${photo}" alt="">` : '';
   if(!photo) hoverCardAvatar.textContent = initials(name);
-  hoverCardName.innerHTML = `${escapeHtml(name)}${adminTagHtml(admin)}${bannedTagHtml(banned)}`;
+  hoverCardName.innerHTML = `${escapeHtml(name)}${adminTagHtml(admin)}${supportTagHtml(support)}${bannedTagHtml(banned)}`;
   hoverCardStatus.innerHTML = `<span class="status-dot ${online?'on':''}"></span>${online ? 'online agora' : 'offline'}`;
   hoverCardBio.textContent = bio;
   hoverCardSector.innerHTML = sector ? sectorTagHtml(sector) : '';
@@ -2254,6 +2307,21 @@ viewProfileBanBtn.addEventListener('click', ()=>{
   );
   if(!ok) return;
   update(ref(db, 'users/'+viewingProfileUid), { isBanned: !banned }).then(()=>{
+    closeViewProfile();
+  }).catch(handleDbError);
+});
+viewProfileSupportBtn.addEventListener('click', ()=>{
+  if(!viewingProfileUid || !isAdmin()) return;
+  const profile = state.users[viewingProfileUid] || {};
+  const support = !!profile.isSupport;
+  const name = viewProfileName.textContent || 'essa pessoa';
+  const ok = confirm(
+    support
+      ? `Remover a marca de suporte de ${name}?`
+      : `Marcar ${name} como suporte? A etiqueta amarela "suporte" vai aparecer no nome dela em todo o site, e ela passa a aparecer como opção de contato no botão de Suporte.`
+  );
+  if(!ok) return;
+  update(ref(db, 'users/'+viewingProfileUid), { isSupport: !support }).then(()=>{
     closeViewProfile();
   }).catch(handleDbError);
 });
@@ -2703,7 +2771,8 @@ function authorInfo(item){
     sector: profile && profile.sector ? profile.sector : null,
     bio: profile && profile.bio ? profile.bio : null,
     photo: profile && profile.photo ? profile.photo : null,
-    isAdmin: !!(profile && profile.isAdmin)
+    isAdmin: !!(profile && profile.isAdmin),
+    isSupport: !!(profile && profile.isSupport)
   };
 }
 function avatarHtml(info, sm){
@@ -2729,6 +2798,9 @@ function sectorTagHtml(sector){
 }
 function adminTagHtml(flag){
   return flag ? `<span class="admin-tag" title="Admin: pode moderar e apagar conteúdo de qualquer setor">🛡 admin</span>` : '';
+}
+function supportTagHtml(flag){
+  return flag ? `<span class="support-tag" title="Fala com essa pessoa se precisar de ajuda com o Plantel Hub">💬 suporte</span>` : '';
 }
 function bannedTagHtml(flag){
   return flag ? `<span class="banned-tag" title="Essa conta foi banida e não consegue mais entrar">🚫 banido</span>` : '';
@@ -2770,7 +2842,7 @@ function render(){
       <div class="post-head">
         ${avatarHtml(pInfo)}
         <div>
-          <div class="post-author"><span${authorNameAttr(pInfo)}>${escapeHtml(pInfo.name)}</span>${sectorTagHtml(pInfo.sector)}${adminTagHtml(pInfo.isAdmin)}${visibilityTagHtml(p._sector)} <span class="post-time">· ${timeAgo(p.ts)}</span></div>
+          <div class="post-author"><span${authorNameAttr(pInfo)}>${escapeHtml(pInfo.name)}</span>${sectorTagHtml(pInfo.sector)}${adminTagHtml(pInfo.isAdmin)}${supportTagHtml(pInfo.isSupport)}${visibilityTagHtml(p._sector)} <span class="post-time">· ${timeAgo(p.ts)}</span></div>
         </div>
       </div>
       ${isEditing ? `
@@ -2807,7 +2879,7 @@ function render(){
           <div class="comment">
             ${avatarHtml(cInfo, true)}
             <div class="comment-body">
-              <div class="comment-author"><span${authorNameAttr(cInfo)}>${escapeHtml(cInfo.name)}</span>${sectorTagHtml(cInfo.sector)}${adminTagHtml(cInfo.isAdmin)} <span class="post-time">· ${timeAgo(c.ts)}</span></div>
+              <div class="comment-author"><span${authorNameAttr(cInfo)}>${escapeHtml(cInfo.name)}</span>${sectorTagHtml(cInfo.sector)}${adminTagHtml(cInfo.isAdmin)}${supportTagHtml(cInfo.isSupport)} <span class="post-time">· ${timeAgo(c.ts)}</span></div>
               <div class="comment-text">${escapeHtml(c.text)}</div>
               <div class="comment-actions">
                 <button class="comment-like ${cLiked?'is-liked':''}" data-action="like-comment" data-post="${p.id}" data-id="${c.id}">
@@ -2825,7 +2897,7 @@ function render(){
                   <div class="reply">
                     ${avatarHtml(rInfo, true)}
                     <div class="reply-body">
-                      <div class="reply-author"><span${authorNameAttr(rInfo)}>${escapeHtml(rInfo.name)}</span>${sectorTagHtml(rInfo.sector)}${adminTagHtml(rInfo.isAdmin)} <span class="post-time">· ${timeAgo(r.ts)}</span></div>
+                      <div class="reply-author"><span${authorNameAttr(rInfo)}>${escapeHtml(rInfo.name)}</span>${sectorTagHtml(rInfo.sector)}${adminTagHtml(rInfo.isAdmin)}${supportTagHtml(rInfo.isSupport)} <span class="post-time">· ${timeAgo(r.ts)}</span></div>
                       <div class="reply-text">${escapeHtml(r.text)}</div>
                     </div>
                   </div>`;}).join('')}
@@ -2861,7 +2933,7 @@ function render(){
       <div class="check ${m.done?'done':''}" data-action="toggle-meta" data-id="${m.id}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(m.text)}</div>
-        <div class="item-meta"><span${authorNameAttr(mInfo)}>${escapeHtml(mInfo.name)}</span>${sectorTagHtml(mInfo.sector)}${adminTagHtml(mInfo.isAdmin)}${visibilityTagHtml(m._sector)} · ${timeAgo(m.ts)}</div>
+        <div class="item-meta"><span${authorNameAttr(mInfo)}>${escapeHtml(mInfo.name)}</span>${sectorTagHtml(mInfo.sector)}${adminTagHtml(mInfo.isAdmin)}${supportTagHtml(mInfo.isSupport)}${visibilityTagHtml(m._sector)} · ${timeAgo(m.ts)}</div>
       </div>
       <button class="item-remove" data-action="remove-meta" data-id="${m.id}">remover</button>
     </div>`;}).join('') : `<div class="empty">Nenhuma meta ainda.</div>`;
@@ -2870,7 +2942,12 @@ function render(){
   const openDemandas = visibleDemandas.filter(d=>!d.done).length;
   document.getElementById('demanda-count').textContent = openDemandas + (openDemandas===1?' pendente':' pendentes');
   const demandaDone = visibleDemandas.length - openDemandas;
-  const demandaPct = visibleDemandas.length ? Math.round((demandaDone/visibleDemandas.length)*100) : 0;
+  // "fazendo" conta como progresso parcial (50%) na barra, não só feito/não feito
+  const demandaWeighted = visibleDemandas.reduce((sum, d)=>{
+    const s = itemStatus(d);
+    return sum + (s === 'done' ? 1 : s === 'doing' ? 0.5 : 0);
+  }, 0);
+  const demandaPct = visibleDemandas.length ? Math.round((demandaWeighted/visibleDemandas.length)*100) : 0;
   document.getElementById('demanda-progress-fill').style.width = demandaPct + '%';
   document.getElementById('demanda-progress-label').textContent = `${demandaDone}/${visibleDemandas.length} concluídas (${demandaPct}%)`;
   document.getElementById('demanda-list').innerHTML = visibleDemandas.length ? visibleDemandas.map(d=>{
@@ -2880,7 +2957,7 @@ function render(){
       <div class="check ${d.done?'done':''}" data-action="toggle-demanda" data-id="${d.id}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(d.text)}</div>
-        <div class="item-meta"><span${authorNameAttr(dInfo)}>${escapeHtml(dInfo.name)}</span>${sectorTagHtml(dInfo.sector)}${adminTagHtml(dInfo.isAdmin)}${visibilityTagHtml(d._sector)} · ${timeAgo(d.ts)}</div>
+        <div class="item-meta"><span${authorNameAttr(dInfo)}>${escapeHtml(dInfo.name)}</span>${sectorTagHtml(dInfo.sector)}${adminTagHtml(dInfo.isAdmin)}${supportTagHtml(dInfo.isSupport)}${visibilityTagHtml(d._sector)} · ${timeAgo(d.ts)}</div>
       </div>
       <button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>
     </div>`;}).join('') : `<div class="empty">Nenhuma demanda ainda.</div>`;
@@ -3105,6 +3182,11 @@ document.addEventListener('click', (e)=>{
     const otherUid = t.dataset.uid;
     const c = dmConversations[otherUid] || {};
     openDmThread(otherUid, c.name, c.photo);
+  } else if(action === 'message-support'){
+    const otherUid = t.dataset.uid;
+    const p = state.users[otherUid] || {};
+    closeSupportModal();
+    openDmThread(otherUid, p.name || 'Suporte', p.photo || null);
   } else if(action === 'delete-dm-list'){
     const otherUid = t.dataset.uid;
     const c = dmConversations[otherUid] || {};
