@@ -288,6 +288,31 @@ textarea.field{
   background:var(--paper);outline:none;width:100%;color:inherit;font-family:inherit;resize:vertical;min-height:64px;
 }
 textarea.field:focus{border-color:var(--moss);}
+.note-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
+.note-toolbar .btn{padding:8px 12px;}
+.note-status{font-size:12px;color:var(--text-2);}
+.note-card{position:fixed;right:20px;bottom:20px;width:320px;max-height:68px;overflow:hidden;z-index:400;border-radius:22px;background:var(--paper);border:1px solid var(--border);box-shadow:0 22px 50px rgba(0,0,0,.16);transition:all .24s ease;}
+.note-card.expanded{width:min(92vw,420px);max-height:calc(100vh - 40px);}
+.note-card-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:var(--forest);color:#fff;cursor:pointer;}
+.note-card-header strong{font-size:14px;}
+.note-card-label{font-size:12px;color:rgba(255,255,255,.82);margin-top:4px;}
+.note-card-body{display:none;padding:14px 16px;border-top:1px solid var(--border);background:var(--paper);}
+.note-card.expanded .note-card-body{display:block;}
+.note-tabs{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.note-tabs-list{display:flex;flex:1;flex-wrap:wrap;gap:8px;}
+.note-tab-button{padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--paper);color:var(--ink);font-size:12px;cursor:grab;display:flex;align-items:center;gap:8px;position:relative;}
+.note-tab-button.active{background:var(--forest);color:#fff;border-color:var(--forest);}
+.note-tab-button:hover{border-color:var(--moss);}
+.note-tab-button.dragging{opacity:.6;cursor:grabbing;}
+.note-tab-placeholder{border:1px dashed var(--moss);border-radius:999px;background:var(--sage);min-width:120px;min-height:36px;flex:0 0 auto;}
+.note-tab-delete{width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;}
+.note-tab-delete:hover{background:rgba(0,0,0,.14);}
+.note-tab-meta{margin-bottom:12px;}
+#note-tab-title-input{width:100%;}
+#note-card-toggle{width:36px;height:36px;border-radius:12px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;}
+#note-card-toggle svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;transition:transform .18s ease;}
+.note-card.expanded #note-card-toggle svg{transform:rotate(180deg);}
+#note-textarea{min-height:220px;}
 .char-count{font-size:11px;color:var(--text-3);text-align:right;margin:4px 0 14px;}
 
 /* aviso de erro do banco */
@@ -1062,6 +1087,33 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
       </div>
     </div>
   </section>
+
+  </div>
+
+  <div id="note-card" class="note-card" aria-expanded="false">
+    <div class="note-card-header" id="note-card-header" role="button" aria-label="Abrir bloco de notas" tabindex="0">
+      <div>
+        <strong>Bloco de notas</strong>
+        <div class="note-card-label" id="note-card-label">Notas privadas só para você</div>
+      </div>
+      <button type="button" class="icon-btn btn-ghost" id="note-card-toggle" aria-label="Alternar bloco de notas">
+        <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </div>
+    <div class="note-card-body">
+      <div class="note-tabs">
+        <div class="note-tabs-list" id="note-tabs-list"></div>
+        <button type="button" class="btn btn-outline-accent" id="add-note-tab-btn">+ Nova aba</button>
+      </div>
+      <div class="note-tab-meta">
+        <input class="field" id="note-tab-title-input" placeholder="Título da aba" maxlength="50">
+      </div>
+      <div class="note-toolbar">
+        <span class="note-status" id="note-save-status">Suas notas são salvas automaticamente.</span>
+        <button type="button" class="btn btn-ghost" id="clear-notes-btn">Limpar notas</button>
+      </div>
+      <textarea class="field" id="note-textarea" placeholder="Escreva aqui suas notas privadas..."></textarea>
+    </div>
   </div>
 
   <footer>
@@ -1112,8 +1164,19 @@ const loginSubmit = document.getElementById('login-submit');
 const loginToggle = document.getElementById('login-toggle');
 const forgotPasswordLink = document.getElementById('forgot-password-link');
 const forgotPasswordMsg = document.getElementById('forgot-password-msg');
+const noteTextarea = document.getElementById('note-textarea');
+const noteTabsList = document.getElementById('note-tabs-list');
+const addNoteTabBtn = document.getElementById('add-note-tab-btn');
+const noteTabTitleInput = document.getElementById('note-tab-title-input');
+const clearNotesBtn = document.getElementById('clear-notes-btn');
+const noteSaveStatus = document.getElementById('note-save-status');
+const noteCard = document.getElementById('note-card');
+const noteCardHeader = document.getElementById('note-card-header');
+const noteCardToggle = document.getElementById('note-card-toggle');
+const noteCardLabel = document.getElementById('note-card-label');
 let listenersStarted = false;
 let currentUid = null;
+let noteState = null;
 const openComments = new Set();
 const openReplies = new Set();
 const editingPosts = new Set();
@@ -1658,6 +1721,7 @@ onAuthStateChanged(auth, (user)=>{
   if(user){
     currentUid = user.uid;
     rememberAccount({ uid: user.uid, email: user.email });
+    loadUserNotes();
     loginScreen.classList.add('hidden');
     updateBodyScrollLock();
     // mostra (ou mantém) a tela de carregamento até os dados essenciais chegarem
@@ -1668,6 +1732,8 @@ onAuthStateChanged(auth, (user)=>{
     profileOnboardingShown = false;
     banHandled = false;
     if(listenersStarted) stopDataListeners();
+    if(noteTextarea){ noteTextarea.value = ''; }
+    if(noteSaveStatus){ noteSaveStatus.textContent = 'Suas notas são salvas automaticamente.'; }
     wrapApp.classList.add('hidden');
     loadingScreen.classList.add('hidden');
     loginScreen.classList.remove('hidden');
@@ -1707,6 +1773,241 @@ function saveSectionOrder(){
     .map(el => el.dataset.sectionId);
   localStorage.setItem(SECTION_ORDER_KEY, JSON.stringify(order));
 }
+function notesStorageKey(uid){ return `plantel_notes_${uid}`; }
+function getDefaultNoteState(){
+  return {
+    tabs: [ { id: `tab-${Date.now()}`, title: 'Nova aba', content: '' } ],
+    activeTabId: null
+  };
+}
+function getActiveTab(){
+  if(!noteState) return null;
+  return noteState.tabs.find(tab => tab.id === noteState.activeTabId) || noteState.tabs[0] || null;
+}
+function renderNoteTabs(){
+  if(!noteTabsList || !noteState) return;
+  noteTabsList.innerHTML = noteState.tabs.map(tab => {
+    const active = tab.id === noteState.activeTabId ? ' active' : '';
+    return `
+      <button type="button" class="note-tab-button${active}" data-tab-id="${tab.id}">
+        ${escapeHtml(tab.title || 'Sem título')}
+        <span class="note-tab-delete" aria-label="Excluir aba" data-delete-tab-id="${tab.id}">×</span>
+      </button>`;
+  }).join('');
+  const activeTab = getActiveTab();
+  if(noteTabTitleInput) noteTabTitleInput.value = activeTab ? activeTab.title : '';
+  if(noteTextarea) noteTextarea.value = activeTab ? activeTab.content : '';
+  if(noteCardLabel){
+    noteCardLabel.textContent = activeTab && activeTab.title ? activeTab.title : 'Notas privadas só para você';
+  }
+}
+function saveNoteState(){
+  if(!currentUid || !noteState) return;
+  try{ localStorage.setItem(notesStorageKey(currentUid), JSON.stringify(noteState)); }
+  catch(e){}
+}
+function loadUserNotes(){
+  if(!currentUid) return;
+  try{
+    const stored = localStorage.getItem(notesStorageKey(currentUid));
+    noteState = stored ? JSON.parse(stored) : getDefaultNoteState();
+  } catch(e){
+    noteState = getDefaultNoteState();
+  }
+  if(!noteState || !Array.isArray(noteState.tabs) || noteState.tabs.length === 0){
+    noteState = getDefaultNoteState();
+  }
+  if(!noteState.activeTabId || !noteState.tabs.some(tab => tab.id === noteState.activeTabId)){
+    noteState.activeTabId = noteState.tabs[0].id;
+  }
+  renderNoteTabs();
+  if(noteSaveStatus){ noteSaveStatus.textContent = 'Notas carregadas'; }
+}
+function updateActiveTabContent(){
+  const activeTab = getActiveTab();
+  if(!activeTab || !noteTextarea) return;
+  activeTab.content = noteTextarea.value;
+  saveNoteState();
+  if(noteSaveStatus){ noteSaveStatus.textContent = 'Notas salvas'; }
+}
+function updateActiveTabTitle(){
+  const activeTab = getActiveTab();
+  if(!activeTab || !noteTabTitleInput) return;
+  activeTab.title = noteTabTitleInput.value.trim() || 'Sem título';
+  saveNoteState();
+  renderNoteTabs();
+  if(noteSaveStatus){ noteSaveStatus.textContent = 'Título salvo'; }
+}
+function selectNoteTab(tabId){
+  if(!noteState || noteState.activeTabId === tabId) return;
+  const currentTab = getActiveTab();
+  if(currentTab && noteTextarea){ currentTab.content = noteTextarea.value; }
+  noteState.activeTabId = tabId;
+  saveNoteState();
+  renderNoteTabs();
+}
+function addNewNoteTab(){
+  if(!noteState) noteState = getDefaultNoteState();
+  const id = `tab-${Date.now()}`;
+  noteState.tabs.push({ id, title: `Nova aba ${noteState.tabs.length + 1}`, content: '' });
+  noteState.activeTabId = id;
+  saveNoteState();
+  renderNoteTabs();
+}
+function deleteNoteTab(tabId){
+  if(!noteState || noteState.tabs.length <= 1) return;
+  const index = noteState.tabs.findIndex(tab => tab.id === tabId);
+  if(index === -1) return;
+  const wasActive = noteState.activeTabId === tabId;
+  noteState.tabs.splice(index, 1);
+  if(wasActive){ noteState.activeTabId = noteState.tabs[0].id; }
+  saveNoteState();
+  renderNoteTabs();
+}
+function clearUserNotes(){
+  if(!noteState) return;
+  noteState = getDefaultNoteState();
+  saveNoteState();
+  renderNoteTabs();
+  if(noteSaveStatus){ noteSaveStatus.textContent = 'Notas apagadas'; }
+}
+
+let noteDragInfo = null;
+function onNoteTabPointerDown(event){
+  const deleteBtn = event.target.closest('[data-delete-tab-id]');
+  if(deleteBtn) return;
+  const tabBtn = event.target.closest('.note-tab-button');
+  if(!tabBtn) return;
+  event.preventDefault();
+  noteDragInfo = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    moved: false,
+    tabId: tabBtn.dataset.tabId,
+    originalButton: tabBtn,
+    placeholder: null,
+    currentButton: tabBtn,
+    startRect: tabBtn.getBoundingClientRect()
+  };
+  tabBtn.setPointerCapture(event.pointerId);
+  document.addEventListener('pointermove', onNoteTabPointerMove);
+  document.addEventListener('pointerup', onNoteTabPointerUp);
+}
+function startNoteTabDrag(){
+  if(!noteDragInfo) return;
+  const { originalButton, startRect } = noteDragInfo;
+  noteDragInfo.moved = true;
+  const placeholder = document.createElement('div');
+  placeholder.className = 'note-tab-placeholder';
+  placeholder.style.width = `${startRect.width}px`;
+  placeholder.style.height = `${startRect.height}px`;
+  originalButton.parentNode.insertBefore(placeholder, originalButton.nextSibling);
+  originalButton.classList.add('dragging');
+  originalButton.style.position = 'fixed';
+  originalButton.style.left = `${startRect.left}px`;
+  originalButton.style.top = `${startRect.top}px`;
+  originalButton.style.width = `${startRect.width}px`;
+  originalButton.style.zIndex = '500';
+  originalButton.style.transform = 'translate(0,0)';
+  noteDragInfo.placeholder = placeholder;
+  originalButton.parentNode.removeChild(originalButton);
+}
+function onNoteTabPointerMove(event){
+  if(!noteDragInfo) return;
+  const dx = event.clientX - noteDragInfo.startX;
+  const dy = event.clientY - noteDragInfo.startY;
+  if(!noteDragInfo.moved){
+    if(Math.hypot(dx, dy) < 8) return;
+    startNoteTabDrag();
+  }
+  if(!noteDragInfo.placeholder) return;
+  const button = noteDragInfo.currentButton;
+  button.style.transform = `translate(${dx}px, ${dy}px)`;
+  const midX = event.clientX;
+  const siblings = Array.from(noteTabsList.children).filter(el => el !== noteDragInfo.placeholder && el !== button);
+  for(const sibling of siblings){
+    const rect = sibling.getBoundingClientRect();
+    if(midX < rect.left + rect.width / 2){
+      noteTabsList.insertBefore(noteDragInfo.placeholder, sibling);
+      break;
+    }
+    if(sibling === siblings[siblings.length - 1]){
+      noteTabsList.appendChild(noteDragInfo.placeholder);
+    }
+  }
+}
+function onNoteTabPointerUp(event){
+  if(!noteDragInfo) return;
+  const { originalButton, placeholder, tabId, moved } = noteDragInfo;
+  originalButton.releasePointerCapture(event.pointerId);
+  document.removeEventListener('pointermove', onNoteTabPointerMove);
+  document.removeEventListener('pointerup', onNoteTabPointerUp);
+  if(moved && placeholder){
+    placeholder.parentNode.insertBefore(originalButton, placeholder);
+    placeholder.remove();
+    originalButton.classList.remove('dragging');
+    originalButton.style.position = '';
+    originalButton.style.left = '';
+    originalButton.style.top = '';
+    originalButton.style.width = '';
+    originalButton.style.zIndex = '';
+    originalButton.style.transform = '';
+    const targetIndex = Array.from(noteTabsList.children).indexOf(originalButton);
+    const currentIndex = noteState.tabs.findIndex(tab => tab.id === tabId);
+    if(targetIndex !== -1 && currentIndex !== -1 && targetIndex !== currentIndex){
+      const [movedTab] = noteState.tabs.splice(currentIndex, 1);
+      noteState.tabs.splice(targetIndex, 0, movedTab);
+      saveNoteState();
+      renderNoteTabs();
+    }
+  }
+  noteDragInfo = null;
+}
+
+function setNoteCardExpanded(isExpanded){
+  if(!noteCard) return;
+  noteCard.classList.toggle('expanded', isExpanded);
+  noteCard.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+  if(isExpanded && noteTextarea){
+    setTimeout(()=> noteTextarea.focus(), 120);
+  }
+}
+function toggleNoteCard(){ setNoteCardExpanded(!noteCard?.classList.contains('expanded')); }
+
+if(noteCardHeader){
+  noteCardHeader.addEventListener('click', toggleNoteCard);
+  noteCardHeader.addEventListener('keydown', (event)=>{
+    if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleNoteCard(); }
+  });
+}
+if(noteCardToggle){ noteCardToggle.addEventListener('click', (event)=>{ event.stopPropagation(); toggleNoteCard(); }); }
+if(noteTextarea){
+  noteTextarea.addEventListener('input', updateActiveTabContent);
+}
+if(noteTabTitleInput){
+  noteTabTitleInput.addEventListener('input', updateActiveTabTitle);
+}
+if(addNoteTabBtn){ addNoteTabBtn.addEventListener('click', addNewNoteTab); }
+if(noteTabsList){
+  noteTabsList.addEventListener('pointerdown', onNoteTabPointerDown);
+  noteTabsList.addEventListener('click', (event)=>{
+    const deleteBtn = event.target.closest('[data-delete-tab-id]');
+    if(deleteBtn){
+      event.stopPropagation();
+      deleteNoteTab(deleteBtn.dataset.deleteTabId);
+      return;
+    }
+    const tabBtn = event.target.closest('[data-tab-id]');
+    if(tabBtn){
+      selectNoteTab(tabBtn.dataset.tabId);
+    }
+  });
+}
+if(clearNotesBtn){
+  clearNotesBtn.addEventListener('click', (event)=>{ event.stopPropagation(); clearUserNotes(); });
+}
+
 applySavedSectionOrder();
 
 let dragEl = null, dragPlaceholder = null;
