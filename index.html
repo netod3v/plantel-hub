@@ -296,8 +296,8 @@ textarea.field:focus{border-color:var(--moss);}
 .note-card-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:var(--forest);color:#fff;cursor:pointer;}
 .note-card-header strong{font-size:14px;}
 .note-card-label{font-size:12px;color:rgba(255,255,255,.82);margin-top:4px;}
-.note-card-body{display:none;padding:14px 16px;border-top:1px solid var(--border);background:var(--paper);}
-.note-card.expanded .note-card-body{display:block;}
+.note-card-body{display:block;max-height:0;opacity:0;padding:0 14px;border-top:1px solid var(--border);background:var(--paper);overflow:hidden;transition:max-height .24s ease, opacity .24s ease, padding .24s ease;}
+.note-card.expanded .note-card-body{max-height:1000px;opacity:1;padding:14px 16px;}
 .note-tabs{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
 .note-tabs-list{display:flex;flex:1;flex-wrap:wrap;gap:8px;}
 .note-tab-button{padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--paper);color:var(--ink);font-size:12px;cursor:grab;display:flex;align-items:center;gap:8px;position:relative;}
@@ -461,7 +461,9 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .post-remove{margin-left:auto;}
 .post-remove:hover{background:#F6E4E0;color:var(--danger);}
 
-.post-comments{margin:10px 0 0 37px;padding-top:10px;border-top:1px dashed var(--border);display:flex;flex-direction:column;gap:10px;}
+.post-comments{margin:10px 0 0 37px;padding-top:0;border-top:1px dashed var(--border);display:flex;flex-direction:column;gap:10px;overflow:hidden;max-height:0;opacity:0;transform:translateY(-8px);transition:max-height .22s ease, opacity .22s ease, padding .22s ease, transform .22s ease;}
+.post-comments.open{max-height:1200px;opacity:1;padding-top:10px;transform:translateY(0);}
+.post-comments.closing{max-height:0;opacity:0;padding-top:0;transform:translateY(-8px);}
 .comment{display:flex;gap:9px;}
 .avatar-sm{width:22px;height:22px;font-size:9.5px;border-radius:6px;}
 .comment-body{flex:1;min-width:0;}
@@ -829,11 +831,11 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
       <div class="modal-body">
         <div id="support-people-list"></div>
         <a class="social-link" href="https://mail.google.com/mail/?view=cm&fs=1&to=planteldeduvidas@gmail.com&su=Suporte%20Plantel%20Hub" target="_blank" rel="noopener" style="margin-top:8px;">
-          <div><strong>E-mail</strong><span>planteldeduvidas@gmail.com</span></div>
+          <div><strong>E-mail 1</strong><span>planteldeduvidas@gmail.com</span></div>
           <span>↗</span>
         </a>
-        <a class="social-link" href="https://www.instagram.com/planteldeduvidas/" target="_blank" rel="noopener" style="margin-top:8px;" data-insta-name="Plantel Dúvidas" data-insta-user="planteldeduvidas">
-          <div><strong>Instagram</strong><span>@planteldeduvidas</span></div>
+         <a class="social-link" href="https://mail.google.com/mail/?view=cm&fs=1&to=plantelduvidas@gmail.com&su=Suporte%20Plantel%20Hub" target="_blank" rel="noopener" style="margin-top:8px;">
+          <div><strong>E-mail 2</strong><span>plantelduvidas@gmail.com</span></div>
           <span>↗</span>
         </a>
       </div>
@@ -1166,6 +1168,8 @@ const forgotPasswordLink = document.getElementById('forgot-password-link');
 const forgotPasswordMsg = document.getElementById('forgot-password-msg');
 const noteTextarea = document.getElementById('note-textarea');
 const noteTabsList = document.getElementById('note-tabs-list');
+const closingComments = new Set();
+const closingCommentTimers = new Map();
 const addNoteTabBtn = document.getElementById('add-note-tab-btn');
 const noteTabTitleInput = document.getElementById('note-tab-title-input');
 const clearNotesBtn = document.getElementById('clear-notes-btn');
@@ -3132,7 +3136,7 @@ function render(){
     const likeCount = Object.keys(likes).length;
     const liked = !!(currentUid && likes[currentUid]);
     const comments = objToArray(p.comments).sort((a,b)=>a.ts-b.ts);
-    const commentsOpen = openComments.has(p.id);
+    const commentsOpen = openComments.has(p.id) || closingComments.has(p.id);
     const pInfo = authorInfo(p);
     const isEditing = editingPosts.has(p.id);
     return `
@@ -3164,13 +3168,13 @@ function render(){
           <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.7 1.2 6 3.6C14.3 5.2 15.8 4 18 4c4 0 5.5 4 4 7.7C19.5 16.4 12 21 12 21z"/></svg>
           ${likeCount>0?likeCount:'curtir'}
         </button>
-        <button class="btn-ghost" data-action="toggle-comments" data-id="${p.id}">${commentsOpen?'fechar':'comentar'}${comments.length?` (${comments.length})`:''}</button>
+        <button class="btn-ghost" data-action="toggle-comments" data-id="${p.id}">${openComments.has(p.id)?'fechar':'comentar'}${comments.length?` (${comments.length})`:''}</button>
         <button class="btn-ghost pin-toggle ${p.pinned?'is-pinned':''}" data-action="toggle-pin" data-id="${p.id}">${p.pinned ? 'desafixar' : 'fixar'}</button>
         ${p.uid === currentUid ? `<button class="btn-ghost" data-action="edit-post" data-id="${p.id}">editar</button>` : ''}
         ${(p.uid === currentUid || isAdmin()) ? `<button class="btn-ghost post-remove" data-action="remove-post" data-id="${p.id}">excluir</button>` : ''}
       </div>`}
       ${commentsOpen ? `
-      <div class="post-comments">
+      <div class="post-comments ${openComments.has(p.id) ? 'open' : 'closing'}">
         ${comments.length ? comments.map(c=>{
           const cLikes = c.likes || {};
           const cLikeCount = Object.keys(cLikes).length;
@@ -3577,8 +3581,27 @@ document.addEventListener('click', (e)=>{
     const likeRef = ref(db, postPath(post)+'/likes/'+currentUid);
     (liked ? remove(likeRef) : set(likeRef, true)).catch(handleDbError);
   } else if(action === 'toggle-comments'){
-    if(openComments.has(id)) openComments.delete(id); else openComments.add(id);
-    render();
+    if(openComments.has(id)){
+      openComments.delete(id);
+      closingComments.add(id);
+      if(closingCommentTimers.has(id)){
+        clearTimeout(closingCommentTimers.get(id));
+      }
+      closingCommentTimers.set(id, setTimeout(()=>{
+        closingComments.delete(id);
+        closingCommentTimers.delete(id);
+        render();
+      }, 260));
+      render();
+    } else {
+      if(closingCommentTimers.has(id)){
+        clearTimeout(closingCommentTimers.get(id));
+        closingCommentTimers.delete(id);
+      }
+      closingComments.delete(id);
+      openComments.add(id);
+      render();
+    }
   } else if(action === 'send-comment'){
     const input = document.querySelector(`[data-comment-input="${id}"]`);
     const text = input ? input.value.trim() : '';
