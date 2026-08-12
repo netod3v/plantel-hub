@@ -134,13 +134,30 @@ header{padding:36px 0 26px;}
 
 /* modal de pré-visualização do Instagram */
 .modal-overlay{
-  position:fixed;inset:0;background:rgba(10,15,12,.55);display:flex;align-items:center;justify-content:center;
-  padding:20px;z-index:200;
+  position:fixed;inset:0;background:rgba(10,15,12,0);display:flex;align-items:center;justify-content:center;
+  padding:20px;z-index:200;opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .24s cubic-bezier(.2,.8,.2,1), background .24s ease, visibility 0s linear .24s;
 }
-.modal-overlay.hidden{display:none;}
+.modal-overlay.hidden{display:flex;}
+.modal-overlay.modal-visible{
+  opacity:1;visibility:visible;pointer-events:auto;background:rgba(10,15,12,.55);
+  transition:opacity .24s cubic-bezier(.2,.8,.2,1), background .24s ease, visibility 0s linear 0s;
+}
 .modal-box{
   width:100%;max-width:420px;max-height:90vh;background:var(--paper);border:1px solid var(--border);
   border-radius:16px;overflow:hidden;display:flex;flex-direction:column;
+  opacity:0;transform:translateY(10px) scale(.97);
+  transition:opacity .24s cubic-bezier(.2,.8,.2,1), transform .28s cubic-bezier(.2,.9,.2,1);
+  will-change:opacity,transform;
+}
+.modal-overlay.modal-visible .modal-box{opacity:1;transform:translateY(0) scale(1);}
+.modal-overlay.modal-closing{
+  opacity:0;visibility:visible;pointer-events:none;background:rgba(10,15,12,0);
+  transition:opacity .22s ease, background .22s ease, visibility 0s linear .22s;
+}
+.modal-overlay.modal-closing .modal-box{opacity:0;transform:translateY(6px) scale(.985);}
+@media (prefers-reduced-motion:reduce){
+  .modal-overlay,.modal-box{transition:none !important;}
 }
 .modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);flex:none;}
 .modal-head strong{font-size:14px;}
@@ -2207,11 +2224,27 @@ function renderOnlineList(){
   }).join('') : `<div class="empty">Ninguém com perfil criado ainda.</div>`;
 }
 
+function openModalSmooth(modal){
+  if(!modal) return;
+  clearTimeout(modal._closeTimer);
+  modal.classList.remove('hidden','modal-closing');
+  requestAnimationFrame(()=> requestAnimationFrame(()=> modal.classList.add('modal-visible')));
+}
+function closeModalSmooth(modal){
+  if(!modal) return;
+  clearTimeout(modal._closeTimer);
+  modal.classList.remove('modal-visible');
+  modal.classList.add('modal-closing');
+  modal._closeTimer = setTimeout(()=>{
+    modal.classList.add('hidden');
+    modal.classList.remove('modal-closing');
+  }, 240);
+}
 function openOnlineModal(){
   renderOnlineList();
-  onlineModal.classList.remove('hidden');
+  openModalSmooth(onlineModal);
 }
-function closeOnlineModal(){ onlineModal.classList.add('hidden'); }
+function closeOnlineModal(){ closeModalSmooth(onlineModal); }
 onlineBtn.addEventListener('click', openOnlineModal);
 onlineModalClose.addEventListener('click', closeOnlineModal);
 onlineModal.addEventListener('click', (e)=>{ if(e.target === onlineModal) closeOnlineModal(); });
@@ -2237,8 +2270,8 @@ function renderSupportPeopleList(){
     </button>`;
   }).join('');
 }
-function openSupportModal(){ renderSupportPeopleList(); supportModal.classList.remove('hidden'); }
-function closeSupportModal(){ supportModal.classList.add('hidden'); }
+function openSupportModal(){ renderSupportPeopleList(); openModalSmooth(supportModal); }
+function closeSupportModal(){ closeModalSmooth(supportModal); }
 supportBtn.addEventListener('click', openSupportModal);
 supportModalClose.addEventListener('click', closeSupportModal);
 supportModal.addEventListener('click', (e)=>{ if(e.target === supportModal) closeSupportModal(); });
@@ -2286,11 +2319,11 @@ function openProfileModal(forced){
   renderPhotoPreview(mine.name, mine.photo);
   profileError.textContent = '';
   profileModalClose.style.display = forced ? 'none' : '';
-  profileModal.classList.remove('hidden');
+  openModalSmooth(profileModal);
 }
 function closeProfileModal(){
   if(profileOnboarding && !(currentUid && state.users[currentUid])) return; // obrigatório na primeira vez
-  profileModal.classList.add('hidden');
+  closeModalSmooth(profileModal);
 }
 function maybeOpenProfileOnboarding(){
   if(profileOnboardingShown || !currentUid) return;
@@ -2360,7 +2393,7 @@ profileSaveBtn.addEventListener('click', ()=>{
   set(ref(db, 'users/'+currentUid), { name, sector: sector || null, bio: bio || null, photo }).then(()=>{
     profileOnboarding = false;
     pendingPhoto = undefined;
-    profileModal.classList.add('hidden');
+    closeModalSmooth(profileModal);
     showSuccessToast('Perfil salvo!');
   }).catch(err=>{
     profileError.textContent = 'Não foi possível salvar. Tente de novo.';
@@ -2417,9 +2450,9 @@ function openViewProfile(uid, fallbackName, showBack){
   } else {
     viewProfileSupportBtn.style.display = 'none';
   }
-  viewProfileModal.classList.remove('hidden');
+  openModalSmooth(viewProfileModal);
 }
-function closeViewProfile(){ viewProfileModal.classList.add('hidden'); }
+function closeViewProfile(){ closeModalSmooth(viewProfileModal); }
 
 /* ===== card de perfil ao passar o mouse (hover) =====
    Igual ao balãozinho do GitHub quando você passa o mouse no @ de
@@ -2730,11 +2763,11 @@ function updateDmBadge(){
 
 function openDmList(){
   renderDmList();
-  dmListModal.classList.remove('hidden');
+  openModalSmooth(dmListModal);
   localStorage.setItem(DM_SEEN_KEY, String(Date.now()));
   updateDmBadge();
 }
-function closeDmList(){ dmListModal.classList.add('hidden'); }
+function closeDmList(){ closeModalSmooth(dmListModal); }
 dmBtn.addEventListener('click', openDmList);
 dmListModalClose.addEventListener('click', closeDmList);
 dmListModal.addEventListener('click', (e)=>{ if(e.target === dmListModal) closeDmList(); });
@@ -2770,14 +2803,14 @@ function openDmThread(otherUid, name, photo){
     }).join('') : `<div class="dm-empty">Nenhuma mensagem ainda. Diga oi!</div>`;
     dmMessages.scrollTop = dmMessages.scrollHeight;
   }, handleDbError);
-  dmListModal.classList.add('hidden');
-  dmThreadModal.classList.remove('hidden');
+  closeModalSmooth(dmListModal);
+  openModalSmooth(dmThreadModal);
   localStorage.setItem(DM_SEEN_KEY, String(Date.now()));
   updateDmBadge();
   setTimeout(()=> dmInput.focus(), 50);
 }
 function closeDmThread(){
-  dmThreadModal.classList.add('hidden');
+  closeModalSmooth(dmThreadModal);
   if(dmThreadUnsub){ dmThreadUnsub(); dmThreadUnsub = null; }
   dmThreadUid = null;
 }
