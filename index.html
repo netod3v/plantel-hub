@@ -441,6 +441,12 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 
 /* posts do mural */
 .post{padding:14px 0;border-bottom:1px solid var(--border);}
+/* entrada suave de novas mensagens/comentários no mural */
+.post.mural-enter{animation:mural-post-enter .42s cubic-bezier(.2,.9,.2,1) both;}
+.comment.mural-enter,.reply.mural-enter{animation:mural-item-enter .36s cubic-bezier(.2,.9,.2,1) both;}
+@keyframes mural-post-enter{from{opacity:0;transform:translateY(12px) scale(.985);}to{opacity:1;transform:translateY(0) scale(1);}}
+@keyframes mural-item-enter{from{opacity:0;transform:translateY(8px) scale(.99);}to{opacity:1;transform:translateY(0) scale(1);}}
+@media (prefers-reduced-motion:reduce){.post.mural-enter,.comment.mural-enter,.reply.mural-enter{animation:none !important;}}
 .post.is-pinned{
   padding:14px 14px;margin:0 -14px 4px;border-radius:12px;border-bottom:1px solid transparent;
   background:color-mix(in srgb, var(--danger) 8%, transparent);
@@ -1201,6 +1207,9 @@ let noteState = null;
 const openComments = new Set();
 const openReplies = new Set();
 const editingPosts = new Set();
+const newMuralPosts = new Set();
+const newMuralComments = new Set();
+const newMuralReplies = new Set();
 let muralSearch = '';
 let muralSectorFilter = '';
 
@@ -3173,7 +3182,7 @@ function render(){
     const pInfo = authorInfo(p);
     const isEditing = editingPosts.has(p.id);
     return `
-    <div class="post ${p.pinned ? 'is-pinned' : ''}">
+    <div class="post ${p.pinned ? 'is-pinned ' : ''}${newMuralPosts.has(p.id) ? 'mural-enter' : ''}" data-post-id="${p.id}">
       ${p.pinned ? `
       <div class="pinned-banner">
         <svg viewBox="0 0 24 24"><path d="M12 2l2.5 6.5L21 11l-6.5 2.5L12 20l-2.5-6.5L3 11l6.5-2.5L12 2z"/></svg>
@@ -3216,7 +3225,7 @@ function render(){
           const replyOpen = openReplies.has(c.id);
           const cInfo = authorInfo(c);
           return `
-          <div class="comment">
+          <div class="comment ${newMuralComments.has(c.id) ? 'mural-enter' : ''}" data-comment-id="${c.id}">
             ${avatarHtml(cInfo, true)}
             <div class="comment-body">
               <div class="comment-author"><span${authorNameAttr(cInfo)}>${escapeHtml(cInfo.name)}</span>${sectorTagHtml(cInfo.sector)}${adminTagHtml(cInfo.isAdmin)}${supportTagHtml(cInfo.isSupport)} <span class="post-time">· ${timeAgo(c.ts)}</span></div>
@@ -3234,7 +3243,7 @@ function render(){
                 ${replies.map(r=>{
                   const rInfo = authorInfo(r);
                   return `
-                  <div class="reply">
+                  <div class="reply ${newMuralReplies.has(r.id) ? 'mural-enter' : ''}" data-reply-id="${r.id}">
                     ${avatarHtml(rInfo, true)}
                     <div class="reply-body">
                       <div class="reply-author"><span${authorNameAttr(rInfo)}>${escapeHtml(rInfo.name)}</span>${sectorTagHtml(rInfo.sector)}${adminTagHtml(rInfo.isAdmin)}${supportTagHtml(rInfo.isSupport)} <span class="post-time">· ${timeAgo(r.ts)}</span></div>
@@ -3258,6 +3267,10 @@ function render(){
     </div>`;
   }).join('') : `<div class="empty">${(search || sectorFilter) ? 'Nenhuma mensagem encontrada com esse filtro.' : 'Nenhuma mensagem ainda. Escreva a primeira ali em cima.'}</div>`;
 
+
+  if(newMuralPosts.size || newMuralComments.size || newMuralReplies.size){
+    setTimeout(()=>{ newMuralPosts.clear(); newMuralComments.clear(); newMuralReplies.clear(); }, 520);
+  }
 
   const visibleMetas = allMetas();
   const openMetas = visibleMetas.filter(m=>!m.done).length;
@@ -3474,7 +3487,8 @@ document.getElementById('post-btn').addEventListener('click', ()=>{
   const visibility = document.getElementById('msg-visibility').value || null;
   const id = uid();
   const path = visibility ? `posts_private/${visibility}/${id}` : `posts/${id}`;
-  set(ref(db, path), { author: myProfile().name, uid: currentUid, text, ts: Date.now(), metaId: null, demandaId: null }).catch(handleDbError);
+  newMuralPosts.add(id);
+  set(ref(db, path), { author: myProfile().name, uid: currentUid, text, ts: Date.now(), metaId: null, demandaId: null }).catch(err=>{ newMuralPosts.delete(id); handleDbError(err); });
   msgInput.value = '';
 });
 document.getElementById('msg-input').addEventListener('keydown', e=>{
@@ -3643,7 +3657,8 @@ document.addEventListener('click', (e)=>{
     const post = allPosts().find(p=>p.id===id);
     if(!post) return;
     const commentId = uid();
-    set(ref(db, postPath(post)+'/comments/'+commentId), { author: myProfile().name, uid: currentUid, text, ts: Date.now() }).catch(handleDbError);
+    newMuralComments.add(commentId);
+    set(ref(db, postPath(post)+'/comments/'+commentId), { author: myProfile().name, uid: currentUid, text, ts: Date.now() }).catch(err=>{ newMuralComments.delete(commentId); handleDbError(err); });
     openComments.add(id);
   } else if(action === 'like-comment'){
     if(!currentUid) return;
@@ -3671,7 +3686,8 @@ document.addEventListener('click', (e)=>{
     const post = allPosts().find(p=>p.id===postId);
     if(!post) return;
     const replyId = uid();
-    set(ref(db, postPath(post)+'/comments/'+commentId+'/replies/'+replyId), { author: myProfile().name, uid: currentUid, text, ts: Date.now() }).catch(handleDbError);
+    newMuralReplies.add(replyId);
+    set(ref(db, postPath(post)+'/comments/'+commentId+'/replies/'+replyId), { author: myProfile().name, uid: currentUid, text, ts: Date.now() }).catch(err=>{ newMuralReplies.delete(replyId); handleDbError(err); });
     openReplies.add(commentId);
   }
 });
