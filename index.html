@@ -484,9 +484,11 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .post-remove{margin-left:auto;}
 .post-remove:hover{background:#F6E4E0;color:var(--danger);}
 
-.post-comments{margin:10px 0 0 37px;padding-top:0;border-top:1px dashed var(--border);display:flex;flex-direction:column;gap:10px;overflow:hidden;max-height:0;opacity:0;transform:translateY(-8px);transition:max-height .22s ease, opacity .22s ease, padding .22s ease, transform .22s ease;}
-.post-comments.open{max-height:1200px;opacity:1;padding-top:10px;transform:translateY(0);}
-.post-comments.closing{max-height:0;opacity:0;padding-top:0;transform:translateY(-8px);}
+.post-comments{margin:10px 0 0 37px;padding-top:0;border-top:1px dashed var(--border);display:flex;flex-direction:column;gap:10px;overflow:hidden;max-height:0;opacity:0;transform:translateY(-8px) scale(.985);transform-origin:top center;pointer-events:none;transition:max-height .34s cubic-bezier(.22,1,.36,1), opacity .22s ease, padding .34s ease, transform .34s cubic-bezier(.22,1,.36,1);}
+.post-comments.open{max-height:1200px;opacity:1;padding-top:10px;transform:translateY(0) scale(1);pointer-events:auto;}
+.post-comments.closing{max-height:0;opacity:0;padding-top:0;transform:translateY(-8px) scale(.985);pointer-events:none;}
+.post-comment-toggle{transition:opacity .18s ease, transform .18s ease, background .18s ease, color .18s ease;}
+.post-comment-toggle:active{transform:scale(.96);}
 .comment{display:flex;gap:9px;}
 .avatar-sm{width:22px;height:22px;font-size:9.5px;border-radius:6px;}
 .comment-body{flex:1;min-width:0;}
@@ -3210,7 +3212,7 @@ function render(){
           <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.7 1.2 6 3.6C14.3 5.2 15.8 4 18 4c4 0 5.5 4 4 7.7C19.5 16.4 12 21 12 21z"/></svg>
           ${likeCount>0?likeCount:'curtir'}
         </button>
-        <button class="btn-ghost" data-action="toggle-comments" data-id="${p.id}">${openComments.has(p.id)?'fechar':'comentar'}${comments.length?` (${comments.length})`:''}</button>
+        <button class="btn-ghost post-comment-toggle ${closingComments.has(p.id) ? 'is-closing' : ''}" data-action="toggle-comments" data-id="${p.id}">${openComments.has(p.id) || closingComments.has(p.id)?'fechar':'comentar'}${comments.length?` (${comments.length})`:''}</button>
         <button class="btn-ghost pin-toggle ${p.pinned?'is-pinned':''}" data-action="toggle-pin" data-id="${p.id}">${p.pinned ? 'desafixar' : 'fixar'}</button>
         ${p.uid === currentUid ? `<button class="btn-ghost" data-action="edit-post" data-id="${p.id}">editar</button>` : ''}
         ${(p.uid === currentUid || isAdmin()) ? `<button class="btn-ghost post-remove" data-action="remove-post" data-id="${p.id}">excluir</button>` : ''}
@@ -3638,7 +3640,7 @@ document.addEventListener('click', (e)=>{
         closingComments.delete(id);
         closingCommentTimers.delete(id);
         render();
-      }, 260));
+      }, 360));
       render();
     } else {
       if(closingCommentTimers.has(id)){
