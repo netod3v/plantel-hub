@@ -443,10 +443,10 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .post{padding:14px 0;border-bottom:1px solid var(--border);}
 /* entrada suave de novas mensagens/comentários no mural */
 .post.mural-enter{animation:mural-post-enter .42s cubic-bezier(.2,.9,.2,1) both;}
-.comment.mural-enter,.reply.mural-enter{animation:mural-item-enter .36s cubic-bezier(.2,.9,.2,1) both;}
+.comment.mural-enter,.reply.mural-enter,.item.mural-enter{animation:mural-item-enter .36s cubic-bezier(.2,.9,.2,1) both;}
 @keyframes mural-post-enter{from{opacity:0;transform:translateY(12px) scale(.985);}to{opacity:1;transform:translateY(0) scale(1);}}
 @keyframes mural-item-enter{from{opacity:0;transform:translateY(8px) scale(.99);}to{opacity:1;transform:translateY(0) scale(1);}}
-@media (prefers-reduced-motion:reduce){.post.mural-enter,.comment.mural-enter,.reply.mural-enter{animation:none !important;}}
+@media (prefers-reduced-motion:reduce){.post.mural-enter,.comment.mural-enter,.reply.mural-enter,.item.mural-enter{animation:none !important;}}
 .post.is-pinned{
   padding:14px 14px;margin:0 -14px 4px;border-radius:12px;border-bottom:1px solid transparent;
   background:color-mix(in srgb, var(--danger) 8%, transparent);
@@ -1212,6 +1212,8 @@ const editingPosts = new Set();
 const newMuralPosts = new Set();
 const newMuralComments = new Set();
 const newMuralReplies = new Set();
+const newMuralMetas = new Set();
+const newMuralDemandas = new Set();
 let muralSearch = '';
 let muralSectorFilter = '';
 
@@ -3270,8 +3272,8 @@ function render(){
   }).join('') : `<div class="empty">${(search || sectorFilter) ? 'Nenhuma mensagem encontrada com esse filtro.' : 'Nenhuma mensagem ainda. Escreva a primeira ali em cima.'}</div>`;
 
 
-  if(newMuralPosts.size || newMuralComments.size || newMuralReplies.size){
-    setTimeout(()=>{ newMuralPosts.clear(); newMuralComments.clear(); newMuralReplies.clear(); }, 520);
+  if(newMuralPosts.size || newMuralComments.size || newMuralReplies.size || newMuralMetas.size || newMuralDemandas.size){
+    setTimeout(()=>{ newMuralPosts.clear(); newMuralComments.clear(); newMuralReplies.clear(); newMuralMetas.clear(); newMuralDemandas.clear(); }, 520);
   }
 
   const visibleMetas = allMetas();
@@ -3284,7 +3286,7 @@ function render(){
   document.getElementById('meta-list').innerHTML = visibleMetas.length ? visibleMetas.map(m=>{
     const mInfo = authorInfo(m);
     return `
-    <div class="item ${m.done?'done':''}">
+    <div class="item ${m.done?'done ':''}${newMuralMetas.has(m.id)?'mural-enter':''}">
       <div class="check ${m.done?'done':''}" data-action="toggle-meta" data-id="${m.id}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(m.text)}</div>
@@ -3308,7 +3310,7 @@ function render(){
   document.getElementById('demanda-list').innerHTML = visibleDemandas.length ? visibleDemandas.map(d=>{
     const dInfo = authorInfo(d);
     return `
-    <div class="item ${d.done?'done':''}">
+    <div class="item ${d.done?'done ':''}${newMuralDemandas.has(d.id)?'mural-enter':''}">
       <div class="check ${d.done?'done':''}" data-action="toggle-demanda" data-id="${d.id}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(d.text)}</div>
@@ -3512,17 +3514,39 @@ function addDemanda(text, author, itemUid, visibility){
   return id;
 }
 
-document.getElementById('meta-add-btn').addEventListener('click', ()=>{
+function submitMeta(){
   if(!ensureProfileBeforeAction()) return;
   const input = document.getElementById('meta-add-input');
   const visibility = document.getElementById('meta-add-visibility').value || null;
-  if(addMeta(input.value, myProfile().name, currentUid, visibility)){ input.value=''; }
-});
-document.getElementById('demanda-add-btn').addEventListener('click', ()=>{
+  const text = input.value.trim();
+  if(!text) return;
+  const id = addMeta(text, myProfile().name, currentUid, visibility);
+  if(id){
+    newMuralMetas.add(id);
+    input.value='';
+    render();
+  }
+}
+function submitDemanda(){
   if(!ensureProfileBeforeAction()) return;
   const input = document.getElementById('demanda-add-input');
   const visibility = document.getElementById('demanda-add-visibility').value || null;
-  if(addDemanda(input.value, myProfile().name, currentUid, visibility)){ input.value=''; }
+  const text = input.value.trim();
+  if(!text) return;
+  const id = addDemanda(text, myProfile().name, currentUid, visibility);
+  if(id){
+    newMuralDemandas.add(id);
+    input.value='';
+    render();
+  }
+}
+document.getElementById('meta-add-btn').addEventListener('click', submitMeta);
+document.getElementById('demanda-add-btn').addEventListener('click', submitDemanda);
+document.getElementById('meta-add-input').addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ e.preventDefault(); submitMeta(); }
+});
+document.getElementById('demanda-add-input').addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ e.preventDefault(); submitDemanda(); }
 });
 
 document.addEventListener('click', (e)=>{
