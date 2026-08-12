@@ -209,6 +209,21 @@ header{padding:36px 0 26px;}
 #photo-zoom-level{font-size:12px;font-weight:600;min-width:42px;text-align:center;}
 #photo-zoom-reset{width:auto;padding:0 12px;font-size:12px;font-weight:600;border-left:1px solid rgba(255,255,255,.25);border-radius:0;margin-left:2px;}
 .view-profile-head .avatar-upload-preview.has-photo{cursor:pointer;}
+/* pré-visualização rápida da foto de perfil ao passar o mouse */
+.profile-photo-hover-preview{
+  position:fixed; width:220px; height:220px; padding:5px;
+  border:1px solid rgba(255,255,255,.22); border-radius:18px;
+  background:rgba(10,14,12,.92); box-shadow:0 18px 45px rgba(0,0,0,.32);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  z-index:1000; pointer-events:none; opacity:0;
+  transform:translateY(7px) scale(.96);
+  transition:opacity .18s ease, transform .18s ease;
+  overflow:hidden;
+}
+.profile-photo-hover-preview.visible{opacity:1;transform:translateY(0) scale(1);}
+.profile-photo-hover-preview img{width:100%;height:100%;display:block;object-fit:cover;border-radius:14px;}
+@media (max-width:720px){.profile-photo-hover-preview{display:none!important;}}
+
 .modal-close:hover{border-color:var(--moss);color:var(--forest);}
 .modal-close svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;}
 .modal-body{padding:14px 16px 16px;overflow-y:auto;}
@@ -292,6 +307,8 @@ html[data-theme="dark"], html[data-theme="black"] .dm-conversation-remove:hover{
   font-family:'Space Grotesk',sans-serif;overflow:hidden;position:relative;
 }
 .avatar-upload-preview img{width:100%;height:100%;object-fit:cover;display:block;}
+#profile-photo-preview.has-photo{cursor:zoom-in;}
+#profile-photo-preview.has-photo img{cursor:zoom-in;}
 .avatar-upload-actions{display:flex;flex-direction:column;gap:6px;}
 .avatar-upload-actions .btn-ghost{border:1px solid var(--border);padding:6px 12px;}
 .avatar-upload-actions .btn-ghost:hover{border-color:var(--moss);}
@@ -318,6 +335,7 @@ textarea.field:focus{border-color:var(--moss);}
 .note-tabs{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
 .note-tabs-list{display:flex;flex:1;flex-wrap:wrap;gap:8px;}
 .note-tab-button{padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--paper);color:var(--ink);font-size:12px;cursor:grab;display:flex;align-items:center;gap:8px;position:relative;}
+.note-tab-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .note-tab-button.active{background:var(--forest);color:#fff;border-color:var(--forest);}
 .note-tab-button:hover{border-color:var(--moss);}
 .note-tab-button.dragging{opacity:.6;cursor:grabbing;}
@@ -936,6 +954,9 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
       </div>
     </div>
   </div>
+
+
+  <div class="profile-photo-hover-preview" id="profile-photo-hover-preview" aria-hidden="true"></div>
 
   <div class="hover-card hidden" id="hover-profile-card">
     <div class="hover-card-head">
@@ -1826,7 +1847,7 @@ function renderNoteTabs(){
     const active = tab.id === noteState.activeTabId ? ' active' : '';
     return `
       <button type="button" class="note-tab-button${active}" data-tab-id="${tab.id}">
-        ${escapeHtml(tab.title || 'Sem título')}
+        <span class="note-tab-title">${escapeHtml(tab.title || 'Sem título')}</span>
         <span class="note-tab-delete" aria-label="Excluir aba" data-delete-tab-id="${tab.id}">×</span>
       </button>`;
   }).join('');
@@ -1869,9 +1890,19 @@ function updateActiveTabContent(){
 function updateActiveTabTitle(){
   const activeTab = getActiveTab();
   if(!activeTab || !noteTabTitleInput) return;
-  activeTab.title = noteTabTitleInput.value.trim() || 'Sem título';
+  const rawTitle = noteTabTitleInput.value;
+  activeTab.title = rawTitle.trim() || 'Sem título';
   saveNoteState();
-  renderNoteTabs();
+
+  // Não re-renderiza as abas enquanto você digita.
+  // Isso evita que o input perca o foco/cursor a cada tecla.
+  const activeTabButton = noteTabsList?.querySelector(`[data-tab-id="${activeTab.id}"] .note-tab-title`);
+  if(activeTabButton){
+    activeTabButton.textContent = activeTab.title;
+  }
+  if(noteCardLabel){
+    noteCardLabel.textContent = rawTitle.trim() || 'Notas privadas só para você';
+  }
   if(noteSaveStatus){ noteSaveStatus.textContent = 'Título salvo'; }
 }
 function selectNoteTab(tabId){
@@ -2314,9 +2345,11 @@ let pendingPhoto; // undefined = sem alteração, null = remover, string = nova 
 function renderPhotoPreview(name, photo){
   if(photo){
     profilePhotoPreview.innerHTML = `<img src="${photo}" alt="">`;
+    profilePhotoPreview.classList.add('has-photo');
     profilePhotoRemove.style.display = '';
   } else {
     profilePhotoPreview.textContent = initials(name || '?');
+    profilePhotoPreview.classList.remove('has-photo');
     profilePhotoRemove.style.display = 'none';
   }
 }
@@ -2348,6 +2381,10 @@ function maybeOpenProfileOnboarding(){
 profileBtn.addEventListener('click', ()=> openProfileModal(false));
 profileModalClose.addEventListener('click', closeProfileModal);
 profileModal.addEventListener('click', (e)=>{ if(e.target === profileModal) closeProfileModal(); });
+profilePhotoPreview.addEventListener('click', ()=>{
+  const img = profilePhotoPreview.querySelector('img');
+  if(img) openPhotoViewer(img.src);
+});
 document.getElementById('profile-view-btn').addEventListener('click', ()=>{
   if(!currentUid) return;
   closeProfileModal();
@@ -2466,6 +2503,94 @@ function openViewProfile(uid, fallbackName, showBack){
   openModalSmooth(viewProfileModal);
 }
 function closeViewProfile(){ closeModalSmooth(viewProfileModal); }
+
+// Clique nos avatares de outras pessoas: a foto abre ampliada;
+// áreas de perfil que não são a foto continuam abrindo o perfil completo.
+document.addEventListener('click', (e)=>{
+  const img = e.target.closest('[data-action="view-profile"] img');
+  if(img){
+    e.preventDefault();
+    e.stopPropagation();
+    openPhotoViewer(img.src);
+    return;
+  }
+
+  const profileTarget = e.target.closest('[data-action="view-profile"]');
+  if(!profileTarget) return;
+  if(e.target.closest('.note-tab-delete')) return;
+
+  const uid = profileTarget.dataset.uid || null;
+  const fallbackName = profileTarget.dataset.name || '';
+  if(uid){
+    openViewProfile(uid, fallbackName, false);
+  }
+});
+
+
+/* ===== prévia da foto de perfil ao passar o mouse ===== */
+const profilePhotoHoverPreview = document.getElementById('profile-photo-hover-preview');
+let profilePhotoHoverTimer = null;
+let profilePhotoHoverTarget = null;
+
+function positionProfilePhotoPreview(target){
+  if(!profilePhotoHoverPreview) return;
+  const rect = target.getBoundingClientRect();
+  const size = 220, gap = 12, margin = 12;
+  let left = rect.right + gap;
+  let top = rect.top + (rect.height - size) / 2;
+  if(left + size > window.innerWidth - margin) left = rect.left - size - gap;
+  if(left < margin) left = margin;
+  if(top + size > window.innerHeight - margin) top = window.innerHeight - size - margin;
+  if(top < margin) top = margin;
+  profilePhotoHoverPreview.style.left = `${left}px`;
+  profilePhotoHoverPreview.style.top = `${top}px`;
+}
+
+function showProfilePhotoPreview(target){
+  if(!profilePhotoHoverPreview || !target || !target.classList.contains('has-photo')) return;
+  const img = target.querySelector('img');
+  if(!img || !img.src) return;
+  clearTimeout(profilePhotoHoverTimer);
+  profilePhotoHoverTarget = target;
+  profilePhotoHoverPreview.innerHTML = `<img src="${img.src}" alt="Pré-visualização da foto de perfil">`;
+  profilePhotoHoverPreview.classList.add('visible');
+  profilePhotoHoverPreview.setAttribute('aria-hidden','false');
+  positionProfilePhotoPreview(target);
+}
+
+function hideProfilePhotoPreview(){
+  clearTimeout(profilePhotoHoverTimer);
+  profilePhotoHoverTarget = null;
+  if(!profilePhotoHoverPreview) return;
+  profilePhotoHoverPreview.classList.remove('visible');
+  profilePhotoHoverPreview.setAttribute('aria-hidden','true');
+  profilePhotoHoverTimer = setTimeout(()=>{
+    if(!profilePhotoHoverTarget) profilePhotoHoverPreview.innerHTML='';
+  }, 180);
+}
+
+if(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches){
+  document.addEventListener('mouseover', (e)=>{
+    const target = e.target.closest('#profile-photo-preview, #view-profile-photo');
+    if(!target || !target.classList.contains('has-photo')) return;
+    if(target.contains(e.relatedTarget)) return;
+    clearTimeout(profilePhotoHoverTimer);
+    profilePhotoHoverTimer = setTimeout(()=>showProfilePhotoPreview(target), 180);
+  });
+  document.addEventListener('mouseout', (e)=>{
+    const target = e.target.closest('#profile-photo-preview, #view-profile-photo');
+    if(!target) return;
+    if(target.contains(e.relatedTarget)) return;
+    clearTimeout(profilePhotoHoverTimer);
+    if(target === profilePhotoHoverTarget) hideProfilePhotoPreview();
+  });
+  window.addEventListener('resize', ()=>{
+    if(profilePhotoHoverTarget) positionProfilePhotoPreview(profilePhotoHoverTarget);
+  });
+  window.addEventListener('scroll', ()=>{
+    if(profilePhotoHoverTarget) positionProfilePhotoPreview(profilePhotoHoverTarget);
+  }, {passive:true});
+}
 
 /* ===== card de perfil ao passar o mouse (hover) =====
    Igual ao balãozinho do GitHub quando você passa o mouse no @ de
