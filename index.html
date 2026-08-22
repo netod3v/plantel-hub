@@ -393,7 +393,7 @@ section{margin-top:38px;}
   background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:10px 11px;cursor:grab;
 }
 .kanban-card.dragging{opacity:.4;}
-.kanban-card-text{font-size:12.5px;line-height:1.4;margin-bottom:8px;}
+.kanban-card-text{font-size:12.5px;line-height:1.4;margin-bottom:8px;white-space:pre-wrap;word-break:break-word;}
 .kanban-card-meta{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
 .kanban-card-meta .avatar{width:20px;height:20px;font-size:9px;}
 .kanban-card-author{font-size:11.5px;color:var(--text-2);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -432,7 +432,10 @@ section{margin-top:38px;}
 .composer{display:flex;flex-direction:column;gap:10px;}
 .composer-top{display:flex;flex-direction:column;gap:8px;}
 .name-input{width:100%;}
-.msg-input{width:100%;}
+textarea.msg-input{
+  width:100%;background:var(--parchment);min-height:44px;max-height:340px;
+  line-height:1.5;font-family:inherit;overflow-y:auto;resize:vertical;
+}
 input.field,select.field{
   border:1px solid var(--border);border-radius:9px;padding:9px 12px;font-size:13.5px;
   background:var(--parchment);outline:none;width:100%;color:inherit;
@@ -486,7 +489,7 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .avatar img{width:100%;height:100%;object-fit:cover;display:block;}
 .post-author{font-size:13px;font-weight:600;}
 .post-time{font-size:11px;color:var(--text-3);}
-.post-text{font-size:13.5px;margin:0 0 8px 37px;}
+.post-text{font-size:13.5px;margin:0 0 8px 37px;white-space:pre-wrap;word-break:break-word;}
 .post-actions{display:flex;gap:6px;margin-left:37px;flex-wrap:wrap;}
 .tag-done{
   font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:4px;
@@ -511,7 +514,7 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .avatar-sm{width:22px;height:22px;font-size:9.5px;border-radius:6px;}
 .comment-body{flex:1;min-width:0;}
 .comment-author{font-size:12px;font-weight:600;}
-.comment-text{font-size:12.5px;margin-top:1px;}
+.comment-text{font-size:12.5px;margin-top:1px;white-space:pre-wrap;word-break:break-word;}
 .empty-small{font-size:12px;color:var(--text-2);padding:2px 0;}
 .comment-form{display:flex;gap:8px;}
 .comment-form input{flex:1;padding:7px 10px;font-size:12.5px;}
@@ -530,7 +533,7 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .reply{display:flex;gap:8px;}
 .reply-body{flex:1;min-width:0;}
 .reply-author{font-size:11.5px;font-weight:600;}
-.reply-text{font-size:12px;margin-top:1px;}
+.reply-text{font-size:12px;margin-top:1px;white-space:pre-wrap;word-break:break-word;}
 .reply-form{display:flex;gap:8px;margin:8px 0 0 31px;}
 .reply-form input{flex:1;padding:6px 9px;font-size:12px;}
 .reply-form button{flex:none;}
@@ -563,7 +566,7 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .check svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2.5;display:none;}
 .check.done svg{display:block;}
 .item-body{flex:1;min-width:0;}
-.item-text{font-size:13.5px;}
+.item-text{font-size:13.5px;white-space:pre-wrap;word-break:break-word;}
 .item.done .item-text{text-decoration:line-through;color:var(--text-2);}
 .item-meta{font-size:11px;color:var(--text-3);margin-top:2px;}
 .item-remove{
@@ -1067,7 +1070,7 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
     <div class="card">
       <div class="composer">
         <div class="composer-top">
-          <input class="field msg-input" id="msg-input" placeholder="Escreva um recado, uma ideia ou o que precisa ser feito...">
+          <textarea class="field msg-input" id="msg-input" rows="1" placeholder="Escreva um recado, uma ideia ou o que precisa ser feito... (Enter quebra linha, Ctrl+Enter posta)"></textarea>
         </div>
         <div class="composer-bottom">
           <select class="field" id="msg-visibility">
@@ -3619,9 +3622,19 @@ document.getElementById('post-btn').addEventListener('click', ()=>{
   newMuralPosts.add(id);
   set(ref(db, path), { author: myProfile().name, uid: currentUid, text, ts: Date.now(), metaId: null, demandaId: null }).catch(err=>{ newMuralPosts.delete(id); handleDbError(err); });
   msgInput.value = '';
+  autoGrowMsgInput();
 });
+function autoGrowMsgInput(){
+  const el = document.getElementById('msg-input');
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 340) + 'px';
+}
+document.getElementById('msg-input').addEventListener('input', autoGrowMsgInput);
 document.getElementById('msg-input').addEventListener('keydown', e=>{
-  if(e.key==='Enter') document.getElementById('post-btn').click();
+  if(e.key==='Enter' && (e.metaKey || e.ctrlKey)){
+    e.preventDefault();
+    document.getElementById('post-btn').click();
+  }
 });
 
 function addMeta(text, author, itemUid, visibility){
