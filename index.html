@@ -280,28 +280,41 @@ html[data-theme="dark"], html[data-theme="black"] .dm-conversation-remove:hover{
 .field-label{font-size:12px;font-weight:600;color:var(--text-2);margin:0 0 6px;display:block;}
 .field-label + .field{margin-bottom:14px;}
 .sector-tag{
-  font-size:10.5px;font-weight:600;padding:2px 9px;border-radius:20px;background:var(--sage);color:var(--forest);
-  margin-left:6px;vertical-align:middle;display:inline-block;
+  font-size:9.5px;font-weight:600;padding:1.5px 7px;border-radius:20px;background:var(--sage);color:var(--forest);
+  margin-left:5px;vertical-align:middle;display:inline-block;white-space:nowrap;line-height:1.5;
 }
+.sector-tag-more{
+  font-size:9.5px;font-weight:600;padding:1.5px 7px;border-radius:20px;background:var(--parchment);color:var(--text-2);
+  border:1px solid var(--border);margin-left:5px;vertical-align:middle;display:inline-block;white-space:nowrap;line-height:1.5;
+}
+.sector-picker{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+.sector-chip{
+  font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:20px;background:var(--parchment);
+  border:1px solid var(--border);color:var(--text-2);cursor:pointer;transition:all .15s ease;user-select:none;
+}
+.sector-chip.is-selected{background:var(--sage);color:var(--forest);border-color:var(--sage);}
+.sector-chip button{background:none;border:none;padding:0;margin-left:6px;color:inherit;cursor:pointer;font-weight:700;line-height:1;}
+.sector-picker-add{display:flex;gap:8px;margin-bottom:14px;}
+.sector-picker-add .field{flex:1;margin-bottom:0;}
 .visibility-tag{
-  font-size:10.5px;font-weight:600;padding:2px 9px;border-radius:20px;background:var(--gold-l);color:#7A5A22;
-  margin-left:6px;vertical-align:middle;display:inline-block;
+  font-size:9.5px;font-weight:600;padding:1.5px 7px;border-radius:20px;background:var(--gold-l);color:#7A5A22;
+  margin-left:5px;vertical-align:middle;display:inline-block;white-space:nowrap;line-height:1.5;
 }
 .admin-tag{
-  font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--forest);color:#fff;
-  margin-left:6px;vertical-align:middle;display:inline-block;
+  font-size:9.5px;font-weight:700;padding:1.5px 7px;border-radius:20px;background:var(--forest);color:#fff;
+  margin-left:5px;vertical-align:middle;display:inline-block;white-space:nowrap;line-height:1.5;
 }
 .support-tag{
-  font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:#F2C230;color:#5A4600;
-  margin-left:6px;vertical-align:middle;display:inline-block;
+  font-size:9.5px;font-weight:700;padding:1.5px 7px;border-radius:20px;background:#F2C230;color:#5A4600;
+  margin-left:5px;vertical-align:middle;display:inline-block;white-space:nowrap;line-height:1.5;
 }
 .dev-tag{
-  font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:#3D3A8C;color:#fff;
-  margin-left:6px;vertical-align:middle;display:inline-block;
+  font-size:9.5px;font-weight:700;padding:1.5px 7px;border-radius:20px;background:#3D3A8C;color:#fff;
+  margin-left:5px;vertical-align:middle;display:inline-block;white-space:nowrap;line-height:1.5;
 }
 .banned-tag{
-  font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--danger);color:#fff;
-  margin-left:6px;vertical-align:middle;display:inline-block;
+  font-size:9.5px;font-weight:700;padding:1.5px 7px;border-radius:20px;background:var(--danger);color:#fff;
+  margin-left:5px;vertical-align:middle;display:inline-block;white-space:nowrap;line-height:1.5;
 }
 #profile-error{color:var(--danger);font-size:12px;margin:10px 0 0;min-height:14px;}
 .avatar-upload{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
@@ -935,15 +948,12 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
         </div>
         <label class="field-label" for="profile-name-input">Nome</label>
         <input class="field" id="profile-name-input" placeholder="Seu nome">
-        <label class="field-label" for="profile-sector-input">Setor / time</label>
-        <input class="field" id="profile-sector-input" list="sector-options" placeholder="Ex: Marketing, Professores, Monitoria...">
-        <datalist id="sector-options">
-          <option value="Marketing">
-          <option value="Professores">
-          <option value="Monitoria">
-          <option value="Parceiros">
-          <option value="Desenvolvedor">
-        </datalist>
+        <label class="field-label">Setor / time <span style="font-weight:400;color:var(--text-2);">(pode marcar mais de um)</span></label>
+        <div class="sector-picker" id="profile-sector-picker"></div>
+        <div class="sector-picker-add">
+          <input class="field" id="profile-sector-custom-input" placeholder="Adicionar outro setor...">
+          <button type="button" class="btn-ghost" id="profile-sector-custom-add">Adicionar</button>
+        </div>
         <label class="field-label" for="profile-bio-input">Descrição</label>
         <textarea class="field" id="profile-bio-input" maxlength="160" placeholder="Conte um pouco sobre você..."></textarea>
         <div class="char-count" id="profile-bio-count">0/160</div>
@@ -1433,7 +1443,7 @@ function showSelectedAccountPreview(info){
   else { avatar.textContent = initials(info.name || info.email || '?'); }
   // tenta pegar setor do state.users quando possível
   let sector = '';
-  if(info.uid && state && state.users && state.users[info.uid]) sector = state.users[info.uid].sector || '';
+  if(info.uid && state && state.users && state.users[info.uid]) sector = userSectors(state.users[info.uid]).join(', ');
   sectorEl.textContent = sector || '';
   preview.style.display = 'flex';
   // esconde o campo de e-mail enquanto o cartão da conta estiver visível,
@@ -2254,7 +2264,7 @@ function renderOnlineList(){
   const entries = Object.entries(state.users)
     .map(([uid, profile])=>{
       const p = state.presence[uid];
-      return { uid, name: profile.name || 'Alguém', sector: profile.sector, photo: profile.photo, banned: !!profile.isBanned, online: !!(p && p.online), lastSeen: p && p.lastSeen };
+      return { uid, name: profile.name || 'Alguém', sector: userSectors(profile), photo: profile.photo, banned: !!profile.isBanned, online: !!(p && p.online), lastSeen: p && p.lastSeen };
     })
     .sort((a,b)=> (b.online - a.online) || a.name.localeCompare(b.name));
 
@@ -2269,7 +2279,7 @@ function renderOnlineList(){
     <div class="online-item" data-action="view-profile" data-uid="${e.uid}" data-name="${escapeHtml(e.name)}" style="cursor:pointer;">
       ${avatarHtml(info, true)}
       <div class="online-item-body">
-        <div class="online-item-name">${escapeHtml(e.name)}${sectorTagHtml(e.sector)}${bannedTagHtml(e.banned)}</div>
+        <div class="online-item-name">${escapeHtml(e.name)}${sectorTagHtml(e.sector, 2)}${bannedTagHtml(e.banned)}</div>
         <div class="online-item-status"><span class="status-dot ${e.online?'on':''}"></span>${statusText}</div>
       </div>
     </div>`;
@@ -2311,7 +2321,7 @@ function renderSupportPeopleList(){
   const supportUsers = Object.entries(state.users).filter(([uid, p]) => p && p.isSupport);
   if(!supportUsers.length){ list.innerHTML = ''; return; }
   list.innerHTML = supportUsers.map(([uid, p])=>{
-    const info = { name: p.name || 'Alguém', sector: p.sector, photo: p.photo, uid };
+    const info = { name: p.name || 'Alguém', sector: userSectors(p), photo: p.photo, uid };
     return `
     <button type="button" class="social-link" data-action="message-support" data-uid="${uid}" style="width:100%;text-align:left;cursor:pointer;">
       <div style="display:flex;align-items:center;gap:10px;">
@@ -2335,7 +2345,9 @@ document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !supportMod
    demandas), em vez de digitar o nome toda vez. */
 const profileModal = document.getElementById('profile-modal');
 const profileNameInput = document.getElementById('profile-name-input');
-const profileSectorInput = document.getElementById('profile-sector-input');
+const profileSectorPicker = document.getElementById('profile-sector-picker');
+const profileSectorCustomInput = document.getElementById('profile-sector-custom-input');
+const profileSectorCustomAdd = document.getElementById('profile-sector-custom-add');
 const profileBioInput = document.getElementById('profile-bio-input');
 const profileBioCount = document.getElementById('profile-bio-count');
 const profileSaveBtn = document.getElementById('profile-save-btn');
@@ -2348,7 +2360,36 @@ const profilePhotoPick = document.getElementById('profile-photo-pick');
 const profilePhotoRemove = document.getElementById('profile-photo-remove');
 let profileOnboarding = false;
 let profileOnboardingShown = false;
+let profilePendingSectors = [];
 let pendingPhoto; // undefined = sem alteração, null = remover, string = nova foto (base64)
+
+function renderSectorPicker(){
+  const known = allKnownSectors();
+  const all = [...new Set([...known, ...profilePendingSectors])].sort((a,b)=>a.localeCompare(b));
+  profileSectorPicker.innerHTML = all.map(s=>{
+    const selected = profilePendingSectors.includes(s);
+    return `<button type="button" class="sector-chip${selected?' is-selected':''}" data-sector="${escapeHtml(s)}">${escapeHtml(s)}</button>`;
+  }).join('');
+}
+profileSectorPicker.addEventListener('click', (e)=>{
+  const chip = e.target.closest('.sector-chip');
+  if(!chip) return;
+  const s = chip.dataset.sector;
+  const idx = profilePendingSectors.indexOf(s);
+  if(idx === -1) profilePendingSectors.push(s); else profilePendingSectors.splice(idx, 1);
+  renderSectorPicker();
+});
+function addCustomSector(){
+  const val = profileSectorCustomInput.value.trim();
+  if(!val) return;
+  if(!profilePendingSectors.includes(val)) profilePendingSectors.push(val);
+  profileSectorCustomInput.value = '';
+  renderSectorPicker();
+}
+profileSectorCustomAdd.addEventListener('click', addCustomSector);
+profileSectorCustomInput.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){ e.preventDefault(); addCustomSector(); }
+});
 
 function renderPhotoPreview(name, photo){
   if(photo){
@@ -2366,7 +2407,8 @@ function openProfileModal(forced){
   profileOnboarding = !!forced;
   const mine = (currentUid && state.users[currentUid]) || {};
   profileNameInput.value = mine.name || '';
-  profileSectorInput.value = mine.sector || '';
+  profilePendingSectors = userSectors(mine);
+  renderSectorPicker();
   profileBioInput.value = mine.bio || '';
   profileBioCount.textContent = (mine.bio || '').length + '/160';
   pendingPhoto = undefined;
@@ -2443,12 +2485,13 @@ profilePhotoInput.addEventListener('change', ()=>{
 
 profileSaveBtn.addEventListener('click', ()=>{
   const name = profileNameInput.value.trim();
-  const sector = profileSectorInput.value.trim();
   const bio = profileBioInput.value.trim();
   if(!name){ profileError.textContent = 'Digite seu nome pra continuar.'; return; }
   const mine = (currentUid && state.users[currentUid]) || {};
   const photo = pendingPhoto === undefined ? (mine.photo || null) : pendingPhoto;
-  update(ref(db, 'users/'+currentUid), { name, sector: sector || null, bio: bio || null, photo }).then(()=>{
+  const sectors = {};
+  profilePendingSectors.forEach(s=>{ sectors[s] = true; });
+  update(ref(db, 'users/'+currentUid), { name, sectors: Object.keys(sectors).length ? sectors : null, sector: null, bio: bio || null, photo }).then(()=>{
     profileOnboarding = false;
     pendingPhoto = undefined;
     closeModalSmooth(profileModal);
@@ -2476,7 +2519,7 @@ function openViewProfile(uid, fallbackName, showBack){
   viewingProfileUid = uid;
   const profile = uid ? state.users[uid] : null;
   const name = (profile && profile.name) || fallbackName || 'Alguém';
-  const sector = profile && profile.sector ? profile.sector : null;
+  const sector = userSectors(profile);
   const admin = !!(profile && profile.isAdmin);
   const banned = !!(profile && profile.isBanned);
   const support = !!(profile && profile.isSupport);
@@ -2628,7 +2671,7 @@ let hoverShowTimer = null, hoverHideTimer = null, hoverCardTargetEl = null;
 function fillHoverCard(uid, fallbackName){
   const profile = uid ? state.users[uid] : null;
   const name = (profile && profile.name) || fallbackName || 'Alguém';
-  const sector = profile && profile.sector ? profile.sector : null;
+  const sector = userSectors(profile);
   const admin = !!(profile && profile.isAdmin);
   const banned = !!(profile && profile.isBanned);
   const support = !!(profile && profile.isSupport);
@@ -2642,8 +2685,8 @@ function fillHoverCard(uid, fallbackName){
   hoverCardName.innerHTML = `${escapeHtml(name)}${adminTagHtml(admin)}${supportTagHtml(support)}${devTagHtml(dev)}${bannedTagHtml(banned)}`;
   hoverCardStatus.innerHTML = `<span class="status-dot ${online?'on':''}"></span>${online ? 'online agora' : 'offline'}`;
   hoverCardBio.textContent = bio;
-  hoverCardSector.innerHTML = sector ? sectorTagHtml(sector) : '';
-  hoverCardSector.style.display = sector ? '' : 'none';
+  hoverCardSector.innerHTML = sectorTagHtml(sector);
+  hoverCardSector.style.display = sector.length ? '' : 'none';
 }
 
 function positionHoverCard(targetEl){
@@ -3110,13 +3153,13 @@ function subscribeSectorsMerged(basePath, sectors, onUpdate){
 }
 
 function allKnownSectors(){
-  return [...new Set([...FIXED_SECTORS, ...Object.values(state.users).map(u=>u.sector).filter(Boolean)])];
+  return [...new Set([...FIXED_SECTORS, ...Object.values(state.users).flatMap(u=>userSectors(u))])];
 }
 
 function syncPrivateSubscription(){
-  const sector = (myProfile() && myProfile().sector) || null;
+  const mySectors = userSectors(myProfile());
   const admin = isAdmin();
-  const key = admin ? 'admin' : (sector || 'none');
+  const key = admin ? 'admin' : (mySectors.length ? [...mySectors].sort().join(',') : 'none');
   if(key === mySubscribedKey) return;
   if(privateUnsub.posts) privateUnsub.posts();
   if(privateUnsub.metas) privateUnsub.metas();
@@ -3134,19 +3177,19 @@ function syncPrivateSubscription(){
     privateUnsub.demandas = subscribeSectorsMerged('demandas_private', sectors, list => { state.demandasPrivate = list; render(); });
     return;
   }
-  // vê o mural privado do próprio setor + qualquer coisa que ela mesma
-  // tenha mandado pra outros setores (senão a pessoa "perde de vista" o
-  // que postou pra um setor diferente do seu)
+  // vê o mural privado de qualquer um dos próprios setores + qualquer coisa
+  // que ela mesma tenha mandado pra outros setores (senão a pessoa "perde
+  // de vista" o que postou pra um setor diferente do seu)
   privateUnsub.posts = subscribeSectorsMerged('posts_private', sectors, list => {
-    state.postsPrivate = list.filter(p => p._sector === sector || p.uid === currentUid);
+    state.postsPrivate = list.filter(p => mySectors.includes(p._sector) || p.uid === currentUid);
     render();
   });
   privateUnsub.metas = subscribeSectorsMerged('metas_private', sectors, list => {
-    state.metasPrivate = list.filter(m => m._sector === sector || m.uid === currentUid);
+    state.metasPrivate = list.filter(m => mySectors.includes(m._sector) || m.uid === currentUid);
     render();
   });
   privateUnsub.demandas = subscribeSectorsMerged('demandas_private', sectors, list => {
-    state.demandasPrivate = list.filter(d => d._sector === sector || d.uid === currentUid);
+    state.demandasPrivate = list.filter(d => mySectors.includes(d._sector) || d.uid === currentUid);
     render();
   });
 }
@@ -3243,20 +3286,22 @@ muralSectorSelect.addEventListener('change', ()=>{
 });
 const FIXED_SECTORS = ['Marketing', 'Professores', 'Monitoria', 'Parceiros', 'Desenvolvedor'];
 function refreshSectorOptions(){
-  const fromUsers = Object.values(state.users).map(u=>u.sector).filter(Boolean);
+  const fromUsers = Object.values(state.users).flatMap(u=>userSectors(u));
   const sectors = [...new Set([...FIXED_SECTORS, ...fromUsers])].sort((a,b)=>a.localeCompare(b));
   const current = muralSectorSelect.value;
   muralSectorSelect.innerHTML = `<option value="">Todos os setores</option>` +
     sectors.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
   if(sectors.includes(current)) muralSectorSelect.value = current;
 
+  const mySectors = userSectors(myProfile());
+  const visibilityOptions = isAdmin() ? sectors : (mySectors.length ? sectors.filter(s=>mySectors.includes(s)) : sectors);
   const visibilitySelectIds = ['msg-visibility', 'meta-add-visibility', 'demanda-add-visibility'];
   visibilitySelectIds.forEach(selId=>{
     const sel = document.getElementById(selId);
     const cur = sel.value;
     sel.innerHTML = `<option value="">Visível para: Todos</option>` +
-      sectors.map(s=>`<option value="${escapeHtml(s)}">Visível para: ${escapeHtml(s)}</option>`).join('');
-    if(sectors.includes(cur)) sel.value = cur;
+      visibilityOptions.map(s=>`<option value="${escapeHtml(s)}">Visível para: ${escapeHtml(s)}</option>`).join('');
+    if(visibilityOptions.includes(cur)) sel.value = cur;
   });
 }
 
@@ -3281,7 +3326,7 @@ function authorInfo(item){
   return {
     uid,
     name: (profile && profile.name) || (item && item.author) || 'Alguém',
-    sector: profile && profile.sector ? profile.sector : null,
+    sector: userSectors(profile),
     bio: profile && profile.bio ? profile.bio : null,
     photo: profile && profile.photo ? profile.photo : null,
     isAdmin: !!(profile && profile.isAdmin),
@@ -3307,8 +3352,21 @@ function updateProfileBtnAvatar(){
     profileBtn.innerHTML = `<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>`;
   }
 }
-function sectorTagHtml(sector){
-  return sector ? `<span class="sector-tag">${escapeHtml(sector)}</span>` : '';
+function userSectors(profile){
+  if(!profile) return [];
+  if(profile.sectors && typeof profile.sectors === 'object') return Object.keys(profile.sectors).filter(k=>profile.sectors[k]);
+  if(profile.sector) return [profile.sector];
+  return [];
+}
+function sectorTagHtml(sectors, max){
+  const arr = Array.isArray(sectors) ? sectors : (sectors ? [sectors] : []);
+  if(max && arr.length > max){
+    const shown = arr.slice(0, max);
+    const rest = arr.length - max;
+    return shown.map(s=>`<span class="sector-tag">${escapeHtml(s)}</span>`).join('')
+      + `<span class="sector-tag-more" title="${escapeHtml(arr.slice(max).join(', '))}">+${rest}</span>`;
+  }
+  return arr.map(s=>`<span class="sector-tag">${escapeHtml(s)}</span>`).join('');
 }
 function adminTagHtml(flag){
   return flag ? `<span class="admin-tag" title="Admin: pode moderar e apagar conteúdo de qualquer setor">🛡 admin</span>` : '';
@@ -3338,7 +3396,7 @@ function render(){
     posts = posts.filter(p => p.text.toLowerCase().includes(search) || authorInfo(p).name.toLowerCase().includes(search));
   }
   if(sectorFilter){
-    posts = posts.filter(p => authorInfo(p).sector === sectorFilter);
+    posts = posts.filter(p => authorInfo(p).sector.includes(sectorFilter));
   }
   document.getElementById('post-count').textContent = allPostsList.length + (allPostsList.length===1?' mensagem':' mensagens');
   document.getElementById('mural-list').innerHTML = posts.length ? posts.map(p=>{
@@ -3359,7 +3417,7 @@ function render(){
       <div class="post-head">
         ${avatarHtml(pInfo)}
         <div>
-          <div class="post-author"><span${authorNameAttr(pInfo)}>${escapeHtml(pInfo.name)}</span>${sectorTagHtml(pInfo.sector)}${adminTagHtml(pInfo.isAdmin)}${supportTagHtml(pInfo.isSupport)}${devTagHtml(pInfo.isDev)}${visibilityTagHtml(p._sector)} <span class="post-time">· ${timeAgo(p.ts)}</span></div>
+          <div class="post-author"><span${authorNameAttr(pInfo)}>${escapeHtml(pInfo.name)}</span>${sectorTagHtml(pInfo.sector, 2)}${adminTagHtml(pInfo.isAdmin)}${supportTagHtml(pInfo.isSupport)}${devTagHtml(pInfo.isDev)}${visibilityTagHtml(p._sector)} <span class="post-time">· ${timeAgo(p.ts)}</span></div>
         </div>
       </div>
       ${isEditing ? `
@@ -3396,7 +3454,7 @@ function render(){
           <div class="comment ${newMuralComments.has(c.id) ? 'mural-enter' : ''}" data-comment-id="${c.id}">
             ${avatarHtml(cInfo, true)}
             <div class="comment-body">
-              <div class="comment-author"><span${authorNameAttr(cInfo)}>${escapeHtml(cInfo.name)}</span>${sectorTagHtml(cInfo.sector)}${adminTagHtml(cInfo.isAdmin)}${supportTagHtml(cInfo.isSupport)}${devTagHtml(cInfo.isDev)} <span class="post-time">· ${timeAgo(c.ts)}</span></div>
+              <div class="comment-author"><span${authorNameAttr(cInfo)}>${escapeHtml(cInfo.name)}</span>${sectorTagHtml(cInfo.sector, 2)}${adminTagHtml(cInfo.isAdmin)}${supportTagHtml(cInfo.isSupport)}${devTagHtml(cInfo.isDev)} <span class="post-time">· ${timeAgo(c.ts)}</span></div>
               <div class="comment-text">${escapeHtml(c.text)}</div>
               <div class="comment-actions">
                 <button class="comment-like ${cLiked?'is-liked':''}" data-action="like-comment" data-post="${p.id}" data-id="${c.id}">
@@ -3414,7 +3472,7 @@ function render(){
                   <div class="reply ${newMuralReplies.has(r.id) ? 'mural-enter' : ''}" data-reply-id="${r.id}">
                     ${avatarHtml(rInfo, true)}
                     <div class="reply-body">
-                      <div class="reply-author"><span${authorNameAttr(rInfo)}>${escapeHtml(rInfo.name)}</span>${sectorTagHtml(rInfo.sector)}${adminTagHtml(rInfo.isAdmin)}${supportTagHtml(rInfo.isSupport)}${devTagHtml(rInfo.isDev)} <span class="post-time">· ${timeAgo(r.ts)}</span></div>
+                      <div class="reply-author"><span${authorNameAttr(rInfo)}>${escapeHtml(rInfo.name)}</span>${sectorTagHtml(rInfo.sector, 2)}${adminTagHtml(rInfo.isAdmin)}${supportTagHtml(rInfo.isSupport)}${devTagHtml(rInfo.isDev)} <span class="post-time">· ${timeAgo(r.ts)}</span></div>
                       <div class="reply-text">${escapeHtml(r.text)}</div>
                     </div>
                   </div>`;}).join('')}
@@ -3449,14 +3507,15 @@ function render(){
   document.getElementById('meta-progress-label').textContent = `${metaDone}/${visibleMetas.length} concluídas (${metaPct}%)`;
   document.getElementById('meta-list').innerHTML = visibleMetas.length ? visibleMetas.map(m=>{
     const mInfo = authorInfo(m);
+    const canManageMeta = m.uid === currentUid || isAdmin();
     return `
     <div class="item ${m.done?'done ':''}${newMuralMetas.has(m.id)?'mural-enter':''}">
-      <div class="check ${m.done?'done':''}" data-action="toggle-meta" data-id="${m.id}">${CHECK_SVG}</div>
+      <div class="check ${m.done?'done':''}" data-action="${canManageMeta?'toggle-meta':''}" data-id="${m.id}" style="${canManageMeta?'':'pointer-events:none;opacity:.5;'}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(m.text)}</div>
-        <div class="item-meta"><span${authorNameAttr(mInfo)}>${escapeHtml(mInfo.name)}</span>${sectorTagHtml(mInfo.sector)}${adminTagHtml(mInfo.isAdmin)}${supportTagHtml(mInfo.isSupport)}${devTagHtml(mInfo.isDev)}${visibilityTagHtml(m._sector)} · ${timeAgo(m.ts)}</div>
+        <div class="item-meta"><span${authorNameAttr(mInfo)}>${escapeHtml(mInfo.name)}</span>${sectorTagHtml(mInfo.sector, 2)}${adminTagHtml(mInfo.isAdmin)}${supportTagHtml(mInfo.isSupport)}${devTagHtml(mInfo.isDev)}${visibilityTagHtml(m._sector)} · ${timeAgo(m.ts)}</div>
       </div>
-      <button class="item-remove" data-action="remove-meta" data-id="${m.id}">remover</button>
+      ${canManageMeta ? `<button class="item-remove" data-action="remove-meta" data-id="${m.id}">remover</button>` : ''}
     </div>`;}).join('') : `<div class="empty">Nenhuma meta ainda.</div>`;
 
   const visibleDemandas = allDemandas();
@@ -3473,14 +3532,15 @@ function render(){
   document.getElementById('demanda-progress-label').textContent = `${demandaDone}/${visibleDemandas.length} concluídas (${demandaPct}%)`;
   document.getElementById('demanda-list').innerHTML = visibleDemandas.length ? visibleDemandas.map(d=>{
     const dInfo = authorInfo(d);
+    const canManageDemanda = d.uid === currentUid || isAdmin();
     return `
     <div class="item ${d.done?'done ':''}${newMuralDemandas.has(d.id)?'mural-enter':''}">
-      <div class="check ${d.done?'done':''}" data-action="toggle-demanda" data-id="${d.id}">${CHECK_SVG}</div>
+      <div class="check ${d.done?'done':''}" data-action="${canManageDemanda?'toggle-demanda':''}" data-id="${d.id}" style="${canManageDemanda?'':'pointer-events:none;opacity:.5;'}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(d.text)}</div>
-        <div class="item-meta"><span${authorNameAttr(dInfo)}>${escapeHtml(dInfo.name)}</span>${sectorTagHtml(dInfo.sector)}${adminTagHtml(dInfo.isAdmin)}${supportTagHtml(dInfo.isSupport)}${devTagHtml(dInfo.isDev)}${visibilityTagHtml(d._sector)} · ${timeAgo(d.ts)}</div>
+        <div class="item-meta"><span${authorNameAttr(dInfo)}>${escapeHtml(dInfo.name)}</span>${sectorTagHtml(dInfo.sector, 2)}${adminTagHtml(dInfo.isAdmin)}${supportTagHtml(dInfo.isSupport)}${devTagHtml(dInfo.isDev)}${visibilityTagHtml(d._sector)} · ${timeAgo(d.ts)}</div>
       </div>
-      <button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>
+      ${canManageDemanda ? `<button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>` : ''}
     </div>`;}).join('') : `<div class="empty">Nenhuma demanda ainda.</div>`;
 
   renderKanbanBoard('demanda', visibleDemandas);
@@ -3509,17 +3569,20 @@ function renderKanbanBoard(kind, items){
         ${colItems.length ? colItems.map(item=>{
           const info = authorInfo(item);
           const idx = KANBAN_COLUMNS.findIndex(c=>c.key===col.key);
+          const canManageItem = item.uid === currentUid || isAdmin();
           return `
-          <div class="kanban-card" draggable="true" data-id="${item.id}" data-kind="${kind}">
+          <div class="kanban-card" draggable="${canManageItem}" data-id="${item.id}" data-kind="${kind}">
             <div class="kanban-card-text">${escapeHtml(item.text)}</div>
             <div class="kanban-card-meta">${avatarHtml(info, true)}<span class="kanban-card-author"${authorNameAttr(info)}>${escapeHtml(info.name)}</span></div>
             <div class="kanban-card-foot">
               ${visibilityTagHtml(item._sector)}
+              ${canManageItem ? `
               <div class="kanban-card-move">
                 <button type="button" data-action="kanban-move" data-kind="${kind}" data-id="${item.id}" data-dir="-1" ${idx===0?'disabled':''} aria-label="Mover pra trás">‹</button>
                 <button type="button" data-action="kanban-move" data-kind="${kind}" data-id="${item.id}" data-dir="1" ${idx===KANBAN_COLUMNS.length-1?'disabled':''} aria-label="Mover pra frente">›</button>
               </div>
               <button type="button" class="kanban-card-remove" data-action="remove-${kind}" data-id="${item.id}">remover</button>
+              ` : ''}
             </div>
           </div>`;
         }).join('') : `<div class="kanban-empty">Vazio</div>`}
@@ -3628,7 +3691,7 @@ document.getElementById('clear-mural-btn').addEventListener('click', async ()=>{
     failCount += publicResults.filter(r=>r.status==='rejected').length;
 
     // posts privados de cada setor (mesmo os que o app não tem carregado agora)
-    const sectors = [...new Set([...FIXED_SECTORS, ...Object.values(state.users).map(u=>u.sector).filter(Boolean)])];
+    const sectors = allKnownSectors();
     for(const sector of sectors){
       const snap = await get(ref(db, 'posts_private/'+sector));
       const val = snap.val();
