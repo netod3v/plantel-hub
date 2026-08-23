@@ -295,6 +295,10 @@ html[data-theme="dark"], html[data-theme="black"] .dm-conversation-remove:hover{
   font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:#F2C230;color:#5A4600;
   margin-left:6px;vertical-align:middle;display:inline-block;
 }
+.dev-tag{
+  font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:#3D3A8C;color:#fff;
+  margin-left:6px;vertical-align:middle;display:inline-block;
+}
 .banned-tag{
   font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--danger);color:#fff;
   margin-left:6px;vertical-align:middle;display:inline-block;
@@ -938,7 +942,7 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
           <option value="Professores">
           <option value="Monitoria">
           <option value="Parceiros">
-          <option value="Membro">
+          <option value="Desenvolvedor">
         </datalist>
         <label class="field-label" for="profile-bio-input">Descrição</label>
         <textarea class="field" id="profile-bio-input" maxlength="160" placeholder="Conte um pouco sobre você..."></textarea>
@@ -998,6 +1002,7 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
         <p class="view-profile-bio" id="view-profile-bio"></p>
         <button class="btn btn-primary" id="view-profile-message-btn" type="button" style="margin-top:14px;">Mandar mensagem</button>
         <button class="btn" id="view-profile-support-btn" type="button" style="margin-top:10px;width:100%;display:none;"></button>
+        <button class="btn" id="view-profile-dev-btn" type="button" style="margin-top:10px;width:100%;display:none;"></button>
         <button class="btn" id="view-profile-ban-btn" type="button" style="margin-top:10px;width:100%;display:none;"></button>
       </div>
     </div>
@@ -2443,7 +2448,7 @@ profileSaveBtn.addEventListener('click', ()=>{
   if(!name){ profileError.textContent = 'Digite seu nome pra continuar.'; return; }
   const mine = (currentUid && state.users[currentUid]) || {};
   const photo = pendingPhoto === undefined ? (mine.photo || null) : pendingPhoto;
-  set(ref(db, 'users/'+currentUid), { name, sector: sector || null, bio: bio || null, photo }).then(()=>{
+  update(ref(db, 'users/'+currentUid), { name, sector: sector || null, bio: bio || null, photo }).then(()=>{
     profileOnboarding = false;
     pendingPhoto = undefined;
     closeModalSmooth(profileModal);
@@ -2465,6 +2470,7 @@ const viewProfileBio = document.getElementById('view-profile-bio');
 const viewProfileMessageBtn = document.getElementById('view-profile-message-btn');
 const viewProfileBanBtn = document.getElementById('view-profile-ban-btn');
 const viewProfileSupportBtn = document.getElementById('view-profile-support-btn');
+const viewProfileDevBtn = document.getElementById('view-profile-dev-btn');
 
 function openViewProfile(uid, fallbackName, showBack){
   viewingProfileUid = uid;
@@ -2474,6 +2480,7 @@ function openViewProfile(uid, fallbackName, showBack){
   const admin = !!(profile && profile.isAdmin);
   const banned = !!(profile && profile.isBanned);
   const support = !!(profile && profile.isSupport);
+  const dev = !!(profile && profile.isDev);
   const photo = profile && profile.photo ? profile.photo : null;
   const bio = profile && profile.bio
     ? profile.bio
@@ -2481,7 +2488,7 @@ function openViewProfile(uid, fallbackName, showBack){
   if(photo){ viewProfilePhoto.innerHTML = `<img src="${photo}" alt="">`; viewProfilePhoto.classList.add('has-photo'); }
   else { viewProfilePhoto.textContent = initials(name); viewProfilePhoto.classList.remove('has-photo'); }
   viewProfileName.textContent = name;
-  viewProfileSector.innerHTML = sectorTagHtml(sector) + adminTagHtml(admin) + supportTagHtml(support) + bannedTagHtml(banned);
+  viewProfileSector.innerHTML = sectorTagHtml(sector) + adminTagHtml(admin) + supportTagHtml(support) + devTagHtml(dev) + bannedTagHtml(banned);
   viewProfileBio.textContent = bio;
   viewProfileMessageBtn.style.display = (uid && uid !== currentUid) ? '' : 'none';
   viewProfileBack.style.display = showBack ? '' : 'none';
@@ -2502,6 +2509,15 @@ function openViewProfile(uid, fallbackName, showBack){
     viewProfileSupportBtn.className = 'btn';
   } else {
     viewProfileSupportBtn.style.display = 'none';
+  }
+
+  const canManageDev = isAdmin() && uid && uid !== currentUid;
+  if(canManageDev){
+    viewProfileDevBtn.style.display = '';
+    viewProfileDevBtn.textContent = dev ? 'Remover marca do Plantel Labs' : 'Marcar como dev (Plantel Labs)';
+    viewProfileDevBtn.className = 'btn';
+  } else {
+    viewProfileDevBtn.style.display = 'none';
   }
   openModalSmooth(viewProfileModal);
 }
@@ -2616,13 +2632,14 @@ function fillHoverCard(uid, fallbackName){
   const admin = !!(profile && profile.isAdmin);
   const banned = !!(profile && profile.isBanned);
   const support = !!(profile && profile.isSupport);
+  const dev = !!(profile && profile.isDev);
   const photo = profile && profile.photo ? profile.photo : null;
   const bio = profile && profile.bio ? profile.bio : 'Ainda sem descrição no perfil.';
   const online = !!(uid && state.presence[uid] && state.presence[uid].online);
 
   hoverCardAvatar.innerHTML = photo ? `<img src="${photo}" alt="">` : '';
   if(!photo) hoverCardAvatar.textContent = initials(name);
-  hoverCardName.innerHTML = `${escapeHtml(name)}${adminTagHtml(admin)}${supportTagHtml(support)}${bannedTagHtml(banned)}`;
+  hoverCardName.innerHTML = `${escapeHtml(name)}${adminTagHtml(admin)}${supportTagHtml(support)}${devTagHtml(dev)}${bannedTagHtml(banned)}`;
   hoverCardStatus.innerHTML = `<span class="status-dot ${online?'on':''}"></span>${online ? 'online agora' : 'offline'}`;
   hoverCardBio.textContent = bio;
   hoverCardSector.innerHTML = sector ? sectorTagHtml(sector) : '';
@@ -2803,6 +2820,21 @@ viewProfileSupportBtn.addEventListener('click', ()=>{
   );
   if(!ok) return;
   update(ref(db, 'users/'+viewingProfileUid), { isSupport: !support }).then(()=>{
+    closeViewProfile();
+  }).catch(handleDbError);
+});
+viewProfileDevBtn.addEventListener('click', ()=>{
+  if(!viewingProfileUid || !isAdmin()) return;
+  const profile = state.users[viewingProfileUid] || {};
+  const dev = !!profile.isDev;
+  const name = viewProfileName.textContent || 'essa pessoa';
+  const ok = confirm(
+    dev
+      ? `Remover a marca do Plantel Labs de ${name}?`
+      : `Marcar ${name} como parte do Plantel Labs? A etiqueta roxa "plantel labs" vai aparecer no nome dela em todo o site, indicando que faz parte do time de desenvolvimento do Plantel Hub.`
+  );
+  if(!ok) return;
+  update(ref(db, 'users/'+viewingProfileUid), { isDev: !dev }).then(()=>{
     closeViewProfile();
   }).catch(handleDbError);
 });
@@ -3209,7 +3241,7 @@ muralSectorSelect.addEventListener('change', ()=>{
   muralSectorFilter = muralSectorSelect.value;
   render();
 });
-const FIXED_SECTORS = ['Marketing', 'Professores', 'Monitoria', 'Parceiros', 'Membro'];
+const FIXED_SECTORS = ['Marketing', 'Professores', 'Monitoria', 'Parceiros', 'Desenvolvedor'];
 function refreshSectorOptions(){
   const fromUsers = Object.values(state.users).map(u=>u.sector).filter(Boolean);
   const sectors = [...new Set([...FIXED_SECTORS, ...fromUsers])].sort((a,b)=>a.localeCompare(b));
@@ -3253,7 +3285,8 @@ function authorInfo(item){
     bio: profile && profile.bio ? profile.bio : null,
     photo: profile && profile.photo ? profile.photo : null,
     isAdmin: !!(profile && profile.isAdmin),
-    isSupport: !!(profile && profile.isSupport)
+    isSupport: !!(profile && profile.isSupport),
+    isDev: !!(profile && profile.isDev)
   };
 }
 function avatarHtml(info, sm){
@@ -3282,6 +3315,9 @@ function adminTagHtml(flag){
 }
 function supportTagHtml(flag){
   return flag ? `<span class="support-tag" title="Fala com essa pessoa se precisar de ajuda com o Plantel Hub">💬 suporte</span>` : '';
+}
+function devTagHtml(flag){
+  return flag ? `<span class="dev-tag" title="Faz parte do Plantel Labs, o time que desenvolve o Plantel Hub">🛠 plantel labs</span>` : '';
 }
 function bannedTagHtml(flag){
   return flag ? `<span class="banned-tag" title="Essa conta foi banida e não consegue mais entrar">🚫 banido</span>` : '';
@@ -3323,7 +3359,7 @@ function render(){
       <div class="post-head">
         ${avatarHtml(pInfo)}
         <div>
-          <div class="post-author"><span${authorNameAttr(pInfo)}>${escapeHtml(pInfo.name)}</span>${sectorTagHtml(pInfo.sector)}${adminTagHtml(pInfo.isAdmin)}${supportTagHtml(pInfo.isSupport)}${visibilityTagHtml(p._sector)} <span class="post-time">· ${timeAgo(p.ts)}</span></div>
+          <div class="post-author"><span${authorNameAttr(pInfo)}>${escapeHtml(pInfo.name)}</span>${sectorTagHtml(pInfo.sector)}${adminTagHtml(pInfo.isAdmin)}${supportTagHtml(pInfo.isSupport)}${devTagHtml(pInfo.isDev)}${visibilityTagHtml(p._sector)} <span class="post-time">· ${timeAgo(p.ts)}</span></div>
         </div>
       </div>
       ${isEditing ? `
@@ -3360,7 +3396,7 @@ function render(){
           <div class="comment ${newMuralComments.has(c.id) ? 'mural-enter' : ''}" data-comment-id="${c.id}">
             ${avatarHtml(cInfo, true)}
             <div class="comment-body">
-              <div class="comment-author"><span${authorNameAttr(cInfo)}>${escapeHtml(cInfo.name)}</span>${sectorTagHtml(cInfo.sector)}${adminTagHtml(cInfo.isAdmin)}${supportTagHtml(cInfo.isSupport)} <span class="post-time">· ${timeAgo(c.ts)}</span></div>
+              <div class="comment-author"><span${authorNameAttr(cInfo)}>${escapeHtml(cInfo.name)}</span>${sectorTagHtml(cInfo.sector)}${adminTagHtml(cInfo.isAdmin)}${supportTagHtml(cInfo.isSupport)}${devTagHtml(cInfo.isDev)} <span class="post-time">· ${timeAgo(c.ts)}</span></div>
               <div class="comment-text">${escapeHtml(c.text)}</div>
               <div class="comment-actions">
                 <button class="comment-like ${cLiked?'is-liked':''}" data-action="like-comment" data-post="${p.id}" data-id="${c.id}">
@@ -3378,7 +3414,7 @@ function render(){
                   <div class="reply ${newMuralReplies.has(r.id) ? 'mural-enter' : ''}" data-reply-id="${r.id}">
                     ${avatarHtml(rInfo, true)}
                     <div class="reply-body">
-                      <div class="reply-author"><span${authorNameAttr(rInfo)}>${escapeHtml(rInfo.name)}</span>${sectorTagHtml(rInfo.sector)}${adminTagHtml(rInfo.isAdmin)}${supportTagHtml(rInfo.isSupport)} <span class="post-time">· ${timeAgo(r.ts)}</span></div>
+                      <div class="reply-author"><span${authorNameAttr(rInfo)}>${escapeHtml(rInfo.name)}</span>${sectorTagHtml(rInfo.sector)}${adminTagHtml(rInfo.isAdmin)}${supportTagHtml(rInfo.isSupport)}${devTagHtml(rInfo.isDev)} <span class="post-time">· ${timeAgo(r.ts)}</span></div>
                       <div class="reply-text">${escapeHtml(r.text)}</div>
                     </div>
                   </div>`;}).join('')}
@@ -3418,7 +3454,7 @@ function render(){
       <div class="check ${m.done?'done':''}" data-action="toggle-meta" data-id="${m.id}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(m.text)}</div>
-        <div class="item-meta"><span${authorNameAttr(mInfo)}>${escapeHtml(mInfo.name)}</span>${sectorTagHtml(mInfo.sector)}${adminTagHtml(mInfo.isAdmin)}${supportTagHtml(mInfo.isSupport)}${visibilityTagHtml(m._sector)} · ${timeAgo(m.ts)}</div>
+        <div class="item-meta"><span${authorNameAttr(mInfo)}>${escapeHtml(mInfo.name)}</span>${sectorTagHtml(mInfo.sector)}${adminTagHtml(mInfo.isAdmin)}${supportTagHtml(mInfo.isSupport)}${devTagHtml(mInfo.isDev)}${visibilityTagHtml(m._sector)} · ${timeAgo(m.ts)}</div>
       </div>
       <button class="item-remove" data-action="remove-meta" data-id="${m.id}">remover</button>
     </div>`;}).join('') : `<div class="empty">Nenhuma meta ainda.</div>`;
@@ -3442,7 +3478,7 @@ function render(){
       <div class="check ${d.done?'done':''}" data-action="toggle-demanda" data-id="${d.id}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(d.text)}</div>
-        <div class="item-meta"><span${authorNameAttr(dInfo)}>${escapeHtml(dInfo.name)}</span>${sectorTagHtml(dInfo.sector)}${adminTagHtml(dInfo.isAdmin)}${supportTagHtml(dInfo.isSupport)}${visibilityTagHtml(d._sector)} · ${timeAgo(d.ts)}</div>
+        <div class="item-meta"><span${authorNameAttr(dInfo)}>${escapeHtml(dInfo.name)}</span>${sectorTagHtml(dInfo.sector)}${adminTagHtml(dInfo.isAdmin)}${supportTagHtml(dInfo.isSupport)}${devTagHtml(dInfo.isDev)}${visibilityTagHtml(d._sector)} · ${timeAgo(d.ts)}</div>
       </div>
       <button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>
     </div>`;}).join('') : `<div class="empty">Nenhuma demanda ainda.</div>`;
