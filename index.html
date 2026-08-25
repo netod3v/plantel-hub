@@ -110,6 +110,19 @@ html[data-labs="true"] .preview-card:hover,html[data-labs="true"] .card:hover{bo
 html[data-labs="true"] .section-head h2::after{content:' / LABS';font-size:8px;letter-spacing:.12em;color:var(--forest);vertical-align:middle;margin-left:6px;}
 html[data-labs="true"] .btn-primary{background:linear-gradient(135deg,var(--forest),color-mix(in srgb,var(--forest) 68%,var(--gold)));border-color:transparent;box-shadow:0 6px 16px color-mix(in srgb,var(--forest) 22%,transparent);}
 .header-actions{display:flex;gap:8px;flex:none;}
+.header-more{position:relative;display:flex;}
+.header-more-menu{
+  position:absolute;z-index:180;top:calc(100% + 8px);right:0;width:205px;padding:7px;
+  display:grid;gap:4px;border:1px solid var(--border);border-radius:13px;background:var(--paper);
+  box-shadow:0 16px 38px rgba(0,0,0,.2);opacity:0;visibility:hidden;pointer-events:none;
+  transform:translateY(-5px);transition:opacity .18s ease,transform .18s ease,visibility 0s linear .18s;
+}
+.header-more-menu.open{opacity:1;visibility:visible;pointer-events:auto;transform:none;transition-delay:0s;}
+.header-more-menu .icon-btn{width:100%;height:38px;padding:0 10px;justify-content:flex-start;gap:10px;border-color:transparent;}
+.header-more-menu .icon-btn:hover{background:var(--sage);border-color:var(--border);}
+.header-more-menu .icon-btn svg{flex:none;}
+.header-menu-label{font-size:12.5px;font-weight:600;color:var(--ink);}
+#logout-btn .header-menu-label{color:var(--danger);}
 .icon-btn{
   width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--paper);
   display:flex;align-items:center;justify-content:center;flex:none;
@@ -337,7 +350,10 @@ html[data-theme="dark"], html[data-theme="black"] .dm-conversation-remove:hover{
 .dm-thread-box{height:78vh;max-height:640px;}
 .dm-thread-box .modal-head{gap:8px;}
 .dm-thread-head-info{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
+.dm-thread-head-info{cursor:pointer;border-radius:10px;padding:4px 6px;margin:-4px 0;transition:background .15s ease;}
+.dm-thread-head-info:hover,.dm-thread-head-info:focus-visible{background:var(--sage);outline:none;}
 .dm-thread-head-info strong{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#view-profile-modal,#photo-viewer-modal{z-index:260;}
 .dm-messages{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:8px;}
 .dm-bubble{max-width:75%;padding:8px 12px;border-radius:14px;font-size:13.5px;line-height:1.4;word-wrap:break-word;}
 .dm-bubble-mine{align-self:flex-end;background:var(--forest);color:#fff;border-bottom-right-radius:4px;}
@@ -347,9 +363,33 @@ html[data-theme="dark"], html[data-theme="black"] .dm-conversation-remove:hover{
 .dm-message-status{font-size:12px;line-height:1;letter-spacing:-4px;padding-right:4px;color:rgba(255,255,255,.72);white-space:nowrap;}
 .dm-message-status.is-read{color:#69D3FF;}
 .dm-date-divider{align-self:center;position:sticky;top:0;z-index:1;background:var(--paper);color:var(--text-2);border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:10.5px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.06);}
-.dm-composer{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border);flex:none;}
+.dm-composer{display:flex;align-items:center;gap:8px;padding:12px 16px;border-top:1px solid var(--border);flex:none;flex-wrap:wrap;}
 .dm-composer input{flex:1;}
+.audio-record-btn{flex:none;white-space:nowrap;}
+.audio-record-btn.is-recording{background:var(--danger);border-color:var(--danger);color:#fff;animation:audioRecordPulse 1.15s ease-in-out infinite;}
+.audio-record-btn svg{width:16px;height:16px;}
+.audio-record-status{font-size:11.5px;color:var(--text-2);}
+.audio-preview{display:flex;align-items:center;gap:8px;min-width:0;padding:7px 9px;border:1px solid var(--border);border-radius:10px;background:var(--parchment);}
+.audio-preview.hidden{display:none;}
+.audio-preview audio,.dm-audio-message audio{display:block;width:min(100%,300px);height:34px;}
+.audio-preview-remove{width:30px;height:30px;padding:0;flex:none;}
+.dm-audio-preview{flex:1 1 100%;}
+.dm-audio-message{min-width:210px;margin:1px 0 4px;}
+.dm-bubble-mine audio{filter:saturate(.85);}
+@keyframes audioRecordPulse{0%,100%{box-shadow:0 0 0 0 rgba(224,91,91,.15)}50%{box-shadow:0 0 0 5px rgba(224,91,91,.2)}}
 .dm-empty{font-size:13px;color:var(--text-2);text-align:center;padding:30px 10px;}
+.call-modal-box{width:min(92vw,480px);max-width:480px;}
+.call-modal-box .modal-body{padding:0;background:#111;}
+.call-stage{width:100%;min-height:180px;display:grid;place-items:center;background:#111;color:#fff;}
+.call-stage iframe{width:100%!important;height:100%!important;border:0;}
+.call-loading{text-align:center;padding:24px;font-size:13px;color:rgba(255,255,255,.78);}
+.call-loading strong{display:block;margin-bottom:6px;color:#fff;font-size:15px;}
+.call-fallback{color:#9ee7bd;text-decoration:underline;}
+#call-btn{overflow:visible;}
+#call-btn.call-active{border-color:#43d17a;color:#43d17a;animation:callPulse 1.45s ease-in-out infinite;}
+.call-count-badge{position:absolute;z-index:3;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#43d17a;color:#082112;border:2px solid var(--paper);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.call-count-badge.hidden{display:none;}
+@keyframes callPulse{0%,100%{box-shadow:0 0 0 0 rgba(67,209,122,.12)}50%{box-shadow:0 0 0 6px rgba(67,209,122,.2)}}
 .field-label{font-size:12px;font-weight:600;color:var(--text-2);margin:0 0 6px;display:block;}
 .field-label + .field{margin-bottom:14px;}
 .sector-tag{
@@ -540,6 +580,23 @@ input.field::placeholder{color:var(--text-3);opacity:1;}
 input.field:focus,select.field:focus{border-color:var(--moss);}
 .composer-bottom{display:flex;justify-content:space-between;align-items:center;gap:8px;}
 .composer-bottom select{flex:none;width:auto;max-width:190px;}
+.poll-composer-toggle{align-self:flex-start;}
+.poll-composer-panel{display:grid;gap:8px;padding:11px;border:1px solid var(--border);border-radius:11px;background:var(--parchment);}
+.poll-composer-panel.hidden{display:none;}
+#poll-option-list{display:grid;gap:7px;}
+.poll-option-row{display:flex;align-items:center;gap:7px;}
+.poll-option-row .field{flex:1;}
+.poll-remove-option{width:34px;height:34px;flex:none;}
+.poll-composer-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.post-poll{margin:10px 0 12px 37px;display:grid;gap:7px;}
+.poll-choice{position:relative;width:100%;min-height:42px;padding:8px 11px;border:1px solid var(--border);border-radius:10px;background:var(--paper);color:var(--ink);overflow:hidden;text-align:left;}
+.poll-choice:hover{border-color:var(--moss);}
+.poll-choice.is-selected{border-color:var(--forest);box-shadow:inset 0 0 0 1px var(--forest);}
+.poll-choice-fill{position:absolute;inset:0 auto 0 0;width:var(--poll-percent);background:color-mix(in srgb,var(--forest) 15%,transparent);transition:width .35s ease;}
+.poll-choice-content{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px;}
+.poll-choice-label{font-weight:600;overflow-wrap:anywhere;}
+.poll-choice-result{flex:none;color:var(--text-2);font-size:11px;}
+.poll-total{font-size:11px;color:var(--text-3);padding-left:2px;}
 .btn{
   border:1px solid var(--border);background:var(--paper);border-radius:9px;padding:9px 16px;
   font-size:13px;font-weight:500;color:var(--ink);
@@ -859,7 +916,7 @@ img,video,iframe{max-width:100%;}
   .brand-row img{width:44px;height:44px;border-radius:11px;}
   .brand-row h1{font-size:19px;}
   .brand-row p{font-size:11.5px;line-height:1.35;}
-  .header-actions{grid-template-columns:repeat(4,38px);justify-content:end;}
+  .header-actions{grid-template-columns:repeat(6,38px);justify-content:center;}
   .preview-card{padding:10px 11px;}
   .card{padding:14px 13px;border-radius:12px;}
   .section-head{gap:6px;flex-wrap:wrap;}
@@ -870,6 +927,7 @@ img,video,iframe{max-width:100%;}
   .mural-toolbar{display:grid;grid-template-columns:1fr;}
   .post{padding:13px 0;}
   .post-text,.post-actions,.post-comments,.post-views-panel{margin-left:0;}
+  .post-poll{margin-left:0;}
   .post-text{margin-top:8px;line-height:1.5;}
   .post-actions{align-items:center;gap:3px;}
   .post-actions>.btn-ghost{padding:6px 7px;font-size:11.5px;}
@@ -887,10 +945,14 @@ img,video,iframe{max-width:100%;}
   .modal-head{padding:12px;}
   .modal-body{padding:12px;}
   .dm-thread-box{height:min(78dvh,640px);}
+  .call-modal-box{width:100%;max-width:480px;}
+  .call-stage{min-height:170px;}
   .dm-messages{padding:12px 10px;}
   .dm-bubble{max-width:86%;}
   .dm-composer{padding:10px;}
   .dm-composer .btn{padding-inline:12px;}
+  .dm-composer input{min-width:0;}
+  .audio-preview{width:100%;}
   .mention-notification-item{padding:10px 5px;}
   .note-card{right:10px;bottom:10px;width:calc(100vw - 20px);}
   .note-card.expanded{width:calc(100vw - 20px);max-height:calc(100dvh - 20px);}
@@ -898,7 +960,7 @@ img,video,iframe{max-width:100%;}
 }
 @media (max-width:360px){
   .wrap{padding-inline:9px;}
-  .header-actions{grid-template-columns:repeat(4,34px);gap:6px;}
+  .header-actions{grid-template-columns:repeat(6,34px);gap:6px;}
   .icon-btn{width:34px;height:34px;}
   .post-actions>.btn-ghost{font-size:11px;padding-inline:5px;}
   .dm-bubble{max-width:92%;}
@@ -1024,9 +1086,19 @@ img,video,iframe{max-width:100%;}
           <svg viewBox="0 0 24 24"><path d="M4 5h16v11H7l-3 3V5z"/></svg>
           <span id="dm-badge" class="dm-badge hidden"></span>
         </button>
+        <button class="icon-btn" id="call-btn" aria-label="Entrar na call da equipe" title="Call da equipe">
+          <svg viewBox="0 0 24 24"><path d="M15 10l4.5-2.5v9L15 14"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg>
+          <span id="call-count-badge" class="call-count-badge hidden">0</span>
+        </button>
         <button class="icon-btn" id="profile-btn" aria-label="Meu perfil">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>
         </button>
+        <div class="header-more">
+          <button class="icon-btn" id="header-more-btn" type="button" aria-label="Mais opções" aria-expanded="false" aria-controls="header-more-menu">
+            <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>
+          </button>
+          <div class="header-more-menu" id="header-more-menu" role="menu"></div>
+        </div>
         <button class="icon-btn" id="support-btn" aria-label="Suporte / ajuda">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2 1.8-2 3.5"/><circle cx="12" cy="16.6" r="0.6" fill="currentColor" stroke="none"/></svg>
         </button>
@@ -1064,6 +1136,20 @@ img,video,iframe{max-width:100%;}
       </a>
     </div>
   </header>
+
+  <div class="modal-overlay hidden" id="call-modal">
+    <div class="modal-box call-modal-box">
+      <div class="modal-head">
+        <div><strong>Call da equipe</strong><span>A sala será aberta em uma aba dedicada</span></div>
+        <button class="modal-close" id="call-modal-close" type="button" aria-label="Sair da call"><svg viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div class="call-stage" id="call-stage">
+          <div class="call-loading"><strong>O navegador bloqueou a nova aba.</strong>Use o link abaixo para entrar na sala.</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div class="modal-overlay hidden" id="mention-notification-modal">
     <div class="modal-box">
@@ -1265,7 +1351,7 @@ img,video,iframe{max-width:100%;}
         <button class="modal-close" id="dm-thread-back" type="button" aria-label="Voltar" style="margin-right:2px;">
           <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
         </button>
-        <div class="dm-thread-head-info">
+        <div class="dm-thread-head-info" id="dm-thread-profile-link" data-action="view-profile" role="button" tabindex="0" title="Ver perfil">
           <div class="avatar avatar-sm" id="dm-thread-avatar">?</div>
           <strong id="dm-thread-name"></strong>
         </div>
@@ -1281,8 +1367,13 @@ img,video,iframe{max-width:100%;}
       </div>
       <div class="dm-messages" id="dm-messages"></div>
       <div class="dm-composer">
+        <div class="audio-preview dm-audio-preview hidden" id="dm-audio-preview"></div>
+        <button class="btn btn-ghost audio-record-btn" id="dm-audio-record" type="button" aria-label="Gravar áudio" title="Gravar áudio">
+          <svg viewBox="0 0 24 24"><rect x="8" y="3" width="8" height="12" rx="4"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg>
+        </button>
         <input class="field" id="dm-input" placeholder="Escreva uma mensagem..." maxlength="1000">
         <button class="btn btn-primary" id="dm-send-btn">Enviar</button>
+        <span class="audio-record-status" id="dm-audio-status"></span>
       </div>
     </div>
   </div>
@@ -1299,6 +1390,14 @@ img,video,iframe{max-width:100%;}
         <div class="composer-top">
           <textarea class="field msg-input" id="msg-input" rows="1" placeholder="Escreva um recado, uma ideia ou o que precisa ser feito... (Enter quebra linha, Ctrl+Enter posta)"></textarea>
           <div class="mention-suggestions hidden" id="mention-suggestions"></div>
+        </div>
+        <button class="btn btn-ghost poll-composer-toggle" id="poll-composer-toggle" type="button" aria-expanded="false">＋ Criar enquete</button>
+        <div class="poll-composer-panel hidden" id="poll-composer-panel">
+          <div id="poll-option-list"></div>
+          <div class="poll-composer-actions">
+            <button class="btn btn-ghost" id="poll-add-option" type="button">＋ Adicionar opção</button>
+            <span class="post-time">2 a 6 opções</span>
+          </div>
         </div>
         <div class="composer-bottom">
           <select class="field" id="msg-visibility">
@@ -2450,6 +2549,42 @@ document.addEventListener('fullscreenchange', ()=>{
   fsBtn.classList.toggle('on', !!document.fullscreenElement);
 });
 
+/* ===== menu compacto dos controles secundários ===== */
+const headerMoreBtn = document.getElementById('header-more-btn');
+const headerMoreMenu = document.getElementById('header-more-menu');
+[
+  [themeBtn, 'Alternar tema'],
+  [fsBtn, 'Tela cheia'],
+  [document.getElementById('support-btn'), 'Suporte'],
+  [document.getElementById('logout-btn'), 'Sair']
+].forEach(([button,label])=>{
+  if(!button) return;
+  const text = document.createElement('span');
+  text.className = 'header-menu-label';
+  text.textContent = label;
+  button.appendChild(text);
+  button.setAttribute('role','menuitem');
+  headerMoreMenu.appendChild(button);
+});
+function closeHeaderMoreMenu(){
+  headerMoreMenu.classList.remove('open');
+  headerMoreBtn.setAttribute('aria-expanded','false');
+}
+headerMoreBtn.addEventListener('click', event=>{
+  event.stopPropagation();
+  const open = headerMoreMenu.classList.toggle('open');
+  headerMoreBtn.setAttribute('aria-expanded', String(open));
+});
+headerMoreMenu.addEventListener('click', event=>{
+  if(event.target.closest('button')) closeHeaderMoreMenu();
+});
+document.addEventListener('click', event=>{
+  if(!event.target.closest('.header-more')) closeHeaderMoreMenu();
+});
+document.addEventListener('keydown', event=>{
+  if(event.key === 'Escape') closeHeaderMoreMenu();
+});
+
 /* ===== painel de Instagram ===== */
 const socialToggle = document.getElementById('social-toggle');
 const socialPanel = document.getElementById('social-panel');
@@ -2582,6 +2717,69 @@ function closeModalSmooth(modal){
     updateBodyScrollLock();
   }, 240);
 }
+
+/* ===== call da equipe (Jitsi Meet, sem uso do Firebase) ===== */
+const callBtn = document.getElementById('call-btn');
+const callModal = document.getElementById('call-modal');
+const callModalClose = document.getElementById('call-modal-close');
+const callStage = document.getElementById('call-stage');
+const callCountBadge = document.getElementById('call-count-badge');
+const CALL_ROOM_NAME = 'PlantelHub-Equipe-Geral-2026';
+let callWindowPoll = null;
+let callParticipantUid = null;
+function renderCallPresence(participants){
+  const cutoff = Date.now() - 4 * 60 * 60 * 1000;
+  const active = Object.values(participants || {}).filter(person=>Number(person.joinedAt || 0) >= cutoff);
+  callBtn.classList.toggle('call-active', active.length > 0);
+  callCountBadge.classList.toggle('hidden', active.length === 0);
+  callCountBadge.textContent = active.length > 9 ? '9+' : String(active.length);
+  const names = active.map(person=>person.name).filter(Boolean);
+  callBtn.title = active.length
+    ? active.length+' na call'+(names.length ? ': '+names.join(', ') : '')
+    : 'Call da equipe';
+  callBtn.setAttribute('aria-label', active.length ? 'Call ativa com '+active.length+' participante(s)' : 'Entrar na call da equipe');
+}
+function clearMyCallPresence(){
+  clearInterval(callWindowPoll);
+  callWindowPoll = null;
+  const uid = callParticipantUid;
+  callParticipantUid = null;
+  if(uid) remove(ref(db, 'team_call/participants/'+uid)).catch(()=>{});
+}
+function markMyCallPresence(callWindow){
+  if(!currentUid) return;
+  clearMyCallPresence();
+  const uid = currentUid;
+  const mine = myProfile() || {};
+  const participantRef = ref(db, 'team_call/participants/'+uid);
+  callParticipantUid = uid;
+  onDisconnect(participantRef).remove().catch(()=>{});
+  set(participantRef, { name:mine.name || 'Integrante do Plantel', joinedAt:Date.now() }).catch(()=>{});
+  callWindowPoll = setInterval(()=>{
+    if(callWindow.closed) clearMyCallPresence();
+  }, 1500);
+}
+function openTeamCall(){
+  if(!currentUid) return;
+  const roomUrl = 'https://meet.jit.si/'+CALL_ROOM_NAME;
+  const callWindow = window.open(roomUrl, '_blank');
+  if(callWindow){
+    try{ callWindow.opener = null; }catch(e){}
+    markMyCallPresence(callWindow);
+    showSuccessToast('Call aberta em uma nova aba');
+  }else{
+    callStage.innerHTML = '<div class="call-loading"><strong>O navegador bloqueou a nova aba.</strong><a class="call-fallback" href="'+roomUrl+'" target="_blank" rel="noopener">Clique aqui para entrar na call</a></div>';
+    openModalSmooth(callModal);
+  }
+}
+function closeTeamCall(){
+  closeModalSmooth(callModal);
+}
+callBtn.addEventListener('click', openTeamCall);
+callModalClose.addEventListener('click', closeTeamCall);
+callModal.addEventListener('click', event=>{ if(event.target === callModal) closeTeamCall(); });
+document.addEventListener('keydown', event=>{ if(event.key === 'Escape' && !callModal.classList.contains('hidden')) closeTeamCall(); });
+
 function openOnlineModal(){
   renderOnlineList();
   openModalSmooth(onlineModal);
@@ -3248,6 +3446,7 @@ const dmListBody = document.getElementById('dm-list-body');
 const dmThreadModal = document.getElementById('dm-thread-modal');
 const dmThreadBack = document.getElementById('dm-thread-back');
 const dmThreadClose = document.getElementById('dm-thread-close');
+const dmThreadProfileLink = document.getElementById('dm-thread-profile-link');
 const dmThreadAvatar = document.getElementById('dm-thread-avatar');
 const dmThreadName = document.getElementById('dm-thread-name');
 const dmNicknameBtn = document.getElementById('dm-nickname-btn');
@@ -3262,6 +3461,75 @@ let dmThreadUid = null;
 let dmThreadUnsub = null;
 let myNicknames = {};
 const DM_SEEN_KEY = 'plantel_dm_seen_ts';
+
+const AUDIO_MAX_SECONDS = 30;
+const AUDIO_MAX_BYTES = 500 * 1024;
+let activeAudioRecorder = null;
+function audioMimeType(){
+  if(!window.MediaRecorder) return '';
+  return ['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg;codecs=opus']
+    .find(type=>MediaRecorder.isTypeSupported(type)) || '';
+}
+function createAudioRecorder(button, status, preview){
+  let recorder = null, stream = null, chunks = [], pending = null, startedAt = 0, timer = null;
+  const originalHtml = button.innerHTML;
+  const stopTracks = ()=>{ if(stream){ stream.getTracks().forEach(track=>track.stop()); stream=null; } };
+  const updateTimer = ()=>{
+    const elapsed = Math.min(AUDIO_MAX_SECONDS, Math.floor((Date.now()-startedAt)/1000));
+    status.textContent = `Gravando ${String(Math.floor(elapsed/60)).padStart(2,'0')}:${String(elapsed%60).padStart(2,'0')} / 00:30`;
+    if(elapsed >= AUDIO_MAX_SECONDS && recorder?.state === 'recording') recorder.stop();
+  };
+  const drawPreview = ()=>{
+    if(!pending){ preview.classList.add('hidden'); preview.innerHTML=''; return; }
+    preview.classList.remove('hidden');
+    preview.innerHTML = `<audio controls preload="metadata" src="${escapeHtml(pending.data)}"></audio><button class="btn btn-ghost audio-preview-remove" type="button" aria-label="Remover áudio" title="Remover áudio">×</button>`;
+    preview.querySelector('.audio-preview-remove').addEventListener('click', clear);
+  };
+  function finishUi(){
+    clearInterval(timer); timer=null; stopTracks();
+    button.classList.remove('is-recording'); button.innerHTML=originalHtml;
+    button.setAttribute('aria-label','Gravar áudio');
+    if(activeAudioRecorder === api) activeAudioRecorder=null;
+  }
+  function stop(){ if(recorder?.state === 'recording') recorder.stop(); }
+  function clear(){ pending=null; status.textContent=''; drawPreview(); }
+  async function start(){
+    if(!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder){ showDbError('Este navegador não oferece suporte à gravação de áudio.'); return; }
+    if(activeAudioRecorder && activeAudioRecorder !== api) activeAudioRecorder.stop();
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      chunks=[]; pending=null; drawPreview();
+      const mimeType=audioMimeType();
+      const options={audioBitsPerSecond:24000};
+      if(mimeType) options.mimeType=mimeType;
+      recorder=new MediaRecorder(stream,options);
+      recorder.addEventListener('dataavailable',event=>{ if(event.data.size) chunks.push(event.data); });
+      recorder.addEventListener('stop',()=>{
+        const duration=Math.max(1,Math.min(AUDIO_MAX_SECONDS,Math.round((Date.now()-startedAt)/1000)));
+        const blob=new Blob(chunks,{type:recorder.mimeType || mimeType || 'audio/webm'});
+        finishUi();
+        if(!blob.size){ status.textContent='Não foi possível gravar o áudio.'; return; }
+        if(blob.size > AUDIO_MAX_BYTES){ status.textContent='O áudio ficou maior que 500 KB. Tente novamente.'; return; }
+        const reader=new FileReader();
+        reader.addEventListener('load',()=>{
+          pending={data:String(reader.result),mime:blob.type,duration,size:blob.size};
+          status.textContent=`Áudio pronto · ${duration}s`; drawPreview();
+        });
+        reader.readAsDataURL(blob);
+      });
+      recorder.start(250); activeAudioRecorder=api; startedAt=Date.now();
+      button.classList.add('is-recording'); button.textContent='■ Parar';
+      button.setAttribute('aria-label','Parar gravação'); updateTimer(); timer=setInterval(updateTimer,500);
+    }catch(error){
+      finishUi();
+      status.textContent = error?.name === 'NotAllowedError' ? 'Permita o acesso ao microfone.' : 'Não foi possível acessar o microfone.';
+    }
+  }
+  const api={start,stop,clear,getPending:()=>pending,isRecording:()=>recorder?.state==='recording'};
+  button.addEventListener('click',()=>api.isRecording()?stop():start());
+  return api;
+}
+const dmAudioRecorder=createAudioRecorder(document.getElementById('dm-audio-record'),document.getElementById('dm-audio-status'),document.getElementById('dm-audio-preview'));
 
 function chatId(a, b){ return [a, b].sort().join('__'); }
 function nicknameFor(otherUid, fallbackName){
@@ -3303,7 +3571,8 @@ function renderDmMessages(msgs, otherReadAt){
       : '';
     return `${divider}
       <div class="dm-bubble ${mine?'dm-bubble-mine':'dm-bubble-theirs'}">
-        ${escapeHtml(m.text)}
+        ${m.text ? escapeHtml(m.text) : ''}
+        ${renderAudioPlayer(m.audio,'dm-audio-message')}
         <div class="dm-bubble-meta" title="${escapeHtml(formatDmFullDateTime(m.ts))}">
           <time class="dm-bubble-time" datetime="${new Date(m.ts || 0).toISOString()}">${formatDmTime(m.ts)}</time>${status}
         </div>
@@ -3391,6 +3660,8 @@ function updateDmThreadHeader(){
   const known = dmConversations[dmThreadUid];
   const displayName = nicknameFor(dmThreadUid, known && known.name);
   dmThreadName.textContent = displayName;
+  dmThreadProfileLink.dataset.uid = dmThreadUid;
+  dmThreadProfileLink.dataset.name = displayName;
   const displayPhoto = known && known.photo;
   if(!dmThreadAvatar.querySelector('img')){ dmThreadAvatar.textContent = initials(displayName); }
 }
@@ -3401,6 +3672,8 @@ function openDmThread(otherUid, name, photo){
   const displayName = nicknameFor(otherUid, (known && known.name) || name);
   const displayPhoto = (known && known.photo) || photo || null;
   dmThreadName.textContent = displayName;
+  dmThreadProfileLink.dataset.uid = otherUid;
+  dmThreadProfileLink.dataset.name = displayName;
   dmThreadAvatar.innerHTML = displayPhoto ? `<img src="${displayPhoto}" alt="">` : initials(displayName);
   dmMessages.innerHTML = '';
   if(dmThreadUnsub) dmThreadUnsub();
@@ -3430,6 +3703,12 @@ function closeDmThread(){
 dmThreadClose.addEventListener('click', closeDmThread);
 dmThreadBack.addEventListener('click', ()=>{ closeDmThread(); openDmList(); });
 dmThreadModal.addEventListener('click', (e)=>{ if(e.target === dmThreadModal) closeDmThread(); });
+dmThreadProfileLink.addEventListener('keydown', event=>{
+  if(event.key === 'Enter' || event.key === ' '){
+    event.preventDefault();
+    dmThreadProfileLink.click();
+  }
+});
 
 dmNicknameBtn.addEventListener('click', ()=>{
   if(!dmThreadUid || !currentUid) return;
@@ -3469,20 +3748,23 @@ dmDeleteBtn.addEventListener('click', ()=>{
 
 function sendDmMessage(){
   const text = dmInput.value.trim();
-  if(!text || !dmThreadUid || !currentUid) return;
+  const audio = dmAudioRecorder.getPending();
+  if((!text && !audio) || !dmThreadUid || !currentUid) return;
   const cid = chatId(currentUid, dmThreadUid);
   const mine = myProfile() || {};
-  set(ref(db, 'dms/'+cid+'/messages/'+uid()), { from: currentUid, text, ts: Date.now() }).catch(handleDbError);
+  set(ref(db, 'dms/'+cid+'/messages/'+uid()), { from: currentUid, text, audio, ts: Date.now() }).catch(handleDbError);
   const now = Date.now();
+  const lastText = text || '🎙 Áudio';
   update(ref(db, 'conversations/'+currentUid+'/'+dmThreadUid), {
     name: dmThreadName.textContent, photo: (dmThreadAvatar.querySelector('img')||{}).src || null,
-    lastText: text, lastTs: now, lastFrom: currentUid
+    lastText, lastTs: now, lastFrom: currentUid
   }).catch(handleDbError);
   update(ref(db, 'conversations/'+dmThreadUid+'/'+currentUid), {
     name: mine.name || 'Alguém', photo: mine.photo || null,
-    lastText: text, lastTs: now, lastFrom: currentUid
+    lastText, lastTs: now, lastFrom: currentUid
   }).catch(handleDbError);
   dmInput.value = '';
+  dmAudioRecorder.clear();
 }
 dmSendBtn.addEventListener('click', sendDmMessage);
 dmInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ e.preventDefault(); sendDmMessage(); } });
@@ -3609,6 +3891,8 @@ setTimeout(()=>{
 
 let dataUnsubs = [];
 function stopDataListeners(){
+  clearMyCallPresence();
+  renderCallPresence({});
   dataUnsubs.forEach(u => { if(u) u(); });
   dataUnsubs = [];
   listenersStarted = false;
@@ -3644,6 +3928,9 @@ function startDataListeners(){
     state.presence = snap.val() || {};
     renderOnlineList();
   }, handleDbError));
+  dataUnsubs.push(onValue(ref(db, 'team_call/participants'), snap => {
+    renderCallPresence(snap.val() || {});
+  }, ()=> renderCallPresence({})));
   dataUnsubs.push(startPresence());
   let dmConversationsLoaded = false;
   const dmSeenLastTs = {};
@@ -3806,6 +4093,22 @@ function renderPostText(p, searchTerm = ''){
   const truncated = p.text.slice(0, POST_TEXT_LIMIT).trimEnd();
   return `<div class="post-text">${renderMarkdown(truncated, p, '')}… <span class="read-more-toggle" data-action="toggle-expand-post" data-id="${p.id}">ler mais</span>${editedTag}</div>`;
 }
+function renderPostPoll(p){
+  if(!p.poll || !p.poll.options) return '';
+  const options = Array.isArray(p.poll.options) ? p.poll.options.filter(Boolean) : Object.values(p.poll.options);
+  const votes = p.poll.votes || {};
+  const voteValues = Object.values(votes);
+  const total = voteValues.length;
+  const myVote = currentUid ? votes[currentUid] : null;
+  return `<div class="post-poll">${options.map(option=>{
+    const count = voteValues.filter(value=>value === option.id).length;
+    const percent = total ? Math.round((count / total) * 100) : 0;
+    return `<button class="poll-choice ${myVote===option.id?'is-selected':''}" type="button" data-action="vote-poll" data-id="${p.id}" data-option="${escapeHtml(option.id)}" style="--poll-percent:${percent}%">
+      <span class="poll-choice-fill"></span>
+      <span class="poll-choice-content"><span class="poll-choice-label">${myVote===option.id?'✓ ':''}${escapeHtml(option.label)}</span><span class="poll-choice-result">${percent}% · ${count}</span></span>
+    </button>`;
+  }).join('')}<div class="poll-total">${total} ${total===1?'voto':'votos'}${myVote ? ' · você já votou' : ''}</div></div>`;
+}
 function renderPostViews(p){
   return Object.entries(p.views || {}).sort((a,b)=>b[1]-a[1]).map(([viewerUid, viewedAt])=>{
     const profile = state.users[viewerUid] || {};
@@ -3815,6 +4118,13 @@ function renderPostViews(p){
 }
 function escapeHtml(s){
   return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function renderAudioPlayer(audio,className=''){
+  const src=String(audio?.data || '');
+  if(!/^data:audio\/(?:webm|ogg|mp4|mpeg|wav|x-m4a);base64,/i.test(src)) return '';
+  const duration=Number(audio?.duration || 0);
+  const label=duration ? `Mensagem de áudio, ${duration} segundos` : 'Mensagem de áudio';
+  return `<div class="${escapeHtml(className)}"><audio controls preload="metadata" aria-label="${escapeHtml(label)}" src="${escapeHtml(src)}"></audio></div>`;
 }
 function highlightSearch(value, searchTerm){
   const text = String(value ?? '');
@@ -3959,7 +4269,7 @@ function render(){
   const search = muralSearch;
   const sectorFilter = muralSectorFilter;
   if(search){
-    posts = posts.filter(p => p.text.toLowerCase().includes(search) || authorInfo(p).name.toLowerCase().includes(search));
+    posts = posts.filter(p => String(p.text || '').toLowerCase().includes(search) || authorInfo(p).name.toLowerCase().includes(search));
   }
   if(sectorFilter){
     posts = posts.filter(p => authorInfo(p).sector.includes(sectorFilter) || p._sector === sectorFilter);
@@ -3996,6 +4306,7 @@ function render(){
         </div>
       </div>` : `
       ${p.text ? renderPostText(p, search) : ''}
+      ${renderPostPoll(p)}
       <div class="post-actions">
         <button class="btn-ghost post-like ${liked?'is-liked':''}" data-action="like-post" data-id="${p.id}">
           <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.7 1.2 6 3.6C14.3 5.2 15.8 4 18 4c4 0 5.5 4 4 7.7C19.5 16.4 12 21 12 21z"/></svg>
@@ -4392,18 +4703,67 @@ if(muralMessageInput){
     muralMessageInput.dispatchEvent(new Event('input', { bubbles:true }));
   });
 }
+const pollComposerToggle = document.getElementById('poll-composer-toggle');
+const pollComposerPanel = document.getElementById('poll-composer-panel');
+const pollOptionList = document.getElementById('poll-option-list');
+const pollAddOption = document.getElementById('poll-add-option');
+function pollOptionRow(value=''){
+  const row = document.createElement('div');
+  row.className = 'poll-option-row';
+  row.innerHTML = '<input class="field poll-option-input" maxlength="120" placeholder="Opção da enquete"><button class="btn btn-ghost poll-remove-option" type="button" aria-label="Remover opção">×</button>';
+  row.querySelector('input').value = value;
+  return row;
+}
+function resetPollComposer(close=true){
+  pollOptionList.innerHTML = '';
+  pollOptionList.append(pollOptionRow(), pollOptionRow());
+  if(close){
+    pollComposerPanel.classList.add('hidden');
+    pollComposerToggle.setAttribute('aria-expanded','false');
+    pollComposerToggle.textContent = '＋ Criar enquete';
+  }
+}
+pollComposerToggle.addEventListener('click', ()=>{
+  const open = pollComposerPanel.classList.toggle('hidden') === false;
+  pollComposerToggle.setAttribute('aria-expanded',String(open));
+  pollComposerToggle.textContent = open ? '× Remover enquete' : '＋ Criar enquete';
+  if(open && !pollOptionList.children.length) resetPollComposer(false);
+});
+pollAddOption.addEventListener('click', ()=>{
+  if(pollOptionList.children.length >= 6) return;
+  const row = pollOptionRow();
+  pollOptionList.appendChild(row);
+  row.querySelector('input').focus();
+});
+pollOptionList.addEventListener('click', event=>{
+  const removeBtn = event.target.closest('.poll-remove-option');
+  if(!removeBtn || pollOptionList.children.length <= 2) return;
+  removeBtn.closest('.poll-option-row').remove();
+});
+resetPollComposer();
 document.getElementById('post-btn').addEventListener('click', ()=>{
   if(!ensureProfileBeforeAction()) return;
   const msgInput = document.getElementById('msg-input');
   const text = msgInput.value.trim();
   if(!text) return;
   const visibility = document.getElementById('msg-visibility').value || null;
+  const pollOpen = !pollComposerPanel.classList.contains('hidden');
+  const pollOptions = Array.from(pollOptionList.querySelectorAll('.poll-option-input')).map(input=>input.value.trim()).filter(Boolean);
+  if(pollOpen && pollOptions.length < 2){
+    showDbError('A enquete precisa ter pelo menos duas opções preenchidas.');
+    return;
+  }
   const id = uid();
   const path = visibility ? `posts_private/${visibility}/${id}` : `posts/${id}`;
   newMuralPosts.add(id);
   const mentions = collectMentions(text);
-  set(ref(db, path), { author: myProfile().name, uid: currentUid, text, mentions:Object.keys(mentions).length ? mentions : null, ts: Date.now(), metaId: null, demandaId: null }).catch(err=>{ newMuralPosts.delete(id); handleDbError(err); });
+  const poll = pollOpen ? {
+    options: pollOptions.map((label,index)=>({ id:'option-'+index, label })),
+    votes: null
+  } : null;
+  set(ref(db, path), { author: myProfile().name, uid: currentUid, text, poll, mentions:Object.keys(mentions).length ? mentions : null, ts: Date.now(), metaId: null, demandaId: null }).catch(err=>{ newMuralPosts.delete(id); handleDbError(err); });
   msgInput.value = '';
+  resetPollComposer();
   closeMentionSuggestions();
   autoGrowMsgInput();
 });
@@ -4616,6 +4976,14 @@ document.addEventListener('click', (e)=>{
       update(ref(db, postPath(post)), { text, mentions:Object.keys(mentions).length ? mentions : null, editedAt: Date.now() }).catch(handleDbError);
     }
     render();
+  } else if(action === 'vote-poll'){
+    if(!currentUid) return;
+    const post = allPosts().find(p=>p.id===id);
+    const optionId = t.dataset.option;
+    if(!post || !post.poll || !optionId) return;
+    const currentVote = post.poll.votes && post.poll.votes[currentUid];
+    const voteRef = ref(db, postPath(post)+'/poll/votes/'+currentUid);
+    (currentVote === optionId ? remove(voteRef) : set(voteRef, optionId)).catch(handleDbError);
   } else if(action === 'like-post'){
     if(!currentUid) return;
     const post = allPosts().find(p=>p.id===id);
