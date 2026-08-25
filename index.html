@@ -274,7 +274,8 @@ html[data-labs="true"] .btn-primary{background:linear-gradient(135deg,var(--fore
   position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:var(--danger);
 }
 .dm-badge.hidden{display:none;}
-.mention-notification-badge{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--danger);color:#fff;border:2px solid var(--paper);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+#mention-notification-btn{overflow:visible;}
+.mention-notification-badge{position:absolute;z-index:3;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:var(--danger);color:#fff;border:2px solid var(--paper);font-size:10px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 7px rgba(0,0,0,.28);}
 .mention-notification-item{width:100%;display:flex;align-items:flex-start;gap:10px;padding:11px 7px;border:none;border-bottom:1px solid var(--border);background:transparent;color:var(--ink);text-align:left;border-radius:9px;}
 .mention-notification-item:last-child{border-bottom:none;}
 .mention-notification-item:hover{background:var(--sage);}
