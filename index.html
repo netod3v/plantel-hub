@@ -507,6 +507,8 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .post-author{font-size:13px;font-weight:600;}
 .post-time{font-size:11px;color:var(--text-3);}
 .post-text{font-size:13.5px;margin:0 0 8px 37px;white-space:pre-wrap;word-break:break-word;}
+.read-more-toggle{display:inline-block;font-size:13px;font-weight:600;color:var(--forest);cursor:pointer;white-space:nowrap;margin-left:2px;}
+.read-more-toggle:hover{text-decoration:underline;}
 .post-actions{display:flex;gap:6px;margin-left:37px;flex-wrap:wrap;}
 .tag-done{
   font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:4px;
@@ -586,10 +588,18 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .item-text{font-size:13.5px;white-space:pre-wrap;word-break:break-word;}
 .item.done .item-text{text-decoration:line-through;color:var(--text-2);}
 .item-meta{font-size:11px;color:var(--text-3);margin-top:2px;}
+.privacy-icon{display:inline-flex;vertical-align:-2px;margin-left:5px;color:var(--text-3);}
+.privacy-icon svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;}
 .item-remove{
   background:none;border:none;color:var(--text-3);font-size:12px;padding:4px 6px;border-radius:6px;flex:none;
 }
 .item-remove:hover{background:#F6E4E0;color:var(--danger);}
+.item-cal{
+  background:none;border:none;color:var(--text-3);padding:4px;border-radius:6px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+}
+.item-cal svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;}
+.item-cal:hover{background:var(--sage);color:var(--forest);}
 
 .add-inline{display:flex;gap:8px;margin-top:12px;}
 .add-inline input{flex:1;}
@@ -1253,6 +1263,7 @@ const newMuralComments = new Set();
 const newMuralReplies = new Set();
 const newMuralMetas = new Set();
 const newMuralDemandas = new Set();
+const expandedPosts = new Set();
 let muralSearch = '';
 let muralSectorFilter = '';
 
@@ -3317,6 +3328,30 @@ function timeAgo(ts){
   if(diff < 86400) return Math.floor(diff/3600)+'h';
   return Math.floor(diff/86400)+'d';
 }
+function formatFullDate(ts){
+  if(!ts) return '';
+  const d = new Date(ts);
+  const dia = String(d.getDate()).padStart(2,'0');
+  const mes = String(d.getMonth()+1).padStart(2,'0');
+  const ano = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  return `${dia}/${mes}/${ano} às ${hh}:${mm}`;
+}
+const POST_TEXT_LIMIT = 320;
+function renderPostText(p){
+  const editedTag = p.editedAt ? ' <span class="post-edited-tag">(editado)</span>' : '';
+  const isLong = p.text.length > POST_TEXT_LIMIT;
+  const isExpanded = expandedPosts.has(p.id);
+  if(!isLong){
+    return `<p class="post-text">${escapeHtml(p.text)}${editedTag}</p>`;
+  }
+  if(isExpanded){
+    return `<p class="post-text">${escapeHtml(p.text)}${editedTag} <span class="read-more-toggle" data-action="toggle-expand-post" data-id="${p.id}">ler menos</span></p>`;
+  }
+  const truncated = p.text.slice(0, POST_TEXT_LIMIT).trimEnd();
+  return `<p class="post-text">${escapeHtml(truncated)}… <span class="read-more-toggle" data-action="toggle-expand-post" data-id="${p.id}">ler mais</span>${editedTag}</p>`;
+}
 function escapeHtml(s){
   return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -3383,6 +3418,9 @@ function bannedTagHtml(flag){
 function visibilityTagHtml(sector){
   return sector ? `<span class="visibility-tag" title="Visível só pro setor ${escapeHtml(sector)}">🔒 ${escapeHtml(sector)}</span>` : '';
 }
+function privacyIconHtml(sector){
+  return sector ? `<span class="privacy-icon" title="Visível só pro setor ${escapeHtml(sector)}"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>` : '';
+}
 
 function render(){
   updateProfileBtnAvatar();
@@ -3396,7 +3434,7 @@ function render(){
     posts = posts.filter(p => p.text.toLowerCase().includes(search) || authorInfo(p).name.toLowerCase().includes(search));
   }
   if(sectorFilter){
-    posts = posts.filter(p => authorInfo(p).sector.includes(sectorFilter));
+    posts = posts.filter(p => authorInfo(p).sector.includes(sectorFilter) || p._sector === sectorFilter);
   }
   document.getElementById('post-count').textContent = allPostsList.length + (allPostsList.length===1?' mensagem':' mensagens');
   document.getElementById('mural-list').innerHTML = posts.length ? posts.map(p=>{
@@ -3417,7 +3455,7 @@ function render(){
       <div class="post-head">
         ${avatarHtml(pInfo)}
         <div>
-          <div class="post-author"><span${authorNameAttr(pInfo)}>${escapeHtml(pInfo.name)}</span>${sectorTagHtml(pInfo.sector, 2)}${adminTagHtml(pInfo.isAdmin)}${supportTagHtml(pInfo.isSupport)}${devTagHtml(pInfo.isDev)}${visibilityTagHtml(p._sector)} <span class="post-time">· ${timeAgo(p.ts)}</span></div>
+          <div class="post-author"><span${authorNameAttr(pInfo)}>${escapeHtml(pInfo.name)}</span>${sectorTagHtml(pInfo.sector, 2)}${adminTagHtml(pInfo.isAdmin)}${supportTagHtml(pInfo.isSupport)}${devTagHtml(pInfo.isDev)}${visibilityTagHtml(p._sector)} <span class="post-time" title="${formatFullDate(p.ts)}">· ${timeAgo(p.ts)} · ${formatFullDate(p.ts)}</span></div>
         </div>
       </div>
       ${isEditing ? `
@@ -3428,7 +3466,7 @@ function render(){
           <button class="btn-ghost" data-action="cancel-post-edit" data-id="${p.id}">Cancelar</button>
         </div>
       </div>` : `
-      ${p.text ? `<p class="post-text">${escapeHtml(p.text)}${p.editedAt ? ' <span class="post-edited-tag">(editado)</span>' : ''}</p>` : ''}
+      ${p.text ? renderPostText(p) : ''}
       <div class="post-actions">
         ${p.metaId ? `<button class="tag-done tag-meta" data-action="undo-meta" data-id="${p.id}" title="Clique para desfazer">virou meta ✕</button>` : `<button class="btn-ghost" data-action="to-meta" data-id="${p.id}">virar meta</button>`}
         ${p.demandaId ? `<button class="tag-done tag-demanda" data-action="undo-demanda" data-id="${p.id}" title="Clique para desfazer">virou demanda ✕</button>` : `<button class="btn-ghost" data-action="to-demanda" data-id="${p.id}">virar demanda</button>`}
@@ -3454,7 +3492,7 @@ function render(){
           <div class="comment ${newMuralComments.has(c.id) ? 'mural-enter' : ''}" data-comment-id="${c.id}">
             ${avatarHtml(cInfo, true)}
             <div class="comment-body">
-              <div class="comment-author"><span${authorNameAttr(cInfo)}>${escapeHtml(cInfo.name)}</span>${sectorTagHtml(cInfo.sector, 2)}${adminTagHtml(cInfo.isAdmin)}${supportTagHtml(cInfo.isSupport)}${devTagHtml(cInfo.isDev)} <span class="post-time">· ${timeAgo(c.ts)}</span></div>
+              <div class="comment-author"><span${authorNameAttr(cInfo)}>${escapeHtml(cInfo.name)}</span>${sectorTagHtml(cInfo.sector, 2)}${adminTagHtml(cInfo.isAdmin)}${supportTagHtml(cInfo.isSupport)}${devTagHtml(cInfo.isDev)} <span class="post-time" title="${formatFullDate(c.ts)}">· ${timeAgo(c.ts)} · ${formatFullDate(c.ts)}</span></div>
               <div class="comment-text">${escapeHtml(c.text)}</div>
               <div class="comment-actions">
                 <button class="comment-like ${cLiked?'is-liked':''}" data-action="like-comment" data-post="${p.id}" data-id="${c.id}">
@@ -3472,7 +3510,7 @@ function render(){
                   <div class="reply ${newMuralReplies.has(r.id) ? 'mural-enter' : ''}" data-reply-id="${r.id}">
                     ${avatarHtml(rInfo, true)}
                     <div class="reply-body">
-                      <div class="reply-author"><span${authorNameAttr(rInfo)}>${escapeHtml(rInfo.name)}</span>${sectorTagHtml(rInfo.sector, 2)}${adminTagHtml(rInfo.isAdmin)}${supportTagHtml(rInfo.isSupport)}${devTagHtml(rInfo.isDev)} <span class="post-time">· ${timeAgo(r.ts)}</span></div>
+                      <div class="reply-author"><span${authorNameAttr(rInfo)}>${escapeHtml(rInfo.name)}</span>${sectorTagHtml(rInfo.sector, 2)}${adminTagHtml(rInfo.isAdmin)}${supportTagHtml(rInfo.isSupport)}${devTagHtml(rInfo.isDev)} <span class="post-time" title="${formatFullDate(r.ts)}">· ${timeAgo(r.ts)} · ${formatFullDate(r.ts)}</span></div>
                       <div class="reply-text">${escapeHtml(r.text)}</div>
                     </div>
                   </div>`;}).join('')}
@@ -3513,8 +3551,9 @@ function render(){
       <div class="check ${m.done?'done':''}" data-action="${canManageMeta?'toggle-meta':''}" data-id="${m.id}" style="${canManageMeta?'':'pointer-events:none;opacity:.5;'}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(m.text)}</div>
-        <div class="item-meta"><span${authorNameAttr(mInfo)}>${escapeHtml(mInfo.name)}</span>${sectorTagHtml(mInfo.sector, 2)}${adminTagHtml(mInfo.isAdmin)}${supportTagHtml(mInfo.isSupport)}${devTagHtml(mInfo.isDev)}${visibilityTagHtml(m._sector)} · ${timeAgo(m.ts)}</div>
+        <div class="item-meta"><span${authorNameAttr(mInfo)}>${escapeHtml(mInfo.name)}</span>${privacyIconHtml(m._sector)} · ${timeAgo(m.ts)}</div>
       </div>
+      <button class="item-cal" data-action="cal-meta" data-id="${m.id}" title="Adicionar ao Google Agenda"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg></button>
       ${canManageMeta ? `<button class="item-remove" data-action="remove-meta" data-id="${m.id}">remover</button>` : ''}
     </div>`;}).join('') : `<div class="empty">Nenhuma meta ainda.</div>`;
 
@@ -3538,7 +3577,7 @@ function render(){
       <div class="check ${d.done?'done':''}" data-action="${canManageDemanda?'toggle-demanda':''}" data-id="${d.id}" style="${canManageDemanda?'':'pointer-events:none;opacity:.5;'}">${CHECK_SVG}</div>
       <div class="item-body">
         <div class="item-text">${escapeHtml(d.text)}</div>
-        <div class="item-meta"><span${authorNameAttr(dInfo)}>${escapeHtml(dInfo.name)}</span>${sectorTagHtml(dInfo.sector, 2)}${adminTagHtml(dInfo.isAdmin)}${supportTagHtml(dInfo.isSupport)}${devTagHtml(dInfo.isDev)}${visibilityTagHtml(d._sector)} · ${timeAgo(d.ts)}</div>
+        <div class="item-meta"><span${authorNameAttr(dInfo)}>${escapeHtml(dInfo.name)}</span>${privacyIconHtml(d._sector)} · ${timeAgo(d.ts)}</div>
       </div>
       ${canManageDemanda ? `<button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>` : ''}
     </div>`;}).join('') : `<div class="empty">Nenhuma demanda ainda.</div>`;
@@ -3736,6 +3775,20 @@ document.getElementById('msg-input').addEventListener('keydown', e=>{
   }
 });
 
+function addMetaToGoogleCalendar(meta){
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth()+1).padStart(2,'0');
+  const d = String(today.getDate()).padStart(2,'0');
+  const dateStr = `${y}${m}${d}`;
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: meta.text,
+    dates: `${dateStr}/${dateStr}`,
+    details: `Meta do Plantel Hub · responsável: ${authorInfo(meta).name}`
+  });
+  window.open(`https://calendar.google.com/calendar/render?${params.toString()}`, '_blank');
+}
 function addMeta(text, author, itemUid, visibility){
   if(!text.trim()) return null;
   const id = uid();
@@ -3835,6 +3888,9 @@ document.addEventListener('click', (e)=>{
       if(demanda) remove(ref(db, demandaPath(demanda))).catch(handleDbError);
       update(ref(db, postPath(post)), { demandaId: null }).catch(handleDbError);
     }
+  } else if(action === 'cal-meta'){
+    const m = allMetas().find(x=>x.id===id);
+    if(m) addMetaToGoogleCalendar(m);
   } else if(action === 'toggle-meta'){
     const m = allMetas().find(x=>x.id===id);
     if(m){ const newDone = !m.done; update(ref(db, metaPath(m)), { done: newDone, status: newDone ? 'done' : 'todo' }).catch(handleDbError); }
@@ -3932,6 +3988,9 @@ document.addEventListener('click', (e)=>{
     const liked = !!(comment && comment.likes && comment.likes[currentUid]);
     const likeRef = ref(db, postPath(post)+'/comments/'+commentId+'/likes/'+currentUid);
     (liked ? remove(likeRef) : set(likeRef, true)).catch(handleDbError);
+  } else if(action === 'toggle-expand-post'){
+    if(expandedPosts.has(id)) expandedPosts.delete(id); else expandedPosts.add(id);
+    render();
   } else if(action === 'toggle-reply'){
     if(openReplies.has(id)) openReplies.delete(id); else openReplies.add(id);
     render();
