@@ -507,6 +507,7 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .post-author{font-size:13px;font-weight:600;}
 .post-time{font-size:11px;color:var(--text-3);}
 .post-text{font-size:13.5px;margin:0 0 8px 37px;white-space:pre-wrap;word-break:break-word;}
+.search-highlight{background:#FFE16A;color:#1F241F;border-radius:3px;padding:0 .08em;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
 .read-more-toggle{display:inline-block;font-size:13px;font-weight:600;color:var(--forest);cursor:pointer;white-space:nowrap;margin-left:2px;}
 .read-more-toggle:hover{text-decoration:underline;}
 .post-actions{display:flex;gap:6px;margin-left:37px;flex-wrap:wrap;}
@@ -3339,21 +3340,37 @@ function formatFullDate(ts){
   return `${dia}/${mes}/${ano} às ${hh}:${mm}`;
 }
 const POST_TEXT_LIMIT = 320;
-function renderPostText(p){
+function renderPostText(p, searchTerm = ''){
   const editedTag = p.editedAt ? ' <span class="post-edited-tag">(editado)</span>' : '';
   const isLong = p.text.length > POST_TEXT_LIMIT;
-  const isExpanded = expandedPosts.has(p.id);
+  const isExpanded = expandedPosts.has(p.id) || !!searchTerm;
   if(!isLong){
-    return `<p class="post-text">${escapeHtml(p.text)}${editedTag}</p>`;
+    return `<p class="post-text">${highlightSearch(p.text, searchTerm)}${editedTag}</p>`;
   }
   if(isExpanded){
-    return `<p class="post-text">${escapeHtml(p.text)}${editedTag} <span class="read-more-toggle" data-action="toggle-expand-post" data-id="${p.id}">ler menos</span></p>`;
+    return `<p class="post-text">${highlightSearch(p.text, searchTerm)}${editedTag}${searchTerm ? '' : ` <span class="read-more-toggle" data-action="toggle-expand-post" data-id="${p.id}">ler menos</span>`}</p>`;
   }
   const truncated = p.text.slice(0, POST_TEXT_LIMIT).trimEnd();
   return `<p class="post-text">${escapeHtml(truncated)}… <span class="read-more-toggle" data-action="toggle-expand-post" data-id="${p.id}">ler mais</span>${editedTag}</p>`;
 }
 function escapeHtml(s){
-  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function highlightSearch(value, searchTerm){
+  const text = String(value ?? '');
+  const term = String(searchTerm ?? '').trim();
+  if(!term) return escapeHtml(text);
+  const lowerText = text.toLocaleLowerCase('pt-BR');
+  const lowerTerm = term.toLocaleLowerCase('pt-BR');
+  let html = '';
+  let cursor = 0;
+  let matchIndex;
+  while((matchIndex = lowerText.indexOf(lowerTerm, cursor)) !== -1){
+    html += escapeHtml(text.slice(cursor, matchIndex));
+    html += `<mark class="search-highlight">${escapeHtml(text.slice(matchIndex, matchIndex + term.length))}</mark>`;
+    cursor = matchIndex + term.length;
+  }
+  return html + escapeHtml(text.slice(cursor));
 }
 function authorInfo(item){
   const uid = item && item.uid ? item.uid : null;
@@ -3455,7 +3472,7 @@ function render(){
       <div class="post-head">
         ${avatarHtml(pInfo)}
         <div>
-          <div class="post-author"><span${authorNameAttr(pInfo)}>${escapeHtml(pInfo.name)}</span>${sectorTagHtml(pInfo.sector, 2)}${adminTagHtml(pInfo.isAdmin)}${supportTagHtml(pInfo.isSupport)}${devTagHtml(pInfo.isDev)}${visibilityTagHtml(p._sector)} <span class="post-time" title="${formatFullDate(p.ts)}">· ${timeAgo(p.ts)} · ${formatFullDate(p.ts)}</span></div>
+          <div class="post-author"><span${authorNameAttr(pInfo)}>${highlightSearch(pInfo.name, search)}</span>${sectorTagHtml(pInfo.sector, 2)}${adminTagHtml(pInfo.isAdmin)}${supportTagHtml(pInfo.isSupport)}${devTagHtml(pInfo.isDev)}${visibilityTagHtml(p._sector)} <span class="post-time" title="${formatFullDate(p.ts)}">· ${timeAgo(p.ts)} · ${formatFullDate(p.ts)}</span></div>
         </div>
       </div>
       ${isEditing ? `
@@ -3466,7 +3483,7 @@ function render(){
           <button class="btn-ghost" data-action="cancel-post-edit" data-id="${p.id}">Cancelar</button>
         </div>
       </div>` : `
-      ${p.text ? renderPostText(p) : ''}
+      ${p.text ? renderPostText(p, search) : ''}
       <div class="post-actions">
         ${p.metaId ? `<button class="tag-done tag-meta" data-action="undo-meta" data-id="${p.id}" title="Clique para desfazer">virou meta ✕</button>` : `<button class="btn-ghost" data-action="to-meta" data-id="${p.id}">virar meta</button>`}
         ${p.demandaId ? `<button class="tag-done tag-demanda" data-action="undo-demanda" data-id="${p.id}" title="Clique para desfazer">virou demanda ✕</button>` : `<button class="btn-ghost" data-action="to-demanda" data-id="${p.id}">virar demanda</button>`}
