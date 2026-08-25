@@ -2069,6 +2069,7 @@ function saveSectionOrder(){
   localStorage.setItem(SECTION_ORDER_KEY, JSON.stringify(order));
 }
 function notesStorageKey(uid){ return `plantel_notes_${uid}`; }
+let noteCloudSaveTimer = null;
 function getDefaultNoteState(){
   return {
     tabs: [ { id: `tab-${Date.now()}`, title: 'Nova aba', content: '' } ],
@@ -2098,25 +2099,59 @@ function renderNoteTabs(){
 }
 function saveNoteState(){
   if(!currentUid || !noteState) return;
-  try{ localStorage.setItem(notesStorageKey(currentUid), JSON.stringify(noteState)); }
+  noteState.updatedAt = Date.now();
+  const uidAtSave = currentUid;
+  const snapshot = JSON.parse(JSON.stringify(noteState));
+  try{ localStorage.setItem(notesStorageKey(uidAtSave), JSON.stringify(snapshot)); }
   catch(e){}
+  clearTimeout(noteCloudSaveTimer);
+  if(noteSaveStatus){ noteSaveStatus.textContent = 'Salvando...'; }
+  noteCloudSaveTimer = setTimeout(()=>{
+    set(ref(db, 'private_notes/'+uidAtSave), snapshot).then(()=>{
+      if(currentUid === uidAtSave && noteSaveStatus) noteSaveStatus.textContent = 'Notas sincronizadas';
+    }).catch(()=>{
+      if(currentUid === uidAtSave && noteSaveStatus) noteSaveStatus.textContent = 'Salvas neste dispositivo · sincronização pendente';
+    });
+  }, 550);
 }
-function loadUserNotes(){
+async function loadUserNotes(){
   if(!currentUid) return;
+  const uidAtLoad = currentUid;
+  let localState = null;
   try{
-    const stored = localStorage.getItem(notesStorageKey(currentUid));
-    noteState = stored ? JSON.parse(stored) : getDefaultNoteState();
+    const stored = localStorage.getItem(notesStorageKey(uidAtLoad));
+    localState = stored ? JSON.parse(stored) : null;
   } catch(e){
-    noteState = getDefaultNoteState();
+    localState = null;
   }
+  noteState = localState || getDefaultNoteState();
+  normalizeNoteState();
+  renderNoteTabs();
+  if(noteSaveStatus){ noteSaveStatus.textContent = 'Carregando notas da conta...'; }
+  try{
+    const cloudSnapshot = await get(ref(db, 'private_notes/'+uidAtLoad));
+    if(currentUid !== uidAtLoad) return;
+    const cloudState = cloudSnapshot.val();
+    if(cloudState && Array.isArray(cloudState.tabs) && Number(cloudState.updatedAt || 0) >= Number(noteState.updatedAt || 0)){
+      noteState = cloudState;
+      normalizeNoteState();
+      localStorage.setItem(notesStorageKey(uidAtLoad), JSON.stringify(noteState));
+    }else if(!cloudState || Number(noteState.updatedAt || 0) > Number(cloudState.updatedAt || 0)){
+      await set(ref(db, 'private_notes/'+uidAtLoad), noteState);
+    }
+    renderNoteTabs();
+    if(noteSaveStatus){ noteSaveStatus.textContent = 'Notas sincronizadas'; }
+  }catch(e){
+    if(noteSaveStatus){ noteSaveStatus.textContent = 'Notas locais · sem sincronização'; }
+  }
+}
+function normalizeNoteState(){
   if(!noteState || !Array.isArray(noteState.tabs) || noteState.tabs.length === 0){
     noteState = getDefaultNoteState();
   }
   if(!noteState.activeTabId || !noteState.tabs.some(tab => tab.id === noteState.activeTabId)){
     noteState.activeTabId = noteState.tabs[0].id;
   }
-  renderNoteTabs();
-  if(noteSaveStatus){ noteSaveStatus.textContent = 'Notas carregadas'; }
 }
 function updateActiveTabContent(){
   const activeTab = getActiveTab();
