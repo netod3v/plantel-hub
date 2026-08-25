@@ -193,6 +193,26 @@ html[data-labs="true"] .btn-primary{background:linear-gradient(135deg,var(--fore
   transition:opacity .22s ease, background .22s ease, visibility 0s linear .22s;
 }
 .modal-overlay.modal-closing .modal-box{opacity:0;transform:translateY(6px) scale(.985);}
+.mobile-channels-toggle{
+  display:none;width:100%;align-items:center;justify-content:space-between;gap:12px;
+  margin-top:16px;padding:11px 13px;border:1px solid var(--border);border-radius:12px;
+  background:var(--paper);color:var(--ink);font-size:12.5px;font-weight:700;text-align:left;
+  cursor:pointer;
+}
+.mobile-channels-toggle svg{
+  width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;
+  transition:transform .2s ease;
+}
+.mobile-channels-toggle[aria-expanded="true"] svg{transform:rotate(180deg);}
+@media (max-width:600px){
+  .mobile-channels-toggle{display:flex;}
+  .preview-row{display:none;grid-template-columns:1fr;margin-top:8px;}
+  .preview-row.mobile-open{display:grid;animation:channelsOpen .2s ease;}
+  @keyframes channelsOpen{
+    from{opacity:0;transform:translateY(-5px);}
+    to{opacity:1;transform:none;}
+  }
+}
 @media (prefers-reduced-motion:reduce){
   .modal-overlay,.modal-box{transition:none !important;}
 }
@@ -806,6 +826,9 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
 /* ===== responsividade e otimizações gerais ===== */
 img,video,iframe{max-width:100%;}
 @media (max-width:720px){
+  body.mobile-modal-open .note-card{
+    opacity:0;visibility:hidden;pointer-events:none;transform:translateY(12px);
+  }
   .wrap{max-width:100%;padding:0 16px 44px;}
   header{padding:25px 0 20px;}
   html[data-labs="true"] header{margin-top:12px;padding:16px;border-radius:16px;}
@@ -847,11 +870,14 @@ img,video,iframe{max-width:100%;}
   .comment,.reply{gap:7px;}
   .comment-form,.reply-form{flex-wrap:wrap;}
   .comment-form .field,.reply-form .field{flex:1 1 100%;}
-  .modal-overlay{padding:7px;align-items:flex-end;}
-  .modal-box{max-width:none;max-height:calc(100dvh - 14px);border-radius:16px 16px 10px 10px;}
+  .modal-overlay{padding:12px;align-items:center;justify-content:center;}
+  .modal-box{
+    width:min(100%,460px);max-width:460px;max-height:calc(100dvh - 24px);
+    margin:auto;border-radius:16px;
+  }
   .modal-head{padding:12px;}
   .modal-body{padding:12px;}
-  .dm-thread-box{height:calc(100dvh - 14px);}
+  .dm-thread-box{height:min(78dvh,640px);}
   .dm-messages{padding:12px 10px;}
   .dm-bubble{max-width:86%;}
   .dm-composer{padding:10px;}
@@ -1000,7 +1026,11 @@ img,video,iframe{max-width:100%;}
         </button>
       </div>
     </div>
-    <div class="preview-row">
+    <button class="mobile-channels-toggle" id="mobile-channels-toggle" type="button" aria-expanded="false" aria-controls="preview-channels">
+      <span>Canais da equipe</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="preview-row" id="preview-channels">
       <a class="preview-card" href="#" target="_blank" rel="noopener">
         <div class="preview-icon"><svg viewBox="0 0 24 24"><path d="M4 20l1.4-4.2A8 8 0 1 1 9 18.7z"/><path d="M8.5 9.5c0 3 2.5 5.5 5.5 5.5"/></svg></div>
         <div class="preview-text"><p class="preview-title">WhatsApp</p><p class="preview-sub">Fale com a gente agora</p></div>
@@ -2387,6 +2417,20 @@ if(socialToggle && socialPanel){
   });
 }
 
+const mobileChannelsToggle = document.getElementById('mobile-channels-toggle');
+const previewChannels = document.getElementById('preview-channels');
+if(mobileChannelsToggle && previewChannels){
+  mobileChannelsToggle.addEventListener('click', ()=>{
+    const open = previewChannels.classList.toggle('mobile-open');
+    mobileChannelsToggle.setAttribute('aria-expanded', String(open));
+    if(!open && socialToggle && socialPanel){
+      socialPanel.classList.remove('is-open');
+      socialPanel.hidden = true;
+      socialToggle.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
+
 /* ===== pré-visualização do Instagram (modal) ===== */
 const instaModal = document.getElementById('insta-modal');
 const instaModalTitle = document.getElementById('insta-modal-title');
@@ -2469,10 +2513,15 @@ function renderOnlineList(){
   }).join('') : `<div class="empty">${labsMode ? 'Nenhum integrante do Plantel Labs encontrado.' : 'Ninguém com perfil criado ainda.'}</div>`;
 }
 
+function syncMobileNoteWithModals(){
+  const hasOpenModal = !!document.querySelector('.modal-overlay:not(.hidden):not(.modal-closing)');
+  document.body.classList.toggle('mobile-modal-open', hasOpenModal);
+}
 function openModalSmooth(modal){
   if(!modal) return;
   clearTimeout(modal._closeTimer);
   modal.classList.remove('hidden','modal-closing');
+  syncMobileNoteWithModals();
   updateBodyScrollLock();
   requestAnimationFrame(()=> requestAnimationFrame(()=> modal.classList.add('modal-visible')));
 }
@@ -2481,9 +2530,11 @@ function closeModalSmooth(modal){
   clearTimeout(modal._closeTimer);
   modal.classList.remove('modal-visible');
   modal.classList.add('modal-closing');
+  syncMobileNoteWithModals();
   modal._closeTimer = setTimeout(()=>{
     modal.classList.add('hidden');
     modal.classList.remove('modal-closing');
+    syncMobileNoteWithModals();
     updateBodyScrollLock();
   }, 240);
 }
