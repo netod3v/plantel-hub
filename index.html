@@ -273,7 +273,11 @@ html[data-theme="dark"], html[data-theme="black"] .dm-conversation-remove:hover{
 .dm-bubble{max-width:75%;padding:8px 12px;border-radius:14px;font-size:13.5px;line-height:1.4;word-wrap:break-word;}
 .dm-bubble-mine{align-self:flex-end;background:var(--forest);color:#fff;border-bottom-right-radius:4px;}
 .dm-bubble-theirs{align-self:flex-start;background:var(--sage);color:var(--ink);border-bottom-left-radius:4px;}
-.dm-bubble-time{font-size:10px;opacity:.7;margin-top:3px;display:block;}
+.dm-bubble-meta{display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:3px;min-height:13px;}
+.dm-bubble-time{font-size:10px;opacity:.72;white-space:nowrap;}
+.dm-message-status{font-size:12px;line-height:1;letter-spacing:-4px;padding-right:4px;color:rgba(255,255,255,.72);white-space:nowrap;}
+.dm-message-status.is-read{color:#69D3FF;}
+.dm-date-divider{align-self:center;position:sticky;top:0;z-index:1;background:var(--paper);color:var(--text-2);border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:10.5px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.06);}
 .dm-composer{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border);flex:none;}
 .dm-composer input{flex:1;}
 .dm-empty{font-size:13px;color:var(--text-2);text-align:center;padding:30px 10px;}
@@ -1795,7 +1799,8 @@ let authResolved = false;
 function updateBodyScrollLock(){
   const loginVisible = !loginScreen.classList.contains('hidden');
   const drawerOpen = accountDrawerOverlay && accountDrawerOverlay.classList.contains('open');
-  const locked = loginVisible || drawerOpen;
+  const modalOpen = !!document.querySelector('.modal-overlay:not(.hidden)');
+  const locked = loginVisible || drawerOpen || modalOpen;
   document.body.style.overflow = locked ? 'hidden' : '';
   document.documentElement.style.overflow = locked ? 'hidden' : '';
 }
@@ -2302,6 +2307,7 @@ function openModalSmooth(modal){
   if(!modal) return;
   clearTimeout(modal._closeTimer);
   modal.classList.remove('hidden','modal-closing');
+  updateBodyScrollLock();
   requestAnimationFrame(()=> requestAnimationFrame(()=> modal.classList.add('modal-visible')));
 }
 function closeModalSmooth(modal){
@@ -2312,6 +2318,7 @@ function closeModalSmooth(modal){
   modal._closeTimer = setTimeout(()=>{
     modal.classList.add('hidden');
     modal.classList.remove('modal-closing');
+    updateBodyScrollLock();
   }, 240);
 }
 function openOnlineModal(){
@@ -2679,6 +2686,8 @@ const hoverCardBio = document.getElementById('hover-card-bio');
 const hoverCardSector = document.getElementById('hover-card-sector');
 const supportsHover = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 let hoverShowTimer = null, hoverHideTimer = null, hoverCardTargetEl = null;
+const HOVER_CARD_DELAY = 650;
+const HOVER_CARD_HIDE_DELAY = 120;
 
 function fillHoverCard(uid, fallbackName){
   const profile = uid ? state.users[uid] : null;
@@ -2690,12 +2699,16 @@ function fillHoverCard(uid, fallbackName){
   const dev = !!(profile && profile.isDev);
   const photo = profile && profile.photo ? profile.photo : null;
   const bio = profile && profile.bio ? profile.bio : 'Ainda sem descrição no perfil.';
-  const online = !!(uid && state.presence[uid] && state.presence[uid].online);
+  const presence = uid && state.presence[uid] ? state.presence[uid] : null;
+  const online = !!(presence && presence.online);
+  const statusText = online
+    ? 'online agora'
+    : (presence && presence.lastSeen ? 'visto por último ' + timeAgo(presence.lastSeen) : 'offline');
 
   hoverCardAvatar.innerHTML = photo ? `<img src="${photo}" alt="">` : '';
   if(!photo) hoverCardAvatar.textContent = initials(name);
   hoverCardName.innerHTML = `${escapeHtml(name)}${adminTagHtml(admin)}${supportTagHtml(support)}${devTagHtml(dev)}${bannedTagHtml(banned)}`;
-  hoverCardStatus.innerHTML = `<span class="status-dot ${online?'on':''}"></span>${online ? 'online agora' : 'offline'}`;
+  hoverCardStatus.innerHTML = `<span class="status-dot ${online?'on':''}"></span>${escapeHtml(statusText)}`;
   hoverCardBio.textContent = bio;
   hoverCardSector.innerHTML = sectorTagHtml(sector);
   hoverCardSector.style.display = sector.length ? '' : 'none';
@@ -2723,27 +2736,34 @@ function showHoverCard(targetEl){
   requestAnimationFrame(()=> hoverCard.classList.add('visible'));
 }
 function hideHoverCardNow(){
+  clearTimeout(hoverShowTimer);
+  clearTimeout(hoverHideTimer);
   hoverCard.classList.remove('visible');
-  hoverCard.classList.add('hidden');
   hoverCardTargetEl = null;
+  hoverHideTimer = setTimeout(()=>{
+    if(!hoverCard.classList.contains('visible')) hoverCard.classList.add('hidden');
+  }, 130);
 }
 
 if(supportsHover){
   document.addEventListener('mouseover', (e)=>{
     const el = e.target.closest('[data-action="view-profile"]');
+    if(el && el.contains(e.relatedTarget)) return;
     if(!el || el === hoverCardTargetEl) return;
     clearTimeout(hoverHideTimer);
     clearTimeout(hoverShowTimer);
     hoverCardTargetEl = el;
     hoverShowTimer = setTimeout(()=>{
       if(hoverCardTargetEl === el) showHoverCard(el);
-    }, 350);
+    }, HOVER_CARD_DELAY);
   });
   document.addEventListener('mouseout', (e)=>{
     const el = e.target.closest('[data-action="view-profile"]');
+    if(el && el.contains(e.relatedTarget)) return;
     if(!el || el !== hoverCardTargetEl) return;
     clearTimeout(hoverShowTimer);
-    hoverHideTimer = setTimeout(hideHoverCardNow, 150);
+    hoverCardTargetEl = null;
+    hoverHideTimer = setTimeout(hideHoverCardNow, HOVER_CARD_HIDE_DELAY);
   });
   document.addEventListener('scroll', hideHoverCardNow, true);
   document.addEventListener('click', hideHoverCardNow);
@@ -2924,6 +2944,49 @@ function chatId(a, b){ return [a, b].sort().join('__'); }
 function nicknameFor(otherUid, fallbackName){
   return (myNicknames && otherUid && myNicknames[otherUid]) || fallbackName || 'Alguém';
 }
+function dmDayKey(ts){
+  const d = new Date(ts || 0);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function formatDmDay(ts){
+  const date = new Date(ts || 0);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const key = dmDayKey(ts);
+  if(key === dmDayKey(today.getTime())) return 'Hoje';
+  if(key === dmDayKey(yesterday.getTime())) return 'Ontem';
+  return date.toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+}
+function formatDmTime(ts){
+  return new Date(ts || 0).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+}
+function formatDmFullDateTime(ts){
+  return new Date(ts || 0).toLocaleString('pt-BR', {
+    day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'
+  });
+}
+function renderDmMessages(msgs, otherReadAt){
+  if(!msgs.length) return `<div class="dm-empty">Nenhuma mensagem ainda. Diga oi!</div>`;
+  let lastDay = '';
+  return msgs.map(m=>{
+    const mine = m.from === currentUid;
+    const day = dmDayKey(m.ts);
+    const divider = day !== lastDay ? `<div class="dm-date-divider">${escapeHtml(formatDmDay(m.ts))}</div>` : '';
+    lastDay = day;
+    const read = mine && Number(otherReadAt || 0) >= Number(m.ts || 0);
+    const status = mine
+      ? `<span class="dm-message-status ${read ? 'is-read' : ''}" title="${read ? 'Visualizada' : 'Enviada'}" aria-label="${read ? 'Visualizada' : 'Enviada'}">${read ? '✓✓' : '✓'}</span>`
+      : '';
+    return `${divider}
+      <div class="dm-bubble ${mine?'dm-bubble-mine':'dm-bubble-theirs'}">
+        ${escapeHtml(m.text)}
+        <div class="dm-bubble-meta" title="${escapeHtml(formatDmFullDateTime(m.ts))}">
+          <time class="dm-bubble-time" datetime="${new Date(m.ts || 0).toISOString()}">${formatDmTime(m.ts)}</time>${status}
+        </div>
+      </div>`;
+  }).join('');
+}
 
 /* ===== som de notificação =====
    Um "pling" curto gerado no próprio navegador (sem precisar de
@@ -3019,17 +3082,16 @@ function openDmThread(otherUid, name, photo){
   dmMessages.innerHTML = '';
   if(dmThreadUnsub) dmThreadUnsub();
   const cid = chatId(currentUid, otherUid);
-  dmThreadUnsub = onValue(ref(db, 'dms/'+cid+'/messages'), snap => {
-    const msgs = objToArray(snap.val()).sort((a,b)=>a.ts-b.ts);
-    dmMessages.innerHTML = msgs.length ? msgs.map(m=>{
-      const mine = m.from === currentUid;
-      return `
-      <div class="dm-bubble ${mine?'dm-bubble-mine':'dm-bubble-theirs'}">
-        ${escapeHtml(m.text)}
-        <span class="dm-bubble-time">${timeAgo(m.ts)}</span>
-      </div>`;
-    }).join('') : `<div class="dm-empty">Nenhuma mensagem ainda. Diga oi!</div>`;
+  dmThreadUnsub = onValue(ref(db, 'dms/'+cid), snap => {
+    const chat = snap.val() || {};
+    const msgs = objToArray(chat.messages).sort((a,b)=>a.ts-b.ts);
+    const readBy = chat.readBy || {};
+    dmMessages.innerHTML = renderDmMessages(msgs, readBy[otherUid]);
     dmMessages.scrollTop = dmMessages.scrollHeight;
+    const newestReceivedAt = msgs.reduce((latest, m)=>m.from === otherUid ? Math.max(latest, Number(m.ts || 0)) : latest, 0);
+    if(newestReceivedAt > Number(readBy[currentUid] || 0)){
+      update(ref(db, 'dms/'+cid+'/readBy'), { [currentUid]: newestReceivedAt }).catch(handleDbError);
+    }
   }, handleDbError);
   closeModalSmooth(dmListModal);
   openModalSmooth(dmThreadModal);
@@ -3296,7 +3358,7 @@ muralSectorSelect.addEventListener('change', ()=>{
   muralSectorFilter = muralSectorSelect.value;
   render();
 });
-const FIXED_SECTORS = ['Marketing', 'Professores', 'Monitoria', 'Parceiros', 'Desenvolvedor'];
+const FIXED_SECTORS = ['Marketing', 'Admnistrador do Listas', 'Monitoria', 'Parceiros', 'Desenvolvedor'];
 function refreshSectorOptions(){
   const fromUsers = Object.values(state.users).flatMap(u=>userSectors(u));
   const sectors = [...new Set([...FIXED_SECTORS, ...fromUsers])].sort((a,b)=>a.localeCompare(b));
