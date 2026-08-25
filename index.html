@@ -3638,7 +3638,7 @@ muralSectorSelect.addEventListener('change', ()=>{
   muralSectorFilter = muralSectorSelect.value;
   render();
 });
-const FIXED_SECTORS = ['Marketing', 'Admnistrador do Listas', 'Monitoria', 'Parceiros', 'Desenvolvedor'];
+const FIXED_SECTORS = ['Marketing', 'Administrador do Listas', 'Monitoria', 'Parceiros', 'Desenvolvedor'];
 function refreshSectorOptions(){
   const fromUsers = Object.values(state.users).flatMap(u=>userSectors(u));
   const sectors = [...new Set([...FIXED_SECTORS, ...fromUsers])].sort((a,b)=>a.localeCompare(b));
