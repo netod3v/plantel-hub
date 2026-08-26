@@ -1078,7 +1078,7 @@ img,video,iframe{max-width:100%;}
           <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span id="online-badge" class="dm-badge hidden"></span>
         </button>
-        <button class="icon-btn" id="mention-notification-btn" aria-label="Notificações de menções" style="position:relative;">
+        <button class="icon-btn" id="mention-notification-btn" aria-label="Notificações" style="position:relative;">
           <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
           <span id="mention-notification-badge" class="mention-notification-badge hidden">0</span>
         </button>
@@ -1154,7 +1154,7 @@ img,video,iframe{max-width:100%;}
   <div class="modal-overlay hidden" id="mention-notification-modal">
     <div class="modal-box">
       <div class="modal-head">
-        <div><strong>Notificações</strong><span id="mention-notification-summary">Menções no mural</span></div>
+        <div><strong>Notificações</strong><span id="mention-notification-summary">Atividades recentes</span></div>
         <button class="modal-close" id="mention-notification-close" type="button" aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/></svg></button>
       </div>
       <div class="modal-body" id="mention-notification-list"></div>
@@ -2790,7 +2790,7 @@ onlineModalClose.addEventListener('click', closeOnlineModal);
 onlineModal.addEventListener('click', (e)=>{ if(e.target === onlineModal) closeOnlineModal(); });
 document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !onlineModal.classList.contains('hidden')) closeOnlineModal(); });
 
-/* ===== notificações de menções no mural ===== */
+/* ===== notificações do aplicativo ===== */
 const mentionNotificationBtn = document.getElementById('mention-notification-btn');
 const mentionNotificationBadge = document.getElementById('mention-notification-badge');
 const mentionNotificationModal = document.getElementById('mention-notification-modal');
@@ -2813,12 +2813,23 @@ function myAppNotifications(){
     if(p.uid === currentUid || mentionedPostIds.has(p.id)) return false;
     return authorInfo(p).isAdmin;
   }).map(p=>({ kind:'admin-post', ts:p.ts||0, post:p, person:authorInfo(p) }));
+  const postLikes = allPosts().filter(p=>p.uid === currentUid).flatMap(p=>
+    Object.entries(p.likes || {}).flatMap(([likerUid, like])=>{
+      const ts = Number(like && typeof like === 'object' ? like.ts : 0);
+      if(likerUid === currentUid || !ts) return [];
+      const profile = state.users[likerUid] || {};
+      return [{
+        kind:'post-like', ts, post:p,
+        person:{ uid:likerUid, name:profile.name || 'Alguém', photo:profile.photo || null }
+      }];
+    })
+  );
   const directMessages = Object.entries(dmConversations).filter(([, conversation])=>conversation.lastFrom && conversation.lastFrom !== currentUid && conversation.lastTs).map(([otherUid, conversation])=>({
     kind:'dm', ts:conversation.lastTs||0, otherUid,
     person:{ uid:otherUid, name:nicknameFor(otherUid, conversation.name), photo:conversation.photo || null },
     preview:conversation.lastText || 'Nova mensagem'
   }));
-  return [...mentions, ...adminPosts, ...directMessages].sort((a,b)=>b.ts-a.ts).slice(0,60);
+  return [...mentions, ...adminPosts, ...postLikes, ...directMessages].sort((a,b)=>b.ts-a.ts).slice(0,60);
 }
 function renderMentionNotifications(){
   const notifications = myAppNotifications();
@@ -2826,14 +2837,16 @@ function renderMentionNotifications(){
   const unread = notifications.filter(item=>item.ts>seenAt).length;
   mentionNotificationBadge.textContent = unread > 99 ? '99+' : String(unread);
   mentionNotificationBadge.classList.toggle('hidden', unread === 0);
-  mentionNotificationSummary.textContent = unread ? `${unread} ${unread===1?'menção nova':'menções novas'}` : 'Menções no mural';
+  mentionNotificationSummary.textContent = unread ? `${unread} ${unread===1?'notificação nova':'notificações novas'}` : 'Atividades recentes';
   mentionNotificationList.innerHTML = notifications.length ? notifications.map(item=>{
     const action = item.kind === 'dm' ? `data-action="open-dm" data-uid="${item.otherUid}"` : `data-action="open-mentioned-post" data-id="${item.post.id}"`;
     const message = item.kind === 'mention'
       ? `<strong>${escapeHtml(item.person.name)}</strong> mencionou você no mural`
       : item.kind === 'admin-post'
         ? `<strong>${escapeHtml(item.person.name)}</strong> publicou um novo aviso no mural`
-        : `<strong>${escapeHtml(item.person.name)}</strong> enviou uma mensagem particular<span class="mention-notification-time">${escapeHtml(item.preview)}</span>`;
+        : item.kind === 'post-like'
+          ? `<strong>${escapeHtml(item.person.name)}</strong> curtiu sua publicação no mural`
+          : `<strong>${escapeHtml(item.person.name)}</strong> enviou uma mensagem particular<span class="mention-notification-time">${escapeHtml(item.preview)}</span>`;
     return `<button type="button" class="mention-notification-item ${item.ts>seenAt?'is-unread':''}" ${action}>
       ${avatarHtml(item.person, true)}
       <span class="mention-notification-copy">${message}<span class="mention-notification-time">${escapeHtml(formatFullDate(item.ts))}</span></span>
@@ -4990,7 +5003,7 @@ document.addEventListener('click', (e)=>{
     if(!post) return;
     const liked = !!(post.likes && post.likes[currentUid]);
     const likeRef = ref(db, postPath(post)+'/likes/'+currentUid);
-    (liked ? remove(likeRef) : set(likeRef, true)).catch(handleDbError);
+    (liked ? remove(likeRef) : set(likeRef, { ts:Date.now() })).catch(handleDbError);
   } else if(action === 'toggle-comments'){
     if(openComments.has(id)){
       openComments.delete(id);
