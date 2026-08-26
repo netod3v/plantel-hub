@@ -2718,13 +2718,13 @@ function closeModalSmooth(modal){
   }, 240);
 }
 
-/* ===== call da equipe (Jitsi Meet, sem uso do Firebase) ===== */
+/* ===== call da equipe (Google Meet; Firebase usado só na presença) ===== */
 const callBtn = document.getElementById('call-btn');
 const callModal = document.getElementById('call-modal');
 const callModalClose = document.getElementById('call-modal-close');
 const callStage = document.getElementById('call-stage');
 const callCountBadge = document.getElementById('call-count-badge');
-const CALL_ROOM_NAME = 'PlantelHub-Equipe-Geral-2026';
+const CALL_MEETING_URL = 'https://meet.google.com/tso-ovps-fvd';
 let callWindowPoll = null;
 let callParticipantUid = null;
 function renderCallPresence(participants){
@@ -2761,7 +2761,7 @@ function markMyCallPresence(callWindow){
 }
 function openTeamCall(){
   if(!currentUid) return;
-  const roomUrl = 'https://meet.jit.si/'+CALL_ROOM_NAME;
+  const roomUrl = CALL_MEETING_URL;
   const callWindow = window.open(roomUrl, '_blank');
   if(callWindow){
     try{ callWindow.opener = null; }catch(e){}
