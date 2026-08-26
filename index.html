@@ -580,19 +580,46 @@ section{margin-top:38px;}
 }
 
 #sections-container{position:relative;}
+#sections-container.free-layout{min-height:500px;}
+#sections-container.free-layout .draggable-section{position:absolute;left:0;top:0;margin:0;min-width:280px;min-height:170px;resize:none;overflow:auto;}
+.section-resize-handle{display:none;position:absolute;right:3px;bottom:3px;width:24px;height:24px;border-radius:7px;align-items:center;justify-content:center;color:var(--moss);background:var(--paper);border:1px solid var(--border);box-shadow:0 3px 10px rgba(0,0,0,.12);cursor:nwse-resize;opacity:0;z-index:8;transition:opacity .15s ease,transform .15s ease;touch-action:none;}
+#sections-container.free-layout .draggable-section:not(.section-minimized):not(.section-maximized):hover>.section-resize-handle{display:flex;opacity:.82;}
+#sections-container.free-layout .draggable-section.section-resizing>.section-resize-handle{display:flex;opacity:1;transform:scale(1.06);}
+.section-resize-handle svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;}
+.section-window-controls{display:none;align-items:center;gap:4px;margin-left:8px;}
+#sections-container.free-layout .section-window-controls{display:flex;}
+#sections-container:not(.free-layout) .drag-handle{display:none;}
+.section-window-btn{width:25px;height:25px;padding:0;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--text-3);display:grid;place-items:center;cursor:pointer;}
+.section-window-btn:hover{border-color:var(--border);background:var(--sage);color:var(--forest);}
+.section-window-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.section-window-btn.section-close:hover{background:rgba(232,90,90,.12);color:var(--danger);}
+.draggable-section.section-minimized{height:auto!important;min-height:0!important;resize:none!important;overflow:hidden!important;}
+.draggable-section.section-minimized>:not(.section-head){display:none!important;}
+.draggable-section.section-maximized{resize:none!important;z-index:60;}
+.draggable-section.section-closed{display:none!important;}
+.section-restore-bar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:0 0 12px;}
+.section-restore-bar.hidden{display:none;}
+.section-restore-label{color:var(--text-3);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;}
+.section-restore-btn{padding:6px 9px;border:1px solid var(--border);border-radius:9px;background:var(--paper);color:var(--text-2);font-size:10px;font-weight:600;cursor:pointer;}
+.section-restore-btn:hover{border-color:var(--moss);color:var(--forest);}
+.section-layout-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:9px;margin:0 0 12px;}
+.section-layout-toolbar small{color:var(--text-3);font-size:10px;}
+.section-customize-btn{padding:8px 11px;border:1px solid var(--border);border-radius:10px;background:var(--paper);color:var(--text-2);font-size:11px;font-weight:700;cursor:pointer;}
+.section-customize-btn:hover,.section-customize-btn.active{border-color:var(--moss);background:var(--sage);color:var(--forest);}
 .draggable-section.dragging{
   opacity:.94;box-shadow:0 18px 42px rgba(0,0,0,.22);border-radius:14px;background:var(--parchment);
-  pointer-events:none;z-index:900;transform:scale(.985);transform-origin:center top;
+  pointer-events:none;z-index:900;
 }
-.section-placeholder{
-  position:relative;height:4px!important;margin:17px 0 13px;border-radius:999px;background:var(--moss);
-  box-shadow:0 0 0 4px rgba(91,139,99,.12);animation:dropLineIn .16s ease;
-}
-.section-placeholder::before,.section-placeholder::after{content:'';position:absolute;top:50%;width:9px;height:9px;border-radius:50%;background:var(--moss);transform:translateY(-50%);}
-.section-placeholder::before{left:-2px;}.section-placeholder::after{right:-2px;}
 .section-center-guide{position:fixed;top:0;bottom:0;width:1px;background:var(--moss);box-shadow:0 0 0 1px rgba(91,139,99,.18);z-index:899;pointer-events:none;opacity:0;transition:opacity .12s ease;}
 .section-center-guide.visible{opacity:.72;}
-@keyframes dropLineIn{from{opacity:0;transform:scaleX(.72);}to{opacity:1;transform:scaleX(1);}}
+@media(max-width:720px){
+  #sections-container.free-layout{min-height:0!important;}
+  #sections-container.free-layout .draggable-section{position:static!important;width:100%!important;margin:0!important;transform:none!important;}
+  #sections-container.free-layout .draggable-section:not(.section-minimized){height:auto!important;min-height:0!important;resize:none!important;overflow:visible!important;}
+  .section-head .drag-handle{display:none;}
+  .section-resize-handle{display:none!important;}
+  .section-layout-toolbar{display:none;}
+}
 .section-head .drag-handle{
   width:26px;height:26px;flex:none;border-radius:7px;color:var(--text-3);
   display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none;order:-1;
@@ -1431,6 +1458,8 @@ img,video,iframe{max-width:100%;}
   </div>
 
 
+  <div class="section-layout-toolbar"><small id="section-layout-hint">Visualização padrão</small><button class="section-customize-btn" id="section-customize-btn" type="button">Personalizar painel</button></div>
+  <div class="section-restore-bar hidden" id="section-restore-bar"></div>
   <div id="sections-container">
   <section class="draggable-section" data-section-id="mural">
     <div class="section-head">
@@ -2202,7 +2231,13 @@ setTimeout(()=>{
    jeito que preferir. A ordem fica salva só no navegador dela
    (localStorage) -- é uma preferência pessoal, não algo do grupo. */
 const SECTION_ORDER_KEY = 'plantel_section_order';
+const SECTION_LAYOUT_KEY = 'plantel_section_layout';
+const SECTION_CUSTOMIZE_KEY = 'plantel_section_customize';
 const sectionsContainer = document.getElementById('sections-container');
+const sectionRestoreBar = document.getElementById('section-restore-bar');
+const sectionCustomizeBtn = document.getElementById('section-customize-btn');
+const sectionLayoutHint = document.getElementById('section-layout-hint');
+let sectionCustomizationEnabled = localStorage.getItem(SECTION_CUSTOMIZE_KEY) === '1';
 
 function applySavedSectionOrder(){
   let order;
@@ -2218,6 +2253,48 @@ function saveSectionOrder(){
     .filter(el => el.classList.contains('draggable-section'))
     .map(el => el.dataset.sectionId);
   localStorage.setItem(SECTION_ORDER_KEY, JSON.stringify(order));
+}
+function applySavedSectionLayout(){
+  requestAnimationFrame(initializeFreeSectionLayout);
+}
+function saveSectionLayout(){
+  const mobile = window.matchMedia('(max-width:720px)').matches;
+  const layout = mobile ? savedSectionPositions() : {};
+  sectionsContainer.querySelectorAll('.draggable-section').forEach(section=>{
+    const x = Number.parseFloat(section.style.left);
+    const y = Number.parseFloat(section.style.top);
+    const width = Number.parseFloat(section.style.width);
+    const height = Number.parseFloat(section.style.height);
+    const previous = layout[section.dataset.sectionId] || {};
+    layout[section.dataset.sectionId] = {
+      x:mobile?(previous.x??0):(Number.isFinite(x)?x:0), y:mobile?(previous.y??0):(Number.isFinite(y)?y:0),
+      width:mobile?(previous.width??section.offsetWidth):(Number.isFinite(width)?width:section.offsetWidth),
+      height:mobile?(previous.height??null):(Number.isFinite(height)?height:null),
+      minimized:section.classList.contains('section-minimized'),
+      closed:section.classList.contains('section-closed'),
+      maximized:section.classList.contains('section-maximized'),
+      restore:section._restoreLayout || null
+    };
+  });
+  localStorage.setItem(SECTION_LAYOUT_KEY, JSON.stringify(layout));
+}
+function sectionTitle(section){ return section.querySelector('.section-head h2')?.textContent.trim() || 'Seção'; }
+function updateSectionRestoreBar(){
+  const closed = Array.from(sectionsContainer.querySelectorAll('.draggable-section.section-closed'));
+  sectionRestoreBar.classList.toggle('hidden', !sectionCustomizationEnabled || closed.length===0);
+  sectionRestoreBar.innerHTML = closed.length ? `<span class="section-restore-label">Seções fechadas</span>${closed.map(section=>`<button type="button" class="section-restore-btn" data-action="section-restore" data-section="${section.dataset.sectionId}">+ ${escapeHtml(sectionTitle(section))}</button>`).join('')}` : '';
+}
+function setupSectionWindows(){
+  sectionsContainer.querySelectorAll('.draggable-section').forEach(section=>{
+    const head = section.querySelector('.section-head');
+    if(!head || head.querySelector('.section-window-controls')) return;
+    head.insertAdjacentHTML('beforeend', `<span class="section-window-controls">
+      <button type="button" class="section-window-btn" data-action="section-minimize" title="Minimizar" aria-label="Minimizar"><svg viewBox="0 0 24 24"><path d="M6 18h12"/></svg></button>
+      <button type="button" class="section-window-btn" data-action="section-maximize" title="Maximizar" aria-label="Maximizar"><svg viewBox="0 0 24 24"><path d="M5 9V5h4M15 5h4v4M19 15v4h-4M9 19H5v-4"/></svg></button>
+      <button type="button" class="section-window-btn section-close" data-action="section-close" title="Fechar" aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </span>`);
+    section.insertAdjacentHTML('beforeend', `<span class="section-resize-handle" title="Arraste para ajustar o tamanho" aria-label="Ajustar tamanho"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10L10 20M20 15l-5 5M20 5L5 20"/></svg></span>`);
+  });
 }
 function notesStorageKey(uid){ return `plantel_notes_${uid}`; }
 let noteCloudSaveTimer = null;
@@ -2499,35 +2576,199 @@ if(clearNotesBtn){
   clearNotesBtn.addEventListener('click', (event)=>{ event.stopPropagation(); clearUserNotes(); });
 }
 
-applySavedSectionOrder();
+setupSectionWindows();
+applySavedSectionLayout();
 
-let dragEl = null, dragPlaceholder = null, dragCenterGuide = null;
-let dragStartX = 0, dragStartY = 0, pointerStartX = 0, pointerStartY = 0;
+let freeSectionLayoutReady = false;
+let dragEl = null, dragCenterGuide = null;
+let dragPointerOffsetX = 0, dragPointerOffsetY = 0;
+let sectionLayoutSaveTimer = null;
+function scheduleSectionLayoutSave(){
+  clearTimeout(sectionLayoutSaveTimer);
+  sectionLayoutSaveTimer = setTimeout(()=>{ if(freeSectionLayoutReady) saveSectionLayout(); }, 260);
+}
+
+function savedSectionPositions(){
+  try{
+    const value = JSON.parse(localStorage.getItem(SECTION_LAYOUT_KEY)) || {};
+    return value && typeof value === 'object' ? value : {};
+  }catch(e){ return {}; }
+}
+function updateFreeLayoutHeight(){
+  if(!freeSectionLayoutReady || window.matchMedia('(max-width:720px)').matches) return;
+  const sections = Array.from(sectionsContainer.querySelectorAll('.draggable-section'));
+  const bottom = sections.reduce((max,section)=>{
+    const y = Number.parseFloat(section.style.top) || 0;
+    return Math.max(max, y + section.offsetHeight);
+  }, 0);
+  sectionsContainer.style.height = Math.max(500, bottom + 36) + 'px';
+}
+function initializeFreeSectionLayout(){
+  ['mural','metas','demandas'].forEach(id=>{
+    const section = sectionsContainer.querySelector(`[data-section-id="${id}"]`);
+    if(section) sectionsContainer.appendChild(section);
+  });
+  const mobile = window.matchMedia('(max-width:720px)').matches;
+  const sections = Array.from(sectionsContainer.querySelectorAll('.draggable-section'));
+  if(!sectionCustomizationEnabled || mobile){
+    sectionsContainer.classList.remove('free-layout');
+    sectionsContainer.style.height = '';
+    sections.forEach(section=>{
+      section.style.left='';section.style.top='';section.style.width='';section.style.height='';
+      section.classList.remove('section-minimized','section-maximized','section-closed','dragging');
+    });
+    freeSectionLayoutReady = false;
+    updateSectionRestoreBar();
+    if(sectionCustomizeBtn){
+      sectionCustomizeBtn.classList.toggle('active', sectionCustomizationEnabled && !mobile);
+      sectionCustomizeBtn.textContent = sectionCustomizationEnabled && !mobile ? 'Concluir personalização' : 'Personalizar painel';
+      sectionLayoutHint.textContent = sectionCustomizationEnabled && !mobile ? 'Arraste, redimensione ou organize os cards' : 'Visualização padrão';
+    }
+    return;
+  }
+  if(freeSectionLayoutReady) return;
+  const containerRect = sectionsContainer.getBoundingClientRect();
+  const saved = savedSectionPositions();
+  const gap = 14;
+  const defaultWidth = Math.max(280, (containerRect.width - gap*2) / 3);
+  sectionsContainer.classList.add('free-layout');
+  sections.forEach((section,index)=>{
+    const position = saved[section.dataset.sectionId];
+    const valid = position && Number.isFinite(Number(position.x)) && Number.isFinite(Number(position.y)) && Number.isFinite(Number(position.width));
+    section.style.left = (valid ? Number(position.x) : index*(defaultWidth+gap)) + 'px';
+    section.style.top = (valid ? Number(position.y) : 0) + 'px';
+    section.style.width = (valid ? Math.max(280,Number(position.width)) : defaultWidth) + 'px';
+    section.style.height = valid && Number.isFinite(Number(position.height)) ? Math.max(170,Number(position.height))+'px' : '';
+    section.classList.toggle('section-minimized', !!(valid && position.minimized));
+    section.classList.toggle('section-closed', !!(valid && position.closed));
+    section.classList.toggle('section-maximized', !!(valid && position.maximized));
+    section._restoreLayout = valid && position.restore ? position.restore : null;
+    if(section.classList.contains('section-maximized')){
+      section.style.left='0px';section.style.top='0px';section.style.width=containerRect.width+'px';section.style.height='min(78vh,760px)';
+    }
+  });
+  freeSectionLayoutReady = true;
+  sectionCustomizeBtn.classList.add('active');
+  sectionCustomizeBtn.textContent = 'Concluir personalização';
+  sectionLayoutHint.textContent = 'Arraste, redimensione ou organize os cards';
+  updateSectionRestoreBar();
+  updateFreeLayoutHeight();
+}
+
+sectionCustomizeBtn.addEventListener('click', ()=>{
+  if(sectionCustomizationEnabled && freeSectionLayoutReady) saveSectionLayout();
+  sectionCustomizationEnabled = !sectionCustomizationEnabled;
+  localStorage.setItem(SECTION_CUSTOMIZE_KEY, sectionCustomizationEnabled ? '1' : '0');
+  freeSectionLayoutReady = false;
+  initializeFreeSectionLayout();
+});
+
+function toggleSectionMinimize(section){
+  if(!section) return;
+  if(section.classList.contains('section-maximized')) toggleSectionMaximize(section);
+  section.classList.toggle('section-minimized');
+  const button = section.querySelector('[data-action="section-minimize"]');
+  if(button){
+    const minimized = section.classList.contains('section-minimized');
+    button.title = minimized ? 'Restaurar' : 'Minimizar';
+    button.setAttribute('aria-label', button.title);
+  }
+  saveSectionLayout();updateFreeLayoutHeight();
+}
+function toggleSectionMaximize(section){
+  if(!section) return;
+  const maximizing = !section.classList.contains('section-maximized');
+  if(maximizing){
+    section._restoreLayout = { left:section.style.left, top:section.style.top, width:section.style.width, height:section.style.height };
+    section.classList.remove('section-minimized');
+    section.classList.add('section-maximized');
+    if(!window.matchMedia('(max-width:720px)').matches){
+      section.style.left='0px';section.style.top='0px';section.style.width=sectionsContainer.clientWidth+'px';section.style.height='min(78vh,760px)';
+    }
+  }else{
+    section.classList.remove('section-maximized');
+    const restore = section._restoreLayout;
+    if(restore){ section.style.left=restore.left;section.style.top=restore.top;section.style.width=restore.width;section.style.height=restore.height; }
+    section._restoreLayout = null;
+  }
+  saveSectionLayout();updateFreeLayoutHeight();
+}
+sectionsContainer.addEventListener('click', e=>{
+  const button = e.target.closest('.section-window-btn');
+  if(!button) return;
+  e.preventDefault();e.stopPropagation();
+  const section = button.closest('.draggable-section');
+  if(button.dataset.action==='section-minimize') toggleSectionMinimize(section);
+  if(button.dataset.action==='section-maximize') toggleSectionMaximize(section);
+  if(button.dataset.action==='section-close'){
+    section.classList.add('section-closed');
+    saveSectionLayout();updateSectionRestoreBar();updateFreeLayoutHeight();
+  }
+});
+sectionRestoreBar.addEventListener('click', e=>{
+  const button = e.target.closest('[data-action="section-restore"]');
+  if(!button) return;
+  const section = sectionsContainer.querySelector(`[data-section-id="${button.dataset.section}"]`);
+  if(section){ section.classList.remove('section-closed');saveSectionLayout();updateSectionRestoreBar();updateFreeLayoutHeight(); }
+});
+
+let resizingSection = null;
+let resizeStartX = 0, resizeStartY = 0, resizeStartWidth = 0, resizeStartHeight = 0;
+sectionsContainer.addEventListener('pointerdown', e=>{
+  const handle = e.target.closest('.section-resize-handle');
+  if(!handle || !sectionCustomizationEnabled || window.matchMedia('(max-width:720px)').matches) return;
+  const section = handle.closest('.draggable-section');
+  if(!section || section.classList.contains('section-minimized') || section.classList.contains('section-maximized')) return;
+  e.preventDefault();e.stopPropagation();
+  const rect = section.getBoundingClientRect();
+  resizingSection = section;
+  resizeStartX=e.clientX;resizeStartY=e.clientY;resizeStartWidth=rect.width;resizeStartHeight=rect.height;
+  section.classList.add('section-resizing');
+  document.body.style.userSelect='none';
+  document.addEventListener('pointermove', onSectionResizeMove);
+  document.addEventListener('pointerup', onSectionResizeEnd);
+  document.addEventListener('pointercancel', onSectionResizeEnd);
+});
+function onSectionResizeMove(e){
+  if(!resizingSection) return;
+  const rect = resizingSection.getBoundingClientRect();
+  const maxWidth = Math.max(280, window.innerWidth - rect.left - 12);
+  const maxHeight = Math.max(170, window.innerHeight - rect.top - 12);
+  const width = Math.min(maxWidth, Math.max(280, resizeStartWidth + e.clientX-resizeStartX));
+  const height = Math.min(maxHeight, Math.max(170, resizeStartHeight + e.clientY-resizeStartY));
+  resizingSection.style.width=width+'px';
+  resizingSection.style.height=height+'px';
+  updateFreeLayoutHeight();
+}
+function onSectionResizeEnd(){
+  if(!resizingSection) return;
+  resizingSection.classList.remove('section-resizing');
+  resizingSection=null;
+  document.body.style.userSelect='';
+  document.removeEventListener('pointermove',onSectionResizeMove);
+  document.removeEventListener('pointerup',onSectionResizeEnd);
+  document.removeEventListener('pointercancel',onSectionResizeEnd);
+  saveSectionLayout();updateFreeLayoutHeight();
+}
 
 sectionsContainer.addEventListener('pointerdown', (e)=>{
+  if(!sectionCustomizationEnabled || window.matchMedia('(max-width:720px)').matches) return;
   const handle = e.target.closest('.drag-handle');
   if(!handle) return;
   const section = handle.closest('.draggable-section');
   if(!section) return;
   e.preventDefault();
+  initializeFreeSectionLayout();
 
   const rect = section.getBoundingClientRect();
-  dragStartX = rect.left; dragStartY = rect.top;
-  pointerStartX = e.clientX; pointerStartY = e.clientY;
-
-  dragPlaceholder = document.createElement('div');
-  dragPlaceholder.className = 'section-placeholder';
-  section.parentNode.insertBefore(dragPlaceholder, section);
+  dragPointerOffsetX = e.clientX - rect.left;
+  dragPointerOffsetY = e.clientY - rect.top;
 
   dragCenterGuide = document.createElement('div');
   dragCenterGuide.className = 'section-center-guide';
   document.body.appendChild(dragCenterGuide);
 
   dragEl = section;
-  dragEl.style.position = 'fixed';
-  dragEl.style.top = rect.top + 'px';
-  dragEl.style.left = rect.left + 'px';
-  dragEl.style.width = rect.width + 'px';
   dragEl.classList.add('dragging');
   document.body.style.userSelect = 'none';
 
@@ -2539,54 +2780,46 @@ sectionsContainer.addEventListener('pointerdown', (e)=>{
 
 function onSectionDragMove(e){
   if(!dragEl) return;
-  const dx = e.clientX - pointerStartX;
-  const dy = e.clientY - pointerStartY;
   const containerRect = sectionsContainer.getBoundingClientRect();
   const containerCenter = containerRect.left + containerRect.width / 2;
-  let nextLeft = dragStartX + dx;
-  const draggedCenter = nextLeft + dragEl.offsetWidth / 2;
-  const centered = Math.abs(draggedCenter - containerCenter) <= 24;
-  if(centered) nextLeft = containerCenter - dragEl.offsetWidth / 2;
+  const nextLeft = e.clientX - containerRect.left - dragPointerOffsetX;
+  const nextTop = e.clientY - containerRect.top - dragPointerOffsetY;
   dragEl.style.left = nextLeft + 'px';
-  dragEl.style.top = (dragStartY + dy) + 'px';
+  dragEl.style.top = nextTop + 'px';
+  const centered = Math.abs((containerRect.left + nextLeft + dragEl.offsetWidth/2) - containerCenter) <= 18;
   if(dragCenterGuide){
     dragCenterGuide.style.left = containerCenter + 'px';
     dragCenterGuide.classList.toggle('visible', centered);
   }
-
-  const dragCenterY = dragStartY + dy + dragEl.offsetHeight / 2;
-  const others = Array.from(sectionsContainer.children).filter(el => el !== dragEl && el !== dragPlaceholder);
-  let placed = false;
-  for(const other of others){
-    const r = other.getBoundingClientRect();
-    if(dragCenterY < r.top + r.height / 2){
-      sectionsContainer.insertBefore(dragPlaceholder, other);
-      placed = true;
-      break;
-    }
-  }
-  if(!placed) sectionsContainer.appendChild(dragPlaceholder);
+  updateFreeLayoutHeight();
 }
 
 function onSectionDragEnd(){
   if(!dragEl) return;
-  sectionsContainer.insertBefore(dragEl, dragPlaceholder);
-  dragPlaceholder.remove();
   if(dragCenterGuide) dragCenterGuide.remove();
-  dragEl.style.position = '';
-  dragEl.style.top = '';
-  dragEl.style.left = '';
-  dragEl.style.width = '';
   dragEl.classList.remove('dragging');
   document.body.style.userSelect = '';
   document.removeEventListener('pointermove', onSectionDragMove);
   document.removeEventListener('pointerup', onSectionDragEnd);
   document.removeEventListener('pointercancel', onSectionDragEnd);
-  saveSectionOrder();
+  saveSectionLayout();
+  updateFreeLayoutHeight();
   dragEl = null;
-  dragPlaceholder = null;
   dragCenterGuide = null;
 }
+
+if(window.ResizeObserver){
+  const sectionLayoutObserver = new ResizeObserver(()=>{ updateFreeLayoutHeight();scheduleSectionLayoutSave(); });
+  sectionsContainer.querySelectorAll('.draggable-section').forEach(section=>sectionLayoutObserver.observe(section));
+}
+let sectionLayoutResizeTimer = null;
+window.addEventListener('resize', ()=>{
+  clearTimeout(sectionLayoutResizeTimer);
+  sectionLayoutResizeTimer = setTimeout(()=>{
+    freeSectionLayoutReady = false;
+    initializeFreeSectionLayout();
+  }, 120);
+});
 
 /* ===== tema (claro / escuro / preto) ===== */
 const THEME_KEY = 'plantel_theme';
