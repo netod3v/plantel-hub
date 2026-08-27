@@ -1019,7 +1019,7 @@ body.mobile-modal-open .note-card{
   .header-top{align-items:center;flex-wrap:wrap;}
   .brand-row{flex:1 1 260px;min-width:0;}
   .brand-row>div{min-width:0;}
-  .header-actions{width:100%;display:grid;grid-template-columns:repeat(7,38px);justify-content:end;gap:7px;margin-top:10px;}
+  .header-actions{width:100%;display:grid;grid-template-columns:repeat(6,38px);justify-content:end;gap:7px;margin-top:10px;}
   .preview-row{margin-top:16px;}
   .kanban-board{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:7px;overscroll-behavior-x:contain;}
   .kanban-col{flex:0 0:min(82vw,310px);scroll-snap-align:start;}
@@ -1034,7 +1034,7 @@ body.mobile-modal-open .note-card{
   .brand-row img{width:44px;height:44px;border-radius:11px;}
   .brand-row h1{font-size:19px;}
   .brand-row p{font-size:11.5px;line-height:1.35;}
-  .header-actions{grid-template-columns:repeat(6,38px);justify-content:center;}
+  .header-actions{grid-template-columns:repeat(5,38px);justify-content:center;}
   .preview-card{padding:10px 11px;}
   .card{padding:14px 13px;border-radius:12px;}
   .section-head{gap:6px;flex-wrap:wrap;}
@@ -1078,7 +1078,7 @@ body.mobile-modal-open .note-card{
 }
 @media (max-width:360px){
   .wrap{padding-inline:9px;}
-  .header-actions{grid-template-columns:repeat(6,34px);gap:6px;}
+  .header-actions{grid-template-columns:repeat(5,34px);gap:6px;}
   .icon-btn{width:34px;height:34px;}
   .post-actions>.btn-ghost{font-size:11px;padding-inline:5px;}
   .dm-bubble{max-width:92%;}
@@ -3144,6 +3144,7 @@ const headerMoreMenu = document.getElementById('header-more-menu');
 [
   [themeBtn, 'Alternar tema'],
   [fsBtn, 'Tela cheia'],
+  [document.getElementById('my-space-btn'), 'Meu espaço'],
   [document.getElementById('support-btn'), 'Suporte'],
   [document.getElementById('logout-btn'), 'Sair']
 ].forEach(([button,label])=>{
