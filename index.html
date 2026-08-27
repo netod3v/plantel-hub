@@ -317,7 +317,7 @@ html[data-labs="true"] .btn-primary{background:linear-gradient(135deg,var(--fore
 .mention-notification-copy{flex:1;min-width:0;font-size:12.5px;line-height:1.4;}
 .mention-notification-copy strong{font-weight:700;}
 .mention-notification-time{display:block;margin-top:3px;color:var(--text-3);font-size:10.5px;}
-.post.mention-focus{animation:mentionFocus 1.8s ease;}
+.mention-focus{animation:mentionFocus 1.8s ease;}
 @keyframes mentionFocus{0%,35%{box-shadow:0 0 0 3px color-mix(in srgb,var(--forest) 55%,transparent),0 0 28px color-mix(in srgb,var(--forest) 28%,transparent);}100%{box-shadow:none;}}
 #online-badge{background:var(--forest);}
 .online-item{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--border);}
@@ -849,6 +849,11 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .item-text{font-size:13.5px;white-space:pre-wrap;word-break:break-word;}
 .item.done .item-text{text-decoration:line-through;color:var(--text-2);}
 .item-meta{font-size:11px;color:var(--text-3);margin-top:2px;}
+.item-edit-form{display:flex;flex-wrap:wrap;gap:7px;width:100%;}
+.item-edit-form input{flex:1 1 220px;min-width:0;}
+.item-edit-form .btn,.item-edit-form .btn-ghost{padding:7px 10px;}
+.item-edit-button{background:none;border:none;color:var(--text-3);font-size:12px;padding:4px 6px;border-radius:6px;flex:none;}
+.item-edit-button:hover{background:var(--sage);color:var(--forest);}
 .privacy-icon{display:inline-flex;vertical-align:-2px;margin-left:5px;color:var(--text-3);}
 .privacy-icon svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;}
 .item-remove{
@@ -862,7 +867,8 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .item-cal svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;}
 .item-cal:hover{background:var(--sage);color:var(--forest);}
 
-.add-inline{display:flex;gap:8px;margin-top:12px;}
+.add-inline{display:flex;gap:8px;margin-top:12px;position:relative;}
+.add-inline .mention-suggestions{top:auto;bottom:calc(100% + 4px);}
 .add-inline input{flex:1;}
 .add-inline select{flex:none;width:150px;}
 
@@ -1543,6 +1549,7 @@ img,video,iframe{max-width:100%;}
       <div id="meta-list"></div>
       <div class="add-inline">
         <input class="field" id="meta-add-input" placeholder="Adicionar meta diretamente...">
+        <div class="mention-suggestions hidden" id="meta-mention-suggestions"></div>
         <select class="field" id="meta-add-visibility">
           <option value="">Visível para: Todos</option>
         </select>
@@ -1569,6 +1576,7 @@ img,video,iframe{max-width:100%;}
       <div id="demanda-board" class="kanban-board hidden"></div>
       <div class="add-inline">
         <input class="field" id="demanda-add-input" placeholder="Adicionar demanda diretamente...">
+        <div class="mention-suggestions hidden" id="demanda-mention-suggestions"></div>
         <select class="field" id="demanda-add-visibility">
           <option value="">Visível para: Todos</option>
         </select>
@@ -1724,6 +1732,8 @@ let noteState = null;
 const openComments = new Set();
 const openReplies = new Set();
 const editingPosts = new Set();
+const editingMetas = new Set();
+const editingDemandas = new Set();
 const newMuralPosts = new Set();
 const newMuralComments = new Set();
 const newMuralReplies = new Set();
@@ -3363,6 +3373,8 @@ function myAppNotifications(){
     mentionedPostIds.add(p.id);
     return { kind:'mention', ts:p.ts||0, post:p, person:authorInfo(p) };
   });
+  const metaMentions=allMetas().filter(m=>m.uid!==currentUid&&m.mentions&&m.mentions[currentUid]).map(m=>({kind:'meta-mention',ts:m.ts||0,item:m,person:authorInfo(m)}));
+  const demandaMentions=allDemandas().filter(d=>d.uid!==currentUid&&d.mentions&&d.mentions[currentUid]).map(d=>({kind:'demanda-mention',ts:d.ts||0,item:d,person:authorInfo(d)}));
   const adminPosts = allPosts().filter(p=>{
     if(p.uid === currentUid || mentionedPostIds.has(p.id)) return false;
     return authorInfo(p).isAdmin;
@@ -3383,7 +3395,7 @@ function myAppNotifications(){
     person:{ uid:otherUid, name:nicknameFor(otherUid, conversation.name), photo:conversation.photo || null },
     preview:conversation.lastText || 'Nova mensagem'
   }));
-  return [...mentions, ...adminPosts, ...postLikes, ...directMessages].sort((a,b)=>b.ts-a.ts).slice(0,60);
+  return [...mentions, ...metaMentions, ...demandaMentions, ...adminPosts, ...postLikes, ...directMessages].sort((a,b)=>b.ts-a.ts).slice(0,60);
 }
 function renderMentionNotifications(){
   const notifications = myAppNotifications();
@@ -3393,9 +3405,13 @@ function renderMentionNotifications(){
   mentionNotificationBadge.classList.toggle('hidden', unread === 0);
   mentionNotificationSummary.textContent = unread ? `${unread} ${unread===1?'notificação nova':'notificações novas'}` : 'Atividades recentes';
   mentionNotificationList.innerHTML = notifications.length ? notifications.map(item=>{
-    const action = item.kind === 'dm' ? `data-action="open-dm" data-uid="${item.otherUid}"` : `data-action="open-mentioned-post" data-id="${item.post.id}"`;
+    const action = item.kind === 'dm' ? `data-action="open-dm" data-uid="${item.otherUid}"` : item.kind==='meta-mention'||item.kind==='demanda-mention' ? `data-action="open-mentioned-item" data-kind="${item.kind==='meta-mention'?'meta':'demanda'}" data-id="${item.item.id}"` : `data-action="open-mentioned-post" data-id="${item.post.id}"`;
     const message = item.kind === 'mention'
       ? `<strong>${escapeHtml(item.person.name)}</strong> mencionou você no mural`
+      : item.kind === 'meta-mention'
+        ? `<strong>${escapeHtml(item.person.name)}</strong> mencionou voc� em uma meta`
+        : item.kind === 'demanda-mention'
+          ? `<strong>${escapeHtml(item.person.name)}</strong> mencionou voc� em uma demanda`
       : item.kind === 'admin-post'
         ? `<strong>${escapeHtml(item.person.name)}</strong> publicou um novo aviso no mural`
         : item.kind === 'post-like'
@@ -5003,15 +5019,16 @@ function render(){
   document.getElementById('meta-list').innerHTML = visibleMetas.length ? visibleMetas.map(m=>{
     const mInfo = authorInfo(m);
     const canManageMeta = m.uid === currentUid || isAdmin();
+    const isEditingMeta = editingMetas.has(m.id) && canManageMeta;
     return `
-    <div class="item ${m.done?'done ':''}${newMuralMetas.has(m.id)?'mural-enter':''}">
+    <div class="item ${m.done?'done ':''}${newMuralMetas.has(m.id)?'mural-enter':''}" data-meta-id="${m.id}">
       <div class="check ${m.done?'done':''}" data-action="${canManageMeta?'toggle-meta':''}" data-id="${m.id}" style="${canManageMeta?'':'pointer-events:none;opacity:.5;'}">${CHECK_SVG}</div>
       <div class="item-body">
-        <div class="item-text">${escapeHtml(m.text)}</div>
+        ${isEditingMeta ? `<div class="item-edit-form"><input class="field" id="edit-meta-input-${m.id}" value="${escapeHtml(m.text)}" aria-label="Editar meta"><button class="btn btn-primary" data-action="save-meta-edit" data-id="${m.id}">Salvar</button><button class="btn-ghost" data-action="cancel-meta-edit" data-id="${m.id}">Cancelar</button></div>` : `<div class="item-text">${renderTextWithMentions(m.text,m)}${m.editedAt?' <span class="post-edited-tag">(editado)</span>':''}</div>`}
         <div class="item-meta"><span${authorNameAttr(mInfo)}>${escapeHtml(mInfo.name)}</span>${privacyIconHtml(m._sector)} · ${timeAgo(m.ts)}</div>
       </div>
       <button class="item-cal" data-action="cal-meta" data-id="${m.id}" title="Adicionar ao Google Agenda"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg></button>
-      ${canManageMeta ? `<button class="item-remove" data-action="remove-meta" data-id="${m.id}">remover</button>` : ''}
+      ${canManageMeta && !isEditingMeta ? `<button class="item-edit-button" data-action="edit-meta" data-id="${m.id}">editar</button><button class="item-remove" data-action="remove-meta" data-id="${m.id}">remover</button>` : ''}
     </div>`;}).join('') : `<div class="empty">Nenhuma meta ainda.</div>`;
 
   const visibleDemandas = allDemandas();
@@ -5029,14 +5046,15 @@ function render(){
   document.getElementById('demanda-list').innerHTML = visibleDemandas.length ? visibleDemandas.map(d=>{
     const dInfo = authorInfo(d);
     const canManageDemanda = d.uid === currentUid || isAdmin();
+    const isEditingDemanda = editingDemandas.has(d.id) && canManageDemanda;
     return `
-    <div class="item ${d.done?'done ':''}${newMuralDemandas.has(d.id)?'mural-enter':''}">
+    <div class="item ${d.done?'done ':''}${newMuralDemandas.has(d.id)?'mural-enter':''}" data-demanda-id="${d.id}">
       <div class="check ${d.done?'done':''}" data-action="${canManageDemanda?'toggle-demanda':''}" data-id="${d.id}" style="${canManageDemanda?'':'pointer-events:none;opacity:.5;'}">${CHECK_SVG}</div>
       <div class="item-body">
-        <div class="item-text">${escapeHtml(d.text)}</div>
+        ${isEditingDemanda ? `<div class="item-edit-form"><input class="field" id="edit-demanda-input-${d.id}" value="${escapeHtml(d.text)}" aria-label="Editar demanda"><button class="btn btn-primary" data-action="save-demanda-edit" data-id="${d.id}">Salvar</button><button class="btn-ghost" data-action="cancel-demanda-edit" data-id="${d.id}">Cancelar</button></div>` : `<div class="item-text">${renderTextWithMentions(d.text,d)}${d.editedAt?' <span class="post-edited-tag">(editado)</span>':''}</div>`}
         <div class="item-meta"><span${authorNameAttr(dInfo)}>${escapeHtml(dInfo.name)}</span>${privacyIconHtml(d._sector)} · ${timeAgo(d.ts)}</div>
       </div>
-      ${canManageDemanda ? `<button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>` : ''}
+      ${canManageDemanda && !isEditingDemanda ? `<button class="item-edit-button" data-action="edit-demanda" data-id="${d.id}">editar</button><button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>` : ''}
     </div>`;}).join('') : `<div class="empty">Nenhuma demanda ainda.</div>`;
 
   renderKanbanBoard('demanda', visibleDemandas);
@@ -5066,9 +5084,10 @@ function renderKanbanBoard(kind, items){
           const info = authorInfo(item);
           const idx = KANBAN_COLUMNS.findIndex(c=>c.key===col.key);
           const canManageItem = item.uid === currentUid || isAdmin();
+          const isEditingItem = (kind==='meta'?editingMetas:editingDemandas).has(item.id) && canManageItem;
           return `
-          <div class="kanban-card" draggable="${canManageItem}" data-id="${item.id}" data-kind="${kind}">
-            <div class="kanban-card-text">${escapeHtml(item.text)}</div>
+          <div class="kanban-card" draggable="${canManageItem&&!isEditingItem}" data-id="${item.id}" data-kind="${kind}">
+            ${isEditingItem?`<div class="item-edit-form"><input class="field" id="edit-${kind}-input-${item.id}" value="${escapeHtml(item.text)}"><button class="btn btn-primary" data-action="save-${kind}-edit" data-id="${item.id}">Salvar</button><button class="btn-ghost" data-action="cancel-${kind}-edit" data-id="${item.id}">Cancelar</button></div>`:`<div class="kanban-card-text">${renderTextWithMentions(item.text,item)}${item.editedAt?' <span class="post-edited-tag">(editado)</span>':''}</div>`}
             <div class="kanban-card-meta">${avatarHtml(info, true)}<span class="kanban-card-author"${authorNameAttr(info)}>${escapeHtml(info.name)}</span></div>
             <div class="kanban-card-foot">
               ${visibilityTagHtml(item._sector)}
@@ -5077,6 +5096,7 @@ function renderKanbanBoard(kind, items){
                 <button type="button" data-action="kanban-move" data-kind="${kind}" data-id="${item.id}" data-dir="-1" ${idx===0?'disabled':''} aria-label="Mover pra trás">‹</button>
                 <button type="button" data-action="kanban-move" data-kind="${kind}" data-id="${item.id}" data-dir="1" ${idx===KANBAN_COLUMNS.length-1?'disabled':''} aria-label="Mover pra frente">›</button>
               </div>
+              ${!isEditingItem?`<button type="button" data-action="edit-${kind}" data-id="${item.id}">editar</button>`:''}
               <button type="button" class="kanban-card-remove" data-action="remove-${kind}" data-id="${item.id}">remover</button>
               ` : ''}
             </div>
@@ -5267,6 +5287,27 @@ mentionSuggestions.addEventListener('mousedown', e=>{
   e.preventDefault();
   insertMention(Number(option.dataset.mentionIndex));
 });
+function setupInlineMentions(inputId, suggestionsId){
+  const input=document.getElementById(inputId),box=document.getElementById(suggestionsId);if(!input||!box)return;
+  let matches=[],active=0,context=null;
+  function close(){box.classList.add('hidden');box.innerHTML='';matches=[];context=null;}
+  function update(){
+    const cursor=input.selectionStart,before=input.value.slice(0,cursor),match=before.match(/(?:^|\s)@([^\s@\n]*)$/);
+    if(!match){close();return;}
+    context={start:cursor-match[1].length-1,end:cursor};const query=match[1].trim().toLocaleLowerCase('pt-BR');
+    const people=Object.entries(state.users).map(([uid,profile])=>({uid,...profile})).filter(p=>p.name&&(!query||p.name.toLocaleLowerCase('pt-BR').includes(query))).sort((a,b)=>a.name.localeCompare(b.name));
+    const all=!query||'all'.includes(query)||'todos'.includes(query)?[{uid:'__all__',name:'all',_all:true}]:[];matches=[...all,...people].slice(0,8);active=Math.min(active,Math.max(0,matches.length-1));
+    box.innerHTML=matches.map((p,i)=>{const avatar=p._all?'<div class="avatar">@</div>':(p.photo?`<div class="avatar"><img src="${p.photo}" alt=""></div>`:`<div class="avatar">${initials(p.name)}</div>`);const detail=p._all?'Mencionar todas as pessoas':(userSectors(p).join(' · ')||'Sem setor');return `<button type="button" class="mention-option ${i===active?'active':''}" data-inline-mention="${i}">${avatar}<span><span class="mention-option-name">${escapeHtml(p._all?'@all':p.name)}</span><span class="mention-option-sector">${escapeHtml(detail)}</span></span></button>`;}).join('');
+    box.classList.toggle('hidden',!matches.length);
+  }
+  function insert(index){const p=matches[index];if(!p||!context)return;const before=input.value.slice(0,context.start),after=input.value.slice(context.end),value='@'+p.name+' ';input.value=before+value+after;const cursor=before.length+value.length;input.focus();input.setSelectionRange(cursor,cursor);close();}
+  input.addEventListener('input',()=>{active=0;update();});
+  input.addEventListener('keydown',e=>{if(box.classList.contains('hidden'))return;if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();active=(active+(e.key==='ArrowDown'?1:-1)+matches.length)%matches.length;update();}else if(e.key==='Enter'){e.preventDefault();e.stopImmediatePropagation();insert(active);}else if(e.key==='Escape'){e.preventDefault();close();}});
+  box.addEventListener('mousedown',e=>{const option=e.target.closest('[data-inline-mention]');if(!option)return;e.preventDefault();insert(Number(option.dataset.inlineMention));});
+  document.addEventListener('mousedown',e=>{if(e.target!==input&&!box.contains(e.target))close();});
+}
+setupInlineMentions('meta-add-input','meta-mention-suggestions');
+setupInlineMentions('demanda-add-input','demanda-mention-suggestions');
 document.addEventListener('mousedown', e=>{
   if(!e.target.closest('.composer-top')) closeMentionSuggestions();
 });
@@ -5416,14 +5457,16 @@ function addMeta(text, author, itemUid, visibility){
   if(!text.trim()) return null;
   const id = uid();
   const path = visibility ? `metas_private/${visibility}/${id}` : `metas/${id}`;
-  set(ref(db, path), { text: text.trim(), author, uid: itemUid || null, ts: Date.now(), done:false }).catch(handleDbError);
+  const mentions=collectMentions(text);
+  set(ref(db, path), { text: text.trim(), author, uid: itemUid || null, ts: Date.now(), done:false, mentions:Object.keys(mentions).length?mentions:null }).catch(handleDbError);
   return id;
 }
 function addDemanda(text, author, itemUid, visibility){
   if(!text.trim()) return null;
   const id = uid();
   const path = visibility ? `demandas_private/${visibility}/${id}` : `demandas/${id}`;
-  set(ref(db, path), { text: text.trim(), author, uid: itemUid || null, ts: Date.now(), done:false }).catch(handleDbError);
+  const mentions=collectMentions(text);
+  set(ref(db, path), { text: text.trim(), author, uid: itemUid || null, ts: Date.now(), done:false, mentions:Object.keys(mentions).length?mentions:null }).catch(handleDbError);
   return id;
 }
 
@@ -5504,6 +5547,11 @@ document.addEventListener('click', (e)=>{
         setTimeout(()=>postEl.classList.remove('mention-focus'), 1900);
       }
     }, 280);
+  } else if(action === 'open-mentioned-item'){
+    closeMentionNotifications();
+    const kind=t.dataset.kind,section=document.querySelector(`[data-section-id="${kind==='meta'?'metas':'demandas'}"]`);
+    section?.scrollIntoView({behavior:'smooth',block:'center'});
+    setTimeout(()=>{const item=document.querySelector(kind==='meta'?`[data-meta-id="${id}"]`:`[data-demanda-id="${id}"]`);if(item){item.scrollIntoView({behavior:'smooth',block:'center'});item.classList.add('mention-focus');setTimeout(()=>item.classList.remove('mention-focus'),1900);}},280);
   } else if(action === 'open-dm'){
     const otherUid = t.dataset.uid;
     const c = dmConversations[otherUid] || {};
@@ -5554,6 +5602,19 @@ document.addEventListener('click', (e)=>{
   } else if(action === 'toggle-demanda'){
     const d = allDemandas().find(x=>x.id===id);
     if(d){ const newDone = !d.done; update(ref(db, demandaPath(d)), { done: newDone, status: newDone ? 'done' : 'todo' }).catch(handleDbError); }
+  } else if(action === 'edit-meta' || action === 'edit-demanda'){
+    const kind=action==='edit-meta'?'meta':'demanda',item=(kind==='meta'?allMetas():allDemandas()).find(x=>x.id===id);
+    if(!item || (item.uid!==currentUid&&!isAdmin()))return;
+    (kind==='meta'?editingMetas:editingDemandas).add(id);render();
+    requestAnimationFrame(()=>{const inputs=[...document.querySelectorAll(`[id="edit-${kind}-input-${id}"]`)];const input=inputs.find(el=>el.offsetParent!==null)||inputs[0];if(input){input.focus();input.setSelectionRange(input.value.length,input.value.length);}});
+  } else if(action === 'cancel-meta-edit' || action === 'cancel-demanda-edit'){
+    (action==='cancel-meta-edit'?editingMetas:editingDemandas).delete(id);render();
+  } else if(action === 'save-meta-edit' || action === 'save-demanda-edit'){
+    const kind=action==='save-meta-edit'?'meta':'demanda',item=(kind==='meta'?allMetas():allDemandas()).find(x=>x.id===id),input=t.closest('.item,.kanban-card')?.querySelector('input');
+    const text=input?.value.trim();if(!item||!text||(item.uid!==currentUid&&!isAdmin()))return;
+    const mentions=collectMentions(text),path=kind==='meta'?metaPath(item):demandaPath(item);
+    (kind==='meta'?editingMetas:editingDemandas).delete(id);
+    update(ref(db,path),{text,mentions:Object.keys(mentions).length?mentions:null,editedAt:Date.now()}).catch(handleDbError);render();
   } else if(action === 'kanban-move'){
     const kind = t.dataset.kind, dir = parseInt(t.dataset.dir, 10);
     const item = (kind === 'meta' ? allMetas() : allDemandas()).find(x=>x.id===id);
@@ -5686,6 +5747,11 @@ document.addEventListener('click', (e)=>{
 });
 
 document.addEventListener('keydown', (e)=>{
+  if((e.key==='Enter'||e.key==='Escape')&&e.target.matches('[id^="edit-meta-input-"],[id^="edit-demanda-input-"]')){
+    e.preventDefault();const container=e.target.closest('.item,.kanban-card');
+    const action=e.key==='Enter'?(e.target.id.startsWith('edit-meta-')?'save-meta-edit':'save-demanda-edit'):(e.target.id.startsWith('edit-meta-')?'cancel-meta-edit':'cancel-demanda-edit');
+    container?.querySelector(`[data-action="${action}"]`)?.click();return;
+  }
   if(e.key === 'Enter' && e.target.matches('[data-comment-input]')){
     e.preventDefault();
     const id = e.target.dataset.commentInput;
