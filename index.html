@@ -1019,7 +1019,7 @@ body.mobile-modal-open .note-card{
   .header-top{align-items:center;flex-wrap:wrap;}
   .brand-row{flex:1 1 260px;min-width:0;}
   .brand-row>div{min-width:0;}
-  .header-actions{width:100%;display:grid;grid-template-columns:repeat(6,38px);justify-content:end;gap:7px;margin-top:10px;}
+  .header-actions{width:100%;display:grid;grid-template-columns:repeat(7,38px);justify-content:end;gap:7px;margin-top:10px;}
   .preview-row{margin-top:16px;}
   .kanban-board{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:7px;overscroll-behavior-x:contain;}
   .kanban-col{flex:0 0:min(82vw,310px);scroll-snap-align:start;}
@@ -1034,7 +1034,7 @@ body.mobile-modal-open .note-card{
   .brand-row img{width:44px;height:44px;border-radius:11px;}
   .brand-row h1{font-size:19px;}
   .brand-row p{font-size:11.5px;line-height:1.35;}
-  .header-actions{grid-template-columns:repeat(5,38px);justify-content:center;}
+  .header-actions{grid-template-columns:repeat(6,38px);justify-content:center;}
   .preview-card{padding:10px 11px;}
   .card{padding:14px 13px;border-radius:12px;}
   .section-head{gap:6px;flex-wrap:wrap;}
@@ -1053,8 +1053,10 @@ body.mobile-modal-open .note-card{
   .post-more-menu{position:fixed;left:12px;right:12px;top:auto;bottom:12px;min-width:0;padding:8px;border-radius:14px;z-index:500;}
   .post-more-menu .btn-ghost{min-height:40px;font-size:13px;}
   .comment,.reply{gap:7px;}
-  .comment-form,.reply-form{flex-wrap:wrap;}
-  .comment-form .field,.reply-form .field{flex:1 1 100%;}
+  .post-comments.open{max-height:none;overflow:visible;}
+  .comment-form,.reply-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;width:100%;}
+  .comment-form .field,.reply-form .field{min-width:0;width:100%;font-size:16px;min-height:42px;}
+  .comment-form button,.reply-form button{min-height:42px;padding:8px 12px;}
   .modal-overlay{padding:12px;align-items:center;justify-content:center;}
   .modal-box{
     width:min(100%,460px);max-width:460px;max-height:calc(100dvh - 24px);
@@ -1078,7 +1080,7 @@ body.mobile-modal-open .note-card{
 }
 @media (max-width:360px){
   .wrap{padding-inline:9px;}
-  .header-actions{grid-template-columns:repeat(5,34px);gap:6px;}
+  .header-actions{grid-template-columns:repeat(6,34px);gap:6px;}
   .icon-btn{width:34px;height:34px;}
   .post-actions>.btn-ghost{font-size:11px;padding-inline:5px;}
   .dm-bubble{max-width:92%;}
@@ -1710,6 +1712,7 @@ const noteTextarea = document.getElementById('note-textarea');
 const noteTabsList = document.getElementById('note-tabs-list');
 const closingComments = new Set();
 const closingCommentTimers = new Map();
+const commentDrafts = new Map();
 const addNoteTabBtn = document.getElementById('add-note-tab-btn');
 const noteTabTitleInput = document.getElementById('note-tab-title-input');
 const clearNotesBtn = document.getElementById('clear-notes-btn');
@@ -3144,7 +3147,6 @@ const headerMoreMenu = document.getElementById('header-more-menu');
 [
   [themeBtn, 'Alternar tema'],
   [fsBtn, 'Tela cheia'],
-  [document.getElementById('my-space-btn'), 'Meu espaço'],
   [document.getElementById('support-btn'), 'Suporte'],
   [document.getElementById('logout-btn'), 'Sair']
 ].forEach(([button,label])=>{
@@ -3790,6 +3792,7 @@ function closeViewProfile(){ closeModalSmooth(viewProfileModal); }
 
 // Clique nos avatares de outras pessoas: a foto abre ampliada;
 // áreas de perfil que não são a foto continuam abrindo o perfil completo.
+document.addEventListener('input',e=>{if(e.target.matches('[data-comment-input]'))commentDrafts.set(e.target.dataset.commentInput,e.target.value);});
 document.addEventListener('click', (e)=>{
   const img = e.target.closest('[data-action="view-profile"] img');
   if(img){
@@ -5126,6 +5129,7 @@ function render(){
 
   renderKanbanBoard('demanda', visibleDemandas);
   requestAnimationFrame(()=>document.querySelectorAll('[id^="edit-meta-input-"],[id^="edit-demanda-input-"]').forEach(enableEditMentions));
+  requestAnimationFrame(()=>document.querySelectorAll('[data-comment-input]').forEach(input=>{const draft=commentDrafts.get(input.dataset.commentInput);if(draft!==undefined&&input.value!==draft)input.value=draft;}));
 }
 
 const KANBAN_COLUMNS = [
@@ -5774,6 +5778,7 @@ document.addEventListener('click', (e)=>{
       closingComments.delete(id);
       openComments.add(id);
       render();
+      if(window.matchMedia('(max-width:520px)').matches)setTimeout(()=>document.querySelector(`[data-comment-input="${id}"]`)?.scrollIntoView({behavior:'smooth',block:'center'}),180);
     }
   } else if(action === 'send-comment'){
     const input = document.querySelector(`[data-comment-input="${id}"]`);
@@ -5783,6 +5788,7 @@ document.addEventListener('click', (e)=>{
     const post = allPosts().find(p=>p.id===id);
     if(!post) return;
     const commentId = uid();
+    commentDrafts.delete(id);
     newMuralComments.add(commentId);
     set(ref(db, postPath(post)+'/comments/'+commentId), { author: myProfile().name, uid: currentUid, text, ts: Date.now() }).catch(err=>{ newMuralComments.delete(commentId); handleDbError(err); });
     openComments.add(id);
