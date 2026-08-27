@@ -455,7 +455,7 @@ textarea.field:focus{border-color:var(--moss);}
 .note-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
 .note-toolbar .btn{padding:8px 12px;}
 .note-status{font-size:12px;color:var(--text-2);}
-.note-card{position:fixed;right:20px;bottom:20px;width:320px;max-height:68px;overflow:hidden;z-index:400;border-radius:22px;background:var(--paper);border:1px solid var(--border);box-shadow:0 22px 50px rgba(0,0,0,.16);transition:all .24s ease;}
+.note-card{position:fixed;right:20px;bottom:20px;width:320px;max-height:68px;overflow:hidden;z-index:150;border-radius:22px;background:var(--paper);border:1px solid var(--border);box-shadow:0 22px 50px rgba(0,0,0,.16);transition:all .24s ease;}
 .note-card.expanded{width:min(92vw,420px);max-height:calc(100vh - 40px);}
 .note-card-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:var(--forest);color:#fff;cursor:pointer;}
 .note-card-header strong{font-size:14px;}
@@ -509,6 +509,17 @@ textarea.field:focus{border-color:var(--moss);}
 .whiteboard-divider{width:1px;height:25px;background:#ddd;margin:0 2px;}.whiteboard-color{width:30px;height:30px;padding:3px;border:0;border-radius:7px;background:#eee;cursor:pointer;}.whiteboard-size{height:32px;width:70px;border:0;border-radius:7px;background:#f1f1f1;color:#222;font-size:11px;padding:0 5px;}.whiteboard-select{height:32px;max-width:105px;border:0;border-radius:7px;background:#f1f1f1;color:#222;font-size:11px;padding:0 5px;}.whiteboard-zoom span{min-width:44px;text-align:center;font-size:11px;}
 @media(max-width:720px){#note-studio-modal .note-studio-box{width:100%;height:100dvh;max-height:none;border-radius:0;}.note-format-bar{flex-wrap:nowrap;overflow-x:auto}.note-rich-editor{min-height:190px}.note-studio-body[data-mode="draw"] .note-draw-panel{min-height:0}.whiteboard-toolbar{max-width:calc(100% - 20px);overflow-x:auto;bottom:8px}.whiteboard-zoom{right:8px;top:8px;bottom:auto;}}
 .char-count{font-size:11px;color:var(--text-3);text-align:right;margin:4px 0 14px;}
+.my-space-box{width:calc(100vw - 48px);max-width:1400px;max-height:min(88vh,820px);}
+.my-space-body{display:grid;gap:14px;overflow-y:auto;overflow-x:hidden;min-width:0;width:100%;}
+.my-space-profile,.my-space-section{border:1px solid var(--border);border-radius:13px;padding:15px;background:var(--paper);min-width:0;width:100%;max-width:100%;}
+.my-space-profile{display:flex;align-items:center;gap:13px;background:linear-gradient(135deg,color-mix(in srgb,var(--forest) 9%,var(--paper)),var(--paper));}
+.my-space-profile .avatar{width:58px;height:58px;border-radius:16px;font-size:18px;flex:none;}
+.my-space-profile-copy{flex:1;min-width:0}.my-space-profile-copy strong{display:block;font:700 18px 'Space Grotesk',sans-serif}.my-space-profile-copy p{margin:4px 0;color:var(--text-2);font-size:12px}.my-space-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.my-space-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.my-space-title strong{display:block;font-size:14px}.my-space-title span{font-size:10.5px;color:var(--text-3)}
+.my-space-team{display:flex;gap:9px;overflow-x:auto;padding-bottom:3px}.my-space-person{min-width:135px;border:1px solid var(--border);border-radius:10px;padding:9px;display:flex;align-items:center;gap:8px;cursor:pointer;background:var(--parchment)}.my-space-person .avatar{width:31px;height:31px;flex:none}.my-space-person span{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.my-space-add{display:flex;gap:8px;margin-top:10px;width:100%}.my-space-add input{flex:1;min-width:0}.my-space-add .btn-primary{width:auto;display:inline-flex;flex:none}.my-space-personal-item{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--border);min-width:0}.my-space-personal-item:last-child{border-bottom:0}.my-space-personal-item .item-text{flex:1;min-width:0;overflow-wrap:anywhere}.my-space-assigned-item{padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:7px;background:var(--parchment);min-width:0;overflow:hidden}.my-space-assigned-item .item-text{overflow-wrap:anywhere;word-break:break-word}
+.my-space-personal-item.done .item-text,.my-space-assigned-item.done .item-text{text-decoration:line-through;color:var(--text-2)}
+@media(max-width:620px){.my-space-box{width:100%;max-width:none;height:100dvh;max-height:none;border-radius:0}.my-space-profile{align-items:flex-start}.my-space-add{flex-direction:column}.my-space-add .btn-primary{width:100%;justify-content:center}}
 
 /* aviso de erro do banco */
 #db-error-toast{
@@ -998,10 +1009,10 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
 
 /* ===== responsividade e otimizações gerais ===== */
 img,video,iframe{max-width:100%;}
+body.mobile-modal-open .note-card{
+  opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:translateY(12px);
+}
 @media (max-width:720px){
-  body.mobile-modal-open .note-card{
-    opacity:0;visibility:hidden;pointer-events:none;transform:translateY(12px);
-  }
   .wrap{max-width:100%;padding:0 16px 44px;}
   header{padding:25px 0 20px;}
   html[data-labs="true"] header{margin-top:12px;padding:16px;border-radius:16px;}
@@ -1199,6 +1210,9 @@ img,video,iframe{max-width:100%;}
         </button>
         <button class="icon-btn" id="profile-btn" aria-label="Meu perfil">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>
+        </button>
+        <button class="icon-btn" id="my-space-btn" aria-label="Meu espaço" title="Meu espaço">
+          <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10M9 20v-6h6v6"/></svg>
         </button>
         <div class="header-more">
           <button class="icon-btn" id="header-more-btn" type="button" aria-label="Mais opções" aria-expanded="false" aria-controls="header-more-menu">
@@ -1627,6 +1641,18 @@ img,video,iframe{max-width:100%;}
         </div>
         <div class="note-rich-editor" id="note-rich-editor" contenteditable="true" role="textbox" aria-multiline="true"></div>
         <div class="note-draw-panel"><div class="note-draw-viewport" id="note-draw-viewport"><canvas id="note-draw-canvas" width="1400" height="760"></canvas></div><div class="whiteboard-toolbar"><button class="whiteboard-tool" id="note-draw-undo" type="button" title="Desfazer" aria-label="Desfazer"><svg viewBox="0 0 24 24"><path d="M9 7l-5 5 5 5M5 12h8a6 6 0 0 1 6 6"/></svg></button><span class="whiteboard-divider"></span><button class="whiteboard-tool active" id="note-draw-pen" type="button" title="Caneta" aria-label="Caneta"><svg viewBox="0 0 24 24"><path d="M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20zM13.5 8l3 3"/></svg></button><button class="whiteboard-tool" id="note-draw-eraser" type="button" title="Borracha" aria-label="Borracha"><svg viewBox="0 0 24 24"><path d="M7 17l-3-3 8-8a2 2 0 0 1 3 0l3 3a2 2 0 0 1 0 3l-5 5H7zM10 17h9"/></svg></button><input class="whiteboard-color" type="color" id="note-draw-color" value="#244b35" title="Cor do traço"><select class="whiteboard-size" id="note-draw-size" title="Espessura"><option value="2">Fino</option><option value="5" selected>Médio</option><option value="9">Grosso</option></select><span class="whiteboard-divider"></span><button class="whiteboard-tool" id="note-draw-clear" type="button" title="Limpar quadro" aria-label="Limpar quadro"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></svg></button></div><div class="whiteboard-zoom"><button class="whiteboard-tool" id="note-zoom-out" type="button" aria-label="Diminuir zoom"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5L20 20M7 10h6"/></svg></button><span id="note-zoom-label">100%</span><button class="whiteboard-tool" id="note-zoom-in" type="button" aria-label="Aumentar zoom"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5L20 20M7 10h6M10 7v6"/></svg></button></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="my-space-modal">
+    <div class="modal-box my-space-box">
+      <div class="modal-head"><div><strong>Meu espaço</strong><span>Perfil, time e organização pessoal</span></div><button class="modal-close" id="my-space-close" type="button" aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="modal-body my-space-body">
+        <section class="my-space-profile" id="my-space-profile"></section>
+        <section class="my-space-section"><div class="my-space-title"><div><strong>Meu time</strong><span>Pessoas que compartilham seus setores</span></div></div><div class="my-space-team" id="my-space-team"></div></section>
+        <section class="my-space-section"><div class="my-space-title"><div><strong>Atribuídas a mim</strong><span>Demandas da equipe em que você foi mencionado</span></div><span id="my-space-assigned-count"></span></div><div id="my-space-assigned"></div></section>
+        <section class="my-space-section"><div class="my-space-title"><div><strong>Demandas pessoais</strong><span>Privadas e visíveis somente para você</span></div><span id="my-space-personal-count"></span></div><div id="my-space-personal-list"></div><div class="my-space-add"><input class="field" id="my-space-personal-input" placeholder="Adicionar demanda pessoal..."><button class="btn btn-primary" id="my-space-personal-add" type="button">Adicionar</button></div></section>
       </div>
     </div>
   </div>
@@ -3664,6 +3690,34 @@ profileSaveBtn.addEventListener('click', ()=>{
   });
 });
 
+/* ===== Meu espaço: perfil, time, atribuições e demandas privadas ===== */
+const mySpaceBtn=document.getElementById('my-space-btn');
+const mySpaceModal=document.getElementById('my-space-modal');
+const mySpaceClose=document.getElementById('my-space-close');
+const mySpaceProfile=document.getElementById('my-space-profile');
+const mySpaceTeam=document.getElementById('my-space-team');
+const mySpaceAssigned=document.getElementById('my-space-assigned');
+const mySpacePersonalList=document.getElementById('my-space-personal-list');
+const mySpacePersonalInput=document.getElementById('my-space-personal-input');
+function renderMySpace(){
+  if(!mySpaceProfile||!currentUid)return;const mine=myProfile()||{},sectors=userSectors(mine);
+  mySpaceProfile.innerHTML=`${avatarHtml({name:mine.name||'Você',photo:mine.photo},true)}<div class="my-space-profile-copy"><strong>${escapeHtml(mine.name||'Complete seu perfil')}</strong><p>${escapeHtml(mine.bio||'Adicione uma descrição para contar ao time no que você está trabalhando.')}</p><div class="my-space-chips">${sectors.length?sectors.map(s=>`<span class="tag tag-demanda">${escapeHtml(s)}</span>`).join(''):'<span class="tag">Sem time definido</span>'}</div></div><button class="btn-ghost" type="button" id="my-space-edit-profile">Editar perfil</button>`;
+  const team=Object.entries(state.users).filter(([uid,p])=>uid!==currentUid&&userSectors(p).some(s=>sectors.includes(s)));
+  mySpaceTeam.innerHTML=team.length?team.map(([uid,p])=>`<button type="button" class="my-space-person" data-space-profile="${uid}">${avatarHtml({name:p.name,photo:p.photo},true)}<span><strong>${escapeHtml(p.name||'Pessoa')}</strong><br>${escapeHtml(userSectors(p).join(' · ')||'Sem setor')}</span></button>`).join(''):'<div class="empty">Nenhuma outra pessoa encontrada nos seus times.</div>';
+  const assigned=allDemandas().filter(d=>(d.mentions&&d.mentions[currentUid])||(d.assignedTo&&d.assignedTo[currentUid])).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  document.getElementById('my-space-assigned-count').textContent=String(assigned.filter(d=>!d.done).length)+' abertas';
+  mySpaceAssigned.innerHTML=assigned.length?assigned.map(d=>`<div class="my-space-assigned-item ${d.done?'done':''}"><div class="item-text">${renderTextWithMentions(d.text,d)}</div><div class="item-meta">${escapeHtml(authorInfo(d).name)} · ${timeAgo(d.ts)} ${visibilityTagHtml(d._sector)}</div></div>`).join(''):'<div class="empty">Nenhuma demanda atribuída a você.</div>';
+  const personal=[...(state.personalDemandas||[])].sort((a,b)=>(b.ts||0)-(a.ts||0));
+  document.getElementById('my-space-personal-count').textContent=`${personal.filter(d=>!d.done).length} pendentes`;
+  mySpacePersonalList.innerHTML=personal.length?personal.map(d=>`<div class="my-space-personal-item ${d.done?'done':''}"><button class="check ${d.done?'done':''}" type="button" data-personal-toggle="${d.id}">${CHECK_SVG}</button><div class="item-text">${escapeHtml(d.text)}</div><button class="item-remove" type="button" data-personal-remove="${d.id}">remover</button></div>`).join(''):'<div class="empty">Seu espaço pessoal está vazio.</div>';
+}
+function openMySpace(){renderMySpace();openModalSmooth(mySpaceModal);}
+function closeMySpace(){closeModalSmooth(mySpaceModal);}
+function addPersonalDemand(){const text=mySpacePersonalInput.value.trim();if(!text||!currentUid)return;const id=uid();set(ref(db,`personal_demands/${currentUid}/${id}`),{text,done:false,ts:Date.now()}).then(()=>{mySpacePersonalInput.value='';}).catch(handleDbError);}
+mySpaceBtn.addEventListener('click',openMySpace);mySpaceClose.addEventListener('click',closeMySpace);mySpaceModal.addEventListener('click',e=>{if(e.target===mySpaceModal)closeMySpace();});
+document.getElementById('my-space-personal-add').addEventListener('click',addPersonalDemand);mySpacePersonalInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addPersonalDemand();}});
+mySpaceModal.addEventListener('click',e=>{const edit=e.target.closest('#my-space-edit-profile'),person=e.target.closest('[data-space-profile]'),toggle=e.target.closest('[data-personal-toggle]'),removeBtn=e.target.closest('[data-personal-remove]');if(edit){closeMySpace();openProfileModal(false);}else if(person){closeMySpace();openViewProfile(person.dataset.spaceProfile,null,true);}else if(toggle){const item=state.personalDemandas.find(d=>d.id===toggle.dataset.personalToggle);if(item)update(ref(db,`personal_demands/${currentUid}/${item.id}`),{done:!item.done}).catch(handleDbError);}else if(removeBtn)remove(ref(db,`personal_demands/${currentUid}/${removeBtn.dataset.personalRemove}`)).catch(handleDbError);});
+
 /* ===== ver perfil de outra pessoa (somente leitura) ===== */
 const viewProfileModal = document.getElementById('view-profile-modal');
 const viewProfileModalClose = document.getElementById('view-profile-modal-close');
@@ -4409,6 +4463,7 @@ let state = {
   posts: [], postsPrivate: [],
   metas: [], metasPrivate: [],
   demandas: [], demandasPrivate: [],
+  personalDemandas: [],
   users: {},
   presence: {}
 };
@@ -4525,7 +4580,7 @@ function stopDataListeners(){
   if(privateUnsub.demandas) privateUnsub.demandas();
   privateUnsub = { posts: null, metas: null, demandas: null };
   mySubscribedKey = undefined;
-  state.posts = []; state.metas = []; state.demandas = []; state.users = {};
+  state.posts = []; state.metas = []; state.demandas = []; state.personalDemandas = []; state.users = {};
   state.postsPrivate = []; state.metasPrivate = []; state.demandasPrivate = [];
   dmConversations = {};
 }
@@ -4534,6 +4589,10 @@ function startDataListeners(){
   dataUnsubs.push(onValue(ref(db, 'posts'), snap => { state.posts = objToArray(snap.val()); markLoaded('posts'); render(); }, handleDbError));
   dataUnsubs.push(onValue(ref(db, 'metas'), snap => { state.metas = objToArray(snap.val()); render(); }, handleDbError));
   dataUnsubs.push(onValue(ref(db, 'demandas'), snap => { state.demandas = objToArray(snap.val()); render(); }, handleDbError));
+  if(currentUid)dataUnsubs.push(onValue(ref(db, 'personal_demands/'+currentUid),snap=>{state.personalDemandas=objToArray(snap.val());renderMySpace();},(err)=>{
+    const isPermissionDenied = err && (err.code === 'PERMISSION_DENIED' || /permission_denied/i.test(err.message || ''));
+    if(!isPermissionDenied) handleDbError(err);
+  }));
   dataUnsubs.push(onValue(ref(db, 'users'), snap => {
     state.users = snap.val() || {};
     refreshSectorOptions();
@@ -4887,6 +4946,7 @@ function render(){
   updateProfileBtnAvatar();
   renderMentionNotifications();
   renderTodayPanel();
+  renderMySpace();
   const clearMuralBtn = document.getElementById('clear-mural-btn');
   clearMuralBtn.classList.toggle('hidden', !isAdmin());
   const allPostsList = allPosts();
