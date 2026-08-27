@@ -1652,6 +1652,7 @@ body.mobile-modal-open .note-card{
         <section class="my-space-profile" id="my-space-profile"></section>
         <section class="my-space-section"><div class="my-space-title"><div><strong>Meu time</strong><span>Pessoas que compartilham seus setores</span></div></div><div class="my-space-team" id="my-space-team"></div></section>
         <section class="my-space-section"><div class="my-space-title"><div><strong>Atribuídas a mim</strong><span>Demandas da equipe em que você foi mencionado</span></div><span id="my-space-assigned-count"></span></div><div id="my-space-assigned"></div></section>
+        <section class="my-space-section"><div class="my-space-title"><div><strong>Metas atribuídas a mim</strong><span>Metas da equipe em que você foi mencionado</span></div><span id="my-space-assigned-metas-count"></span></div><div id="my-space-assigned-metas"></div></section>
         <section class="my-space-section"><div class="my-space-title"><div><strong>Demandas pessoais</strong><span>Privadas e visíveis somente para você</span></div><span id="my-space-personal-count"></span></div><div id="my-space-personal-list"></div><div class="my-space-add"><input class="field" id="my-space-personal-input" placeholder="Adicionar demanda pessoal..."><button class="btn btn-primary" id="my-space-personal-add" type="button">Adicionar</button></div></section>
       </div>
     </div>
@@ -3697,6 +3698,7 @@ const mySpaceClose=document.getElementById('my-space-close');
 const mySpaceProfile=document.getElementById('my-space-profile');
 const mySpaceTeam=document.getElementById('my-space-team');
 const mySpaceAssigned=document.getElementById('my-space-assigned');
+const mySpaceAssignedMetas=document.getElementById('my-space-assigned-metas');
 const mySpacePersonalList=document.getElementById('my-space-personal-list');
 const mySpacePersonalInput=document.getElementById('my-space-personal-input');
 function renderMySpace(){
@@ -3707,6 +3709,9 @@ function renderMySpace(){
   const assigned=allDemandas().filter(d=>(d.mentions&&d.mentions[currentUid])||(d.assignedTo&&d.assignedTo[currentUid])).sort((a,b)=>(b.ts||0)-(a.ts||0));
   document.getElementById('my-space-assigned-count').textContent=String(assigned.filter(d=>!d.done).length)+' abertas';
   mySpaceAssigned.innerHTML=assigned.length?assigned.map(d=>`<div class="my-space-assigned-item ${d.done?'done':''}"><div class="item-text">${renderTextWithMentions(d.text,d)}</div><div class="item-meta">${escapeHtml(authorInfo(d).name)} · ${timeAgo(d.ts)} ${visibilityTagHtml(d._sector)}</div></div>`).join(''):'<div class="empty">Nenhuma demanda atribuída a você.</div>';
+  const assignedMetas=allMetas().filter(m=>m.mentions&&m.mentions[currentUid]).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  document.getElementById('my-space-assigned-metas-count').textContent=String(assignedMetas.filter(m=>!m.done).length)+' abertas';
+  mySpaceAssignedMetas.innerHTML=assignedMetas.length?assignedMetas.map(m=>`<div class="my-space-assigned-item ${m.done?'done':''}"><div class="item-text">${renderTextWithMentions(m.text,m)}</div><div class="item-meta">${escapeHtml(authorInfo(m).name)} · ${timeAgo(m.ts)} ${visibilityTagHtml(m._sector)}</div></div>`).join(''):'<div class="empty">Nenhuma meta atribuída a você.</div>';
   const personal=[...(state.personalDemandas||[])].sort((a,b)=>(b.ts||0)-(a.ts||0));
   document.getElementById('my-space-personal-count').textContent=`${personal.filter(d=>!d.done).length} pendentes`;
   mySpacePersonalList.innerHTML=personal.length?personal.map(d=>`<div class="my-space-personal-item ${d.done?'done':''}"><button class="check ${d.done?'done':''}" type="button" data-personal-toggle="${d.id}">${CHECK_SVG}</button><div class="item-text">${escapeHtml(d.text)}</div><button class="item-remove" type="button" data-personal-remove="${d.id}">remover</button></div>`).join(''):'<div class="empty">Seu espaço pessoal está vazio.</div>';
