@@ -849,7 +849,8 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .item-text{font-size:13.5px;white-space:pre-wrap;word-break:break-word;}
 .item.done .item-text{text-decoration:line-through;color:var(--text-2);}
 .item-meta{font-size:11px;color:var(--text-3);margin-top:2px;}
-.item-edit-form{display:flex;flex-wrap:wrap;gap:7px;width:100%;}
+.item-edit-form{display:flex;flex-wrap:wrap;gap:7px;width:100%;position:relative;}
+.item-edit-form .mention-suggestions{top:calc(100% + 4px);bottom:auto;}
 .item-edit-form input{flex:1 1 220px;min-width:0;}
 .item-edit-form .btn,.item-edit-form .btn-ghost{padding:7px 10px;}
 .item-edit-button{background:none;border:none;color:var(--text-3);font-size:12px;padding:4px 6px;border-radius:6px;flex:none;}
@@ -5018,7 +5019,7 @@ function render(){
   document.getElementById('meta-progress-label').textContent = `${metaDone}/${visibleMetas.length} concluídas (${metaPct}%)`;
   document.getElementById('meta-list').innerHTML = visibleMetas.length ? visibleMetas.map(m=>{
     const mInfo = authorInfo(m);
-    const canManageMeta = m.uid === currentUid || isAdmin();
+    const canManageMeta = canManageWorkItem(m);
     const isEditingMeta = editingMetas.has(m.id) && canManageMeta;
     return `
     <div class="item ${m.done?'done ':''}${newMuralMetas.has(m.id)?'mural-enter':''}" data-meta-id="${m.id}">
@@ -5045,7 +5046,7 @@ function render(){
   document.getElementById('demanda-progress-label').textContent = `${demandaDone}/${visibleDemandas.length} concluídas (${demandaPct}%)`;
   document.getElementById('demanda-list').innerHTML = visibleDemandas.length ? visibleDemandas.map(d=>{
     const dInfo = authorInfo(d);
-    const canManageDemanda = d.uid === currentUid || isAdmin();
+    const canManageDemanda = canManageWorkItem(d);
     const isEditingDemanda = editingDemandas.has(d.id) && canManageDemanda;
     return `
     <div class="item ${d.done?'done ':''}${newMuralDemandas.has(d.id)?'mural-enter':''}" data-demanda-id="${d.id}">
@@ -5058,6 +5059,7 @@ function render(){
     </div>`;}).join('') : `<div class="empty">Nenhuma demanda ainda.</div>`;
 
   renderKanbanBoard('demanda', visibleDemandas);
+  requestAnimationFrame(()=>document.querySelectorAll('[id^="edit-meta-input-"],[id^="edit-demanda-input-"]').forEach(enableEditMentions));
 }
 
 const KANBAN_COLUMNS = [
@@ -5068,6 +5070,11 @@ const KANBAN_COLUMNS = [
 function itemStatus(item){
   return item.status || (item.done ? 'done' : 'todo');
 }
+function isLegacyWorkItemOwner(item){
+  const mine=myProfile(),author=String(item?.author||'').trim().toLocaleLowerCase('pt-BR'),myName=String(mine?.name||'').trim().toLocaleLowerCase('pt-BR');
+  return !item?.uid && !!author && !!myName && author===myName;
+}
+function canManageWorkItem(item){return item?.uid===currentUid||isLegacyWorkItemOwner(item)||isAdmin();}
 function renderKanbanBoard(kind, items){
   const board = document.getElementById(kind+'-board');
   if(!board || board.classList.contains('hidden')) return; // não gasta trabalho escondido
@@ -5083,7 +5090,7 @@ function renderKanbanBoard(kind, items){
         ${colItems.length ? colItems.map(item=>{
           const info = authorInfo(item);
           const idx = KANBAN_COLUMNS.findIndex(c=>c.key===col.key);
-          const canManageItem = item.uid === currentUid || isAdmin();
+          const canManageItem = canManageWorkItem(item);
           const isEditingItem = (kind==='meta'?editingMetas:editingDemandas).has(item.id) && canManageItem;
           return `
           <div class="kanban-card" draggable="${canManageItem&&!isEditingItem}" data-id="${item.id}" data-kind="${kind}">
@@ -5288,7 +5295,7 @@ mentionSuggestions.addEventListener('mousedown', e=>{
   insertMention(Number(option.dataset.mentionIndex));
 });
 function setupInlineMentions(inputId, suggestionsId){
-  const input=document.getElementById(inputId),box=document.getElementById(suggestionsId);if(!input||!box)return;
+  const input=typeof inputId==='string'?document.getElementById(inputId):inputId,box=typeof suggestionsId==='string'?document.getElementById(suggestionsId):suggestionsId;if(!input||!box)return;
   let matches=[],active=0,context=null;
   function close(){box.classList.add('hidden');box.innerHTML='';matches=[];context=null;}
   function update(){
@@ -5305,6 +5312,10 @@ function setupInlineMentions(inputId, suggestionsId){
   input.addEventListener('keydown',e=>{if(box.classList.contains('hidden'))return;if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();active=(active+(e.key==='ArrowDown'?1:-1)+matches.length)%matches.length;update();}else if(e.key==='Enter'){e.preventDefault();e.stopImmediatePropagation();insert(active);}else if(e.key==='Escape'){e.preventDefault();close();}});
   box.addEventListener('mousedown',e=>{const option=e.target.closest('[data-inline-mention]');if(!option)return;e.preventDefault();insert(Number(option.dataset.inlineMention));});
   document.addEventListener('mousedown',e=>{if(e.target!==input&&!box.contains(e.target))close();});
+}
+function enableEditMentions(input){
+  if(!input||input.dataset.mentionsReady)return;input.dataset.mentionsReady='1';
+  const box=document.createElement('div');box.className='mention-suggestions hidden';input.closest('.item-edit-form')?.appendChild(box);setupInlineMentions(input,box);
 }
 setupInlineMentions('meta-add-input','meta-mention-suggestions');
 setupInlineMentions('demanda-add-input','demanda-mention-suggestions');
@@ -5604,17 +5615,18 @@ document.addEventListener('click', (e)=>{
     if(d){ const newDone = !d.done; update(ref(db, demandaPath(d)), { done: newDone, status: newDone ? 'done' : 'todo' }).catch(handleDbError); }
   } else if(action === 'edit-meta' || action === 'edit-demanda'){
     const kind=action==='edit-meta'?'meta':'demanda',item=(kind==='meta'?allMetas():allDemandas()).find(x=>x.id===id);
-    if(!item || (item.uid!==currentUid&&!isAdmin()))return;
+    if(!item || !canManageWorkItem(item))return;
     (kind==='meta'?editingMetas:editingDemandas).add(id);render();
-    requestAnimationFrame(()=>{const inputs=[...document.querySelectorAll(`[id="edit-${kind}-input-${id}"]`)];const input=inputs.find(el=>el.offsetParent!==null)||inputs[0];if(input){input.focus();input.setSelectionRange(input.value.length,input.value.length);}});
+    requestAnimationFrame(()=>{const inputs=[...document.querySelectorAll(`[id="edit-${kind}-input-${id}"]`)];const input=inputs.find(el=>el.offsetParent!==null)||inputs[0];if(input){enableEditMentions(input);input.focus();input.setSelectionRange(input.value.length,input.value.length);}});
   } else if(action === 'cancel-meta-edit' || action === 'cancel-demanda-edit'){
     (action==='cancel-meta-edit'?editingMetas:editingDemandas).delete(id);render();
   } else if(action === 'save-meta-edit' || action === 'save-demanda-edit'){
     const kind=action==='save-meta-edit'?'meta':'demanda',item=(kind==='meta'?allMetas():allDemandas()).find(x=>x.id===id),input=t.closest('.item,.kanban-card')?.querySelector('input');
-    const text=input?.value.trim();if(!item||!text||(item.uid!==currentUid&&!isAdmin()))return;
+    const text=input?.value.trim();if(!item||!text||!canManageWorkItem(item))return;
     const mentions=collectMentions(text),path=kind==='meta'?metaPath(item):demandaPath(item);
     (kind==='meta'?editingMetas:editingDemandas).delete(id);
-    update(ref(db,path),{text,mentions:Object.keys(mentions).length?mentions:null,editedAt:Date.now()}).catch(handleDbError);render();
+    const changes={text,mentions:Object.keys(mentions).length?mentions:null,editedAt:Date.now()};if(isLegacyWorkItemOwner(item))changes.uid=currentUid;
+    update(ref(db,path),changes).catch(handleDbError);render();
   } else if(action === 'kanban-move'){
     const kind = t.dataset.kind, dir = parseInt(t.dataset.dir, 10);
     const item = (kind === 'meta' ? allMetas() : allDemandas()).find(x=>x.id===id);
