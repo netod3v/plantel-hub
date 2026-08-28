@@ -1011,7 +1011,8 @@ footer{margin:50px 0 20px;padding-top:20px;border-top:1px solid var(--border);
 
 /* ===== responsividade e otimizações gerais ===== */
 img,video,iframe{max-width:100%;}
-body.mobile-modal-open .note-card{
+body.mobile-modal-open .note-card,
+body.composer-focused .note-card{
   opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:translateY(12px);
 }
 @media (max-width:720px){
@@ -5514,6 +5515,16 @@ function autoGrowMsgInput(){
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight, 340) + 'px';
 }
+// o bloco de notas flutuante é position:fixed e, no celular, quando o
+// teclado abre ele "sobe" e pode acabar sobrepondo o campo do mural,
+// atrapalhando o toque/digitação. Escondemos ele enquanto o campo
+// estiver em foco no celular pra evitar esse conflito.
+document.getElementById('msg-input').addEventListener('focus', ()=>{
+  if(window.matchMedia('(max-width:720px)').matches) document.body.classList.add('composer-focused');
+});
+document.getElementById('msg-input').addEventListener('blur', ()=>{
+  document.body.classList.remove('composer-focused');
+});
 document.getElementById('msg-input').addEventListener('input', ()=>{ autoGrowMsgInput(); mentionActiveIndex=0; renderMentionSuggestions(); });
 document.getElementById('msg-input').addEventListener('keydown', e=>{
   if(!mentionSuggestions.classList.contains('hidden')){
