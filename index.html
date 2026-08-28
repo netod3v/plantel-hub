@@ -1061,10 +1061,10 @@ body.composer-focused .note-card{
   .post-more-menu [data-action="toggle-pin"]::before{content:'⌖';}
   .post-more-menu [data-action="edit-post"]::before{content:'✎';}
   .post-more-menu [data-action="remove-post"]::before{content:'×';color:var(--danger);}
-  .header-more-menu{position:fixed;left:12px;right:12px;top:auto;bottom:12px;width:auto;display:flex;flex-direction:column;gap:4px;padding:8px;border-radius:14px;z-index:520;}
-  .header-more-menu .icon-btn{display:grid;grid-template-columns:28px minmax(0,1fr);align-items:center;width:100%;height:44px;padding:0 11px;gap:10px;text-align:left;justify-items:start;overflow:visible;}
-  .header-more-menu .icon-btn svg{width:18px;height:18px;justify-self:center;}
-  .header-more-menu .header-menu-label{white-space:nowrap;}
+  .header-more-menu{position:fixed;left:12px;right:12px;top:auto;bottom:12px;width:auto;display:grid;grid-template-columns:1fr;gap:4px;padding:8px;border-radius:14px;z-index:520;}
+  .header-more-menu .icon-btn{display:grid;grid-template-columns:32px minmax(0,1fr);grid-template-rows:44px;align-items:center;width:100%;height:44px;padding:0 11px;gap:10px;text-align:left;justify-items:start;overflow:visible;}
+  .header-more-menu .icon-btn svg{grid-column:1;grid-row:1;width:18px;height:18px;justify-self:center;}
+  .header-more-menu .header-menu-label{grid-column:2;grid-row:1;white-space:nowrap;align-self:center;}
   .comment,.reply{gap:7px;}
   .post-comments.open{max-height:none;overflow:visible;}
   .comment-form,.reply-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;width:100%;}
@@ -1708,6 +1708,23 @@ const auth = getAuth(app);
 window.__firebaseApp = app;
 window.__firebaseAnalytics = analytics;
 
+async function ensureSignedInUserProfile(user){
+  if(!user || !user.uid) return;
+  const userRef = ref(db, 'users/'+user.uid);
+  const snapshot = await get(userRef);
+  if(snapshot.exists()){
+    const profile = snapshot.val() || {};
+    if(String(profile.name || '').trim()) return;
+  }
+  const emailName = String(user.email || '').split('@')[0].replace(/[._-]+/g, ' ').trim();
+  const fallbackName = String(user.displayName || emailName || 'Usuário').trim();
+  await update(userRef, {
+    name: fallbackName,
+    email: user.email || null,
+    createdAt: snapshot.exists() && snapshot.val()?.createdAt ? snapshot.val().createdAt : Date.now()
+  });
+}
+
 /* ===== login (Firebase Authentication) =====
    O mural só é lido/escrito depois de logar. Crie os usuários (e-mail +
    senha) da equipe no Console do Firebase > Authentication > Users. */
@@ -1726,6 +1743,11 @@ const noteTabsList = document.getElementById('note-tabs-list');
 const closingComments = new Set();
 const closingCommentTimers = new Map();
 const commentDrafts = new Map();
+const replyDrafts = new Map();
+const pendingComments = new Set();
+const pendingReplies = new Set();
+const openPostMenus = new Set();
+const trackedPostViews = new Set();
 const addNoteTabBtn = document.getElementById('add-note-tab-btn');
 const noteTabTitleInput = document.getElementById('note-tab-title-input');
 const clearNotesBtn = document.getElementById('clear-notes-btn');
@@ -1795,6 +1817,16 @@ let muralSectorFilter = '';
 const dbErrorToast = document.getElementById('db-error-toast');
 let dbErrorTimer = null;
 function handleDbError(err){
+  const code = String(err && (err.code || err.message) || '').toLowerCase();
+  console.error('Erro no Firebase:', err);
+  if(code.includes('permission') || code.includes('denied')){
+    showDbError('Sua conta não tem permissão para esta ação. Atualize a página e confira se seu perfil está completo; se continuar, fale com um administrador.');
+  } else if(code.includes('network') || code.includes('offline')){
+    showDbError('Sem conexão com o servidor. Seu texto foi mantido para você tentar novamente.');
+  } else {
+    showDbError('Não foi possível salvar. Tente novamente em instantes.');
+  }
+  return;
   console.error('Erro no Firebase:', err);
   showDbError('Não foi possível salvar: ' + (err && err.message ? err.message : err));
 }
@@ -2327,6 +2359,7 @@ onAuthStateChanged(auth, (user)=>{
   authResolved = true;
   if(user){
     currentUid = user.uid;
+    ensureSignedInUserProfile(user).catch(handleDbError);
     rememberAccount({ uid: user.uid, email: user.email });
     loadUserNotes();
     loginScreen.classList.add('hidden');
@@ -3806,7 +3839,10 @@ function closeViewProfile(){ closeModalSmooth(viewProfileModal); }
 
 // Clique nos avatares de outras pessoas: a foto abre ampliada;
 // áreas de perfil que não são a foto continuam abrindo o perfil completo.
-document.addEventListener('input',e=>{if(e.target.matches('[data-comment-input]'))commentDrafts.set(e.target.dataset.commentInput,e.target.value);});
+document.addEventListener('input',e=>{
+  if(e.target.matches('[data-comment-input]')) commentDrafts.set(e.target.dataset.commentInput,e.target.value);
+  if(e.target.matches('[data-reply-input]')) replyDrafts.set(e.target.dataset.replyInput,e.target.value);
+});
 document.addEventListener('click', (e)=>{
   const img = e.target.closest('[data-action="view-profile"] img');
   if(img){
@@ -4609,9 +4645,9 @@ function stopDataListeners(){
 }
 
 function startDataListeners(){
-  dataUnsubs.push(onValue(ref(db, 'posts'), snap => { state.posts = objToArray(snap.val()); markLoaded('posts'); render(); }, handleDbError));
-  dataUnsubs.push(onValue(ref(db, 'metas'), snap => { state.metas = objToArray(snap.val()); render(); }, handleDbError));
-  dataUnsubs.push(onValue(ref(db, 'demandas'), snap => { state.demandas = objToArray(snap.val()); render(); }, handleDbError));
+  dataUnsubs.push(onValue(ref(db, 'posts'), snap => { state.posts = objToArray(snap.val()); markLoaded('posts'); scheduleRender(); }, handleDbError));
+  dataUnsubs.push(onValue(ref(db, 'metas'), snap => { state.metas = objToArray(snap.val()); scheduleRender(); }, handleDbError));
+  dataUnsubs.push(onValue(ref(db, 'demandas'), snap => { state.demandas = objToArray(snap.val()); scheduleRender(); }, handleDbError));
   if(currentUid)dataUnsubs.push(onValue(ref(db, 'personal_demands/'+currentUid),snap=>{state.personalDemandas=objToArray(snap.val());renderMySpace();},(err)=>{
     const isPermissionDenied = err && (err.code === 'PERMISSION_DENIED' || /permission_denied/i.test(err.message || ''));
     if(!isPermissionDenied) handleDbError(err);
@@ -4954,15 +4990,28 @@ function setupPostViewTracking(){
     entries.forEach(entry=>{
       if(!entry.isIntersecting || entry.intersectionRatio < .5) return;
       const post = allPosts().find(p=>p.id === entry.target.dataset.postId);
-      if(!post || post.uid === currentUid || (post.views && post.views[currentUid])){
+      const viewKey = post ? `${currentUid}:${postPath(post)}` : '';
+      if(!post || post.uid === currentUid || (post.views && post.views[currentUid]) || trackedPostViews.has(viewKey)){
         postViewObserver.unobserve(entry.target);
         return;
       }
       postViewObserver.unobserve(entry.target);
-      update(ref(db, postPath(post)+'/views'), { [currentUid]: Date.now() }).catch(()=>{});
+      trackedPostViews.add(viewKey);
+      update(ref(db, postPath(post)+'/views'), { [currentUid]: Date.now() }).catch(()=> trackedPostViews.delete(viewKey));
     });
   }, { threshold:[.5] });
   document.querySelectorAll('#mural-list .post[data-post-id]').forEach(el=>postViewObserver.observe(el));
+}
+
+// Agrupa várias chamadas de render() que cheguem no mesmo instante (ex: várias
+// "visualizações" de posts sendo gravadas enquanto alguém rola o mural) em um
+// único redesenho por frame, em vez de reconstruir a lista inteira repetidas
+// vezes em sequência — o que era a causa de comentários e o menu "..." falharem
+// no meio do clique/digitação.
+let renderDebounceTimer = null;
+function scheduleRender(){
+  if(renderDebounceTimer) clearTimeout(renderDebounceTimer);
+  renderDebounceTimer = setTimeout(()=>{ renderDebounceTimer = null; render(); }, 200);
 }
 
 function render(){
@@ -4972,6 +5021,23 @@ function render(){
   renderMySpace();
   const clearMuralBtn = document.getElementById('clear-mural-btn');
   clearMuralBtn.classList.toggle('hidden', !isAdmin());
+
+  // Preserva foco e posição do cursor de quem está digitando um comentário/resposta
+  // no mural quando o redesenho é disparado por uma atualização em tempo real
+  // (like, view, comentário de outra pessoa etc). Sem isso, o campo de texto era
+  // destruído e recriado a cada atualização, tirando o foco/teclado no meio da digitação.
+  const muralListEl = document.getElementById('mural-list');
+  let muralFocusRestore = null;
+  const activeEl = document.activeElement;
+  if(activeEl && muralListEl && muralListEl.contains(activeEl)){
+    let selector = null;
+    if(activeEl.matches && activeEl.matches('[data-comment-input]')) selector = `[data-comment-input="${activeEl.dataset.commentInput}"]`;
+    else if(activeEl.matches && activeEl.matches('[data-reply-input]')) selector = `[data-reply-input="${activeEl.dataset.replyInput}"]`;
+    if(selector){
+      muralFocusRestore = { selector, start: activeEl.selectionStart, end: activeEl.selectionEnd };
+    }
+  }
+
   const allPostsList = allPosts();
   let posts = [...allPostsList].sort((a,b)=> (b.pinned?1:0) - (a.pinned?1:0) || b.ts-a.ts);
   const search = muralSearch;
@@ -5022,7 +5088,7 @@ function render(){
         </button>
         <button class="btn-ghost post-comment-toggle ${closingComments.has(p.id) ? 'is-closing' : ''}" data-action="toggle-comments" data-id="${p.id}">${openComments.has(p.id) || closingComments.has(p.id)?'fechar':'comentar'}${comments.length?` (${comments.length})`:''}</button>
         ${(p.uid === currentUid || isAdmin()) ? `<button class="btn-ghost" data-action="toggle-post-views" data-id="${p.id}">${viewCount} ${viewCount===1?'visualização':'visualizações'}</button>` : ''}
-        <details class="post-more">
+        <details class="post-more" data-post-menu="${p.id}" ${openPostMenus.has(p.id) ? 'open' : ''}>
           <summary aria-label="Mais ações">•••</summary>
           <div class="post-more-menu">
             ${p.metaId ? `<button class="btn-ghost" data-action="undo-meta" data-id="${p.id}">Desfazer meta</button>` : `<button class="btn-ghost" data-action="to-meta" data-id="${p.id}">Virar meta</button>`}
@@ -5055,7 +5121,7 @@ function render(){
                   ${cLikeCount>0?cLikeCount:'curtir'}
                 </button>
                 <button class="comment-reply-btn" data-action="toggle-reply" data-post="${p.id}" data-id="${c.id}">${replyOpen?'fechar':'responder'}${replies.length?` (${replies.length})`:''}</button>
-                <button class="comment-remove" data-action="remove-comment" data-post="${p.id}" data-id="${c.id}">excluir</button>
+                ${canManageUserContent(c) ? `<button class="comment-remove" data-action="remove-comment" data-post="${p.id}" data-id="${c.id}">excluir</button>` : ''}
               </div>
               ${replies.length ? `
               <div class="reply-list">
@@ -5143,7 +5209,19 @@ function render(){
 
   renderKanbanBoard('demanda', visibleDemandas);
   requestAnimationFrame(()=>document.querySelectorAll('[id^="edit-meta-input-"],[id^="edit-demanda-input-"]').forEach(enableEditMentions));
-  requestAnimationFrame(()=>document.querySelectorAll('[data-comment-input]').forEach(input=>{const draft=commentDrafts.get(input.dataset.commentInput);if(draft!==undefined&&input.value!==draft)input.value=draft;}));
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('[data-comment-input]').forEach(input=>{const draft=commentDrafts.get(input.dataset.commentInput);if(draft!==undefined&&input.value!==draft)input.value=draft;});
+    document.querySelectorAll('[data-reply-input]').forEach(input=>{const draft=replyDrafts.get(input.dataset.replyInput);if(draft!==undefined&&input.value!==draft)input.value=draft;});
+    if(muralFocusRestore && muralFocusRestore.selector){
+      const el = document.querySelector(muralFocusRestore.selector);
+      if(el){
+        el.focus();
+        if(typeof muralFocusRestore.start === 'number' && el.setSelectionRange){
+          try{ el.setSelectionRange(muralFocusRestore.start, muralFocusRestore.end); }catch(err){}
+        }
+      }
+    }
+  });
 }
 
 const KANBAN_COLUMNS = [
@@ -5159,6 +5237,7 @@ function isLegacyWorkItemOwner(item){
   return !item?.uid && !!author && !!myName && author===myName;
 }
 function canManageWorkItem(item){return item?.uid===currentUid||isLegacyWorkItemOwner(item)||isAdmin();}
+function canManageUserContent(item){return item?.uid===currentUid||isLegacyWorkItemOwner(item)||isAdmin();}
 function renderKanbanBoard(kind, items){
   const board = document.getElementById(kind+'-board');
   if(!board || board.classList.contains('hidden')) return; // não gasta trabalho escondido
@@ -5264,7 +5343,20 @@ function myProfile(){
   return (currentUid && state.users[currentUid]) || null;
 }
 function ensureProfileBeforeAction(){
-  if(!myProfile()){ openProfileModal(true); return false; }
+  if(!currentUid){
+    showDbError('Sua sessão terminou. Entre novamente para interagir.');
+    return false;
+  }
+  const profile = myProfile();
+  if(!profile || !String(profile.name || '').trim()){
+    showDbError('Complete seu perfil antes de comentar ou interagir.');
+    openProfileModal(true);
+    return false;
+  }
+  if(profile.isBanned){
+    showDbError('Esta conta não pode interagir no momento.');
+    return false;
+  }
   return true;
 }
 function isAdmin(){
@@ -5612,7 +5704,10 @@ document.getElementById('demanda-add-input').addEventListener('keydown', e=>{
 
 document.addEventListener('click', (e)=>{
   document.querySelectorAll('.post-more[open]').forEach(menu=>{
-    if(!menu.contains(e.target)) menu.removeAttribute('open');
+    if(!menu.contains(e.target)){
+      menu.removeAttribute('open');
+      if(menu.dataset.postMenu) openPostMenus.delete(menu.dataset.postMenu);
+    }
   });
   const t = e.target.closest('[data-action]');
   if(!t) return;
@@ -5767,7 +5862,7 @@ document.addEventListener('click', (e)=>{
     }
     render();
   } else if(action === 'vote-poll'){
-    if(!currentUid) return;
+    if(!ensureProfileBeforeAction()) return;
     const post = allPosts().find(p=>p.id===id);
     const optionId = t.dataset.option;
     if(!post || !post.poll || !optionId) return;
@@ -5775,7 +5870,7 @@ document.addEventListener('click', (e)=>{
     const voteRef = ref(db, postPath(post)+'/poll/votes/'+currentUid);
     (currentVote === optionId ? remove(voteRef) : set(voteRef, optionId)).catch(handleDbError);
   } else if(action === 'like-post'){
-    if(!currentUid) return;
+    if(!ensureProfileBeforeAction()) return;
     const post = allPosts().find(p=>p.id===id);
     if(!post) return;
     const liked = !!(post.likes && post.likes[currentUid]);
@@ -5805,6 +5900,7 @@ document.addEventListener('click', (e)=>{
       if(window.matchMedia('(max-width:520px)').matches)setTimeout(()=>document.querySelector(`[data-comment-input="${id}"]`)?.scrollIntoView({behavior:'smooth',block:'center'}),180);
     }
   } else if(action === 'send-comment'){
+    if(pendingComments.has(id)) return;
     const input = document.querySelector(`[data-comment-input="${id}"]`);
     const text = input ? input.value.trim() : '';
     if(!text) return;
@@ -5812,12 +5908,19 @@ document.addEventListener('click', (e)=>{
     const post = allPosts().find(p=>p.id===id);
     if(!post) return;
     const commentId = uid();
-    commentDrafts.delete(id);
+    const profile = myProfile();
+    commentDrafts.set(id, text);
+    pendingComments.add(id);
+    if(input) input.disabled = true;
+    t.disabled = true;
     newMuralComments.add(commentId);
-    set(ref(db, postPath(post)+'/comments/'+commentId), { author: myProfile().name, uid: currentUid, text, ts: Date.now() }).catch(err=>{ newMuralComments.delete(commentId); handleDbError(err); });
     openComments.add(id);
+    set(ref(db, postPath(post)+'/comments/'+commentId), { author: profile.name, uid: currentUid, text, ts: Date.now() })
+      .then(()=>{ commentDrafts.delete(id); })
+      .catch(err=>{ newMuralComments.delete(commentId); commentDrafts.set(id,text); handleDbError(err); })
+      .finally(()=>{ pendingComments.delete(id); render(); });
   } else if(action === 'like-comment'){
-    if(!currentUid) return;
+    if(!ensureProfileBeforeAction()) return;
     const postId = t.dataset.post, commentId = id;
     const post = allPosts().find(p=>p.id===postId);
     if(!post) return;
@@ -5837,10 +5940,16 @@ document.addEventListener('click', (e)=>{
   } else if(action === 'remove-comment'){
     const postId = t.dataset.post;
     const post = allPosts().find(p=>p.id===postId);
-    if(post) remove(ref(db, postPath(post)+'/comments/'+id)).catch(handleDbError);
+    const comment = post?.comments?.[id];
+    if(!post || !comment || !canManageUserContent(comment)){
+      showDbError('Você não tem permissão para excluir este comentário.');
+      return;
+    }
+    remove(ref(db, postPath(post)+'/comments/'+id)).catch(handleDbError);
     openReplies.delete(id);
   } else if(action === 'send-reply'){
     const postId = t.dataset.post, commentId = id;
+    if(pendingReplies.has(commentId)) return;
     const input = document.querySelector(`[data-reply-input="${commentId}"]`);
     const text = input ? input.value.trim() : '';
     if(!text) return;
@@ -5848,11 +5957,26 @@ document.addEventListener('click', (e)=>{
     const post = allPosts().find(p=>p.id===postId);
     if(!post) return;
     const replyId = uid();
+    const profile = myProfile();
+    replyDrafts.set(commentId, text);
+    pendingReplies.add(commentId);
+    if(input) input.disabled = true;
+    t.disabled = true;
     newMuralReplies.add(replyId);
-    set(ref(db, postPath(post)+'/comments/'+commentId+'/replies/'+replyId), { author: myProfile().name, uid: currentUid, text, ts: Date.now() }).catch(err=>{ newMuralReplies.delete(replyId); handleDbError(err); });
     openReplies.add(commentId);
+    set(ref(db, postPath(post)+'/comments/'+commentId+'/replies/'+replyId), { author: profile.name, uid: currentUid, text, ts: Date.now() })
+      .then(()=>{ replyDrafts.delete(commentId); })
+      .catch(err=>{ newMuralReplies.delete(replyId); replyDrafts.set(commentId,text); handleDbError(err); })
+      .finally(()=>{ pendingReplies.delete(commentId); render(); });
   }
 });
+
+document.addEventListener('toggle', (e)=>{
+  const menu = e.target;
+  if(!menu.matches?.('.post-more[data-post-menu]')) return;
+  if(menu.open) openPostMenus.add(menu.dataset.postMenu);
+  else openPostMenus.delete(menu.dataset.postMenu);
+}, true);
 
 document.addEventListener('keydown', (e)=>{
   if((e.key==='Enter'||e.key==='Escape')&&e.target.matches('[id^="edit-meta-input-"],[id^="edit-demanda-input-"]')){
