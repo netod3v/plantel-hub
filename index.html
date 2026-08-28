@@ -2907,10 +2907,6 @@ function updateFreeLayoutHeight(){
   sectionsContainer.style.height = Math.max(500, bottom + 36) + 'px';
 }
 function initializeFreeSectionLayout(){
-  ['mural','metas','demandas'].forEach(id=>{
-    const section = sectionsContainer.querySelector(`[data-section-id="${id}"]`);
-    if(section) sectionsContainer.appendChild(section);
-  });
   const mobile = window.matchMedia('(max-width:720px)').matches;
   const sections = Array.from(sectionsContainer.querySelectorAll('.draggable-section'));
   if(!sectionCustomizationEnabled || mobile){
@@ -2930,12 +2926,17 @@ function initializeFreeSectionLayout(){
     return;
   }
   if(freeSectionLayoutReady) return;
+  ['mural','metas','demandas'].forEach(id=>{
+    const section = sectionsContainer.querySelector(`[data-section-id="${id}"]`);
+    if(section) sectionsContainer.appendChild(section);
+  });
+  const orderedSections = Array.from(sectionsContainer.querySelectorAll('.draggable-section'));
   const containerRect = sectionsContainer.getBoundingClientRect();
   const saved = savedSectionPositions();
   const gap = 14;
   const defaultWidth = Math.max(280, (containerRect.width - gap*2) / 3);
   sectionsContainer.classList.add('free-layout');
-  sections.forEach((section,index)=>{
+  orderedSections.forEach((section,index)=>{
     const position = saved[section.dataset.sectionId];
     const valid = position && Number.isFinite(Number(position.x)) && Number.isFinite(Number(position.y)) && Number.isFinite(Number(position.width));
     section.style.left = (valid ? Number(position.x) : index*(defaultWidth+gap)) + 'px';
