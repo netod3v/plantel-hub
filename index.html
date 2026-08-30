@@ -799,7 +799,7 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .post-view-time{color:var(--text-3);font-size:10.5px;}
 
 .post-comments{margin:10px 0 0 37px;padding-top:0;border-top:1px dashed var(--border);display:flex;flex-direction:column;gap:10px;overflow:hidden;max-height:0;opacity:0;transform:translateY(-8px) scale(.985);transform-origin:top center;pointer-events:none;transition:max-height .34s cubic-bezier(.22,1,.36,1), opacity .22s ease, padding .34s ease, transform .34s cubic-bezier(.22,1,.36,1);}
-.post-comments.open{max-height:1200px;opacity:1;padding-top:10px;transform:translateY(0) scale(1);pointer-events:auto;}
+.post-comments.open{max-height:none;overflow:visible;opacity:1;padding-top:10px;transform:translateY(0) scale(1);pointer-events:auto;}
 .post-comments.closing{max-height:0;opacity:0;padding-top:0;transform:translateY(-8px) scale(.985);pointer-events:none;}
 .post-comment-toggle{transition:opacity .18s ease, transform .18s ease, background .18s ease, color .18s ease;}
 .post-comment-toggle:active{transform:scale(.96);}
@@ -807,10 +807,13 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .avatar-sm{width:22px;height:22px;font-size:9.5px;border-radius:6px;}
 .comment-body{flex:1;min-width:0;}
 .comment-author{font-size:12px;font-weight:600;}
-.comment-text{font-size:12.5px;margin-top:1px;white-space:pre-wrap;word-break:break-word;}
+.comment-text{font-size:12.5px;margin-top:1px;white-space:normal;word-break:break-word;line-height:1.5;}
 .empty-small{font-size:12px;color:var(--text-2);padding:2px 0;}
 .comment-form{display:flex;gap:8px;}
-.comment-form input{flex:1;padding:7px 10px;font-size:12.5px;}
+.comment-form input,.comment-form textarea{flex:1;padding:7px 10px;font-size:12.5px;}
+.comment-form textarea,.reply-form textarea{resize:vertical;min-height:42px;max-height:220px;font-family:inherit;line-height:1.45;}
+.comment-edit-form{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:7px;margin:5px 0;align-items:end;}
+.comment-edit-form textarea{width:100%;min-height:70px;max-height:260px;resize:vertical;font-family:inherit;line-height:1.45;}
 .comment-form button{flex:none;}
 
 .comment-actions{display:flex;gap:12px;align-items:center;margin-top:4px;}
@@ -826,7 +829,16 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .reply{display:flex;gap:8px;}
 .reply-body{flex:1;min-width:0;}
 .reply-author{font-size:11.5px;font-weight:600;}
-.reply-text{font-size:12px;margin-top:1px;white-space:pre-wrap;word-break:break-word;}
+.reply-text{font-size:12px;margin-top:1px;white-space:normal;word-break:break-word;line-height:1.5;}
+.comment-text>*:first-child,.reply-text>*:first-child{margin-top:0}.comment-text>*:last-child,.reply-text>*:last-child{margin-bottom:0}
+.comment-text p,.reply-text p{margin:.4em 0;white-space:pre-wrap}
+.comment-text h1,.comment-text h2,.comment-text h3,.reply-text h1,.reply-text h2,.reply-text h3{font-family:'Space Grotesk',sans-serif;line-height:1.25;margin:.65em 0 .3em}
+.comment-text h1,.reply-text h1{font-size:1.28em}.comment-text h2,.reply-text h2{font-size:1.16em}.comment-text h3,.reply-text h3{font-size:1.07em}
+.comment-text ul,.comment-text ol,.reply-text ul,.reply-text ol{margin:.4em 0;padding-left:1.5em}.comment-text li,.reply-text li{margin:.18em 0}
+.comment-text blockquote,.reply-text blockquote{margin:.5em 0;padding:.3em .7em;border-left:3px solid var(--moss);background:var(--parchment);color:var(--text-2)}
+.comment-text code,.reply-text code{padding:.1em .3em;border:1px solid var(--border);border-radius:5px;background:var(--parchment);font:12px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace}
+.comment-text pre,.reply-text pre{overflow:auto;margin:.5em 0;padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:var(--parchment);white-space:pre}
+.comment-text pre code,.reply-text pre code{padding:0;border:0;background:transparent}.comment-text a,.reply-text a{color:var(--forest);text-decoration:underline;text-underline-offset:2px}
 .reply-form{display:flex;gap:8px;margin:8px 0 0 31px;}
 .reply-form input{flex:1;padding:6px 9px;font-size:12px;}
 .reply-form button{flex:none;}
@@ -1070,6 +1082,8 @@ body.composer-focused .note-card{
   .comment-form,.reply-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;width:100%;}
   .comment-form .field,.reply-form .field{min-width:0;width:100%;font-size:16px;min-height:42px;}
   .comment-form button,.reply-form button{min-height:42px;padding:8px 12px;}
+  .comment-edit-form{grid-template-columns:1fr 1fr;}
+  .comment-edit-form textarea{grid-column:1/-1;font-size:16px;}
   .modal-overlay{padding:12px;align-items:center;justify-content:center;}
   .modal-box{
     width:min(100%,460px);max-width:460px;max-height:calc(100dvh - 24px);
@@ -1798,6 +1812,8 @@ let noteState = null;
 const openComments = new Set();
 const openReplies = new Set();
 const editingPosts = new Set();
+const editingComments = new Set();
+const editingReplies = new Set();
 const editingMetas = new Set();
 const editingDemandas = new Set();
 const newMuralPosts = new Set();
@@ -4063,6 +4079,26 @@ function closePhotoViewer(){ photoViewerModal.classList.add('hidden'); photoView
 photoViewerBack.addEventListener('click', closePhotoViewer);
 photoViewerModal.addEventListener('click', (e)=>{ if(e.target === photoViewerModal) closePhotoViewer(); });
 document.addEventListener('keydown', (e)=>{
+  if(e.target.matches('[data-reply-edit]') && e.key === 'Escape'){
+    e.preventDefault();
+    document.querySelector(`[data-action="cancel-reply-edit"][data-id="${e.target.dataset.replyEdit}"]`)?.click();
+    return;
+  }
+  if(e.target.matches('[data-reply-edit]') && e.key === 'Enter' && (e.ctrlKey || e.metaKey)){
+    e.preventDefault();
+    document.querySelector(`[data-action="save-reply-edit"][data-id="${e.target.dataset.replyEdit}"]`)?.click();
+    return;
+  }
+  if(e.target.matches('[data-comment-edit]') && e.key === 'Escape'){
+    e.preventDefault();
+    document.querySelector(`[data-action="cancel-comment-edit"][data-id="${e.target.dataset.commentEdit}"]`)?.click();
+    return;
+  }
+  if(e.target.matches('[data-comment-edit]') && e.key === 'Enter' && (e.ctrlKey || e.metaKey)){
+    e.preventDefault();
+    document.querySelector(`[data-action="save-comment-edit"][data-id="${e.target.dataset.commentEdit}"]`)?.click();
+    return;
+  }
   if(photoViewerModal.classList.contains('hidden')) return;
   if(e.key === 'Escape') closePhotoViewer();
   else if(e.key === '+' || e.key === '=') setPhotoZoom(photoZoom + PHOTO_ZOOM_STEP);
@@ -4588,9 +4624,9 @@ function syncPrivateSubscription(){
 
   if(admin){
     // admin enxerga o privado de todos os setores, pra poder moderar/apagar um a um
-    privateUnsub.posts = subscribeSectorsMerged('posts_private', sectors, list => { state.postsPrivate = list; render(); });
-    privateUnsub.metas = subscribeSectorsMerged('metas_private', sectors, list => { state.metasPrivate = list; render(); });
-    privateUnsub.demandas = subscribeSectorsMerged('demandas_private', sectors, list => { state.demandasPrivate = list; render(); });
+    privateUnsub.posts = subscribeSectorsMerged('posts_private', sectors, list => { state.postsPrivate = list; scheduleRender(); });
+    privateUnsub.metas = subscribeSectorsMerged('metas_private', sectors, list => { state.metasPrivate = list; scheduleRender(); });
+    privateUnsub.demandas = subscribeSectorsMerged('demandas_private', sectors, list => { state.demandasPrivate = list; scheduleRender(); });
     return;
   }
   // vê o mural privado de qualquer um dos próprios setores + qualquer coisa
@@ -4598,15 +4634,15 @@ function syncPrivateSubscription(){
   // de vista" o que postou pra um setor diferente do seu)
   privateUnsub.posts = subscribeSectorsMerged('posts_private', sectors, list => {
     state.postsPrivate = list.filter(p => mySectors.includes(p._sector) || p.uid === currentUid);
-    render();
+    scheduleRender();
   });
   privateUnsub.metas = subscribeSectorsMerged('metas_private', sectors, list => {
     state.metasPrivate = list.filter(m => mySectors.includes(m._sector) || m.uid === currentUid);
-    render();
+    scheduleRender();
   });
   privateUnsub.demandas = subscribeSectorsMerged('demandas_private', sectors, list => {
     state.demandasPrivate = list.filter(d => mySectors.includes(d._sector) || d.uid === currentUid);
-    render();
+    scheduleRender();
   });
 }
 
@@ -4656,7 +4692,7 @@ function startDataListeners(){
     state.users = snap.val() || {};
     refreshSectorOptions();
     syncPrivateSubscription();
-    render();
+    scheduleRender();
     renderOnlineList();
     maybeOpenProfileOnboarding();
     enforceBanCheck();
@@ -4791,8 +4827,19 @@ function renderMarkdownInline(text, p, searchTerm){
   codes.forEach((value,index)=>{ html = html.replace('@@INLINECODE'+index+'@@', value); });
   return html;
 }
+function normalizeLegacyAiFormatting(text){
+  let value = String(text || '').replace(/\r\n?/g,'\n');
+  // Conte�dos antigos eram colados em inputs de uma linha. Recupera listas
+  // numeradas e marcadores que ficaram grudados no meio do par�grafo.
+  value = value.replace(/([^\n])\s+(?=\d{1,2}[.)]\s+[A-Za-z������])/g, '$1\n');
+  value = value.replace(/([^\n])\s+(?=[�?�]\s+)/g, '$1\n');
+  value = value.replace(/([^\n])\s+(?=\d{1,2}[.)]\s+\p{L})/gu, '$1\n');
+  value = value.replace(/([^\n])\s+(?=[\u2022\u2023\u25E6\u2043\u2219]\s+)/g, '$1\n');
+  value = value.replace(/^[\u2022\u2023\u25E6\u2043\u2219]\s+/gm, '- ');
+  return value;
+}
 function renderMarkdown(text, p, searchTerm){
-  const lines = String(text || '').replace(/\r\n?/g,'\n').split('\n');
+  const lines = normalizeLegacyAiFormatting(text).split('\n');
   let html = '', listType = '';
   const closeList = ()=>{ if(listType){ html += '</'+listType+'>'; listType = ''; } };
   for(let i=0;i<lines.length;i++){
@@ -5009,10 +5056,30 @@ function setupPostViewTracking(){
 // vezes em sequência — o que era a causa de comentários e o menu "..." falharem
 // no meio do clique/digitação.
 let renderDebounceTimer = null;
+let renderDeferredByEditor = false;
 function scheduleRender(){
   if(renderDebounceTimer) clearTimeout(renderDebounceTimer);
-  renderDebounceTimer = setTimeout(()=>{ renderDebounceTimer = null; render(); }, 200);
+  renderDebounceTimer = setTimeout(()=>{
+    renderDebounceTimer = null;
+    // N�o substitui o bot�o enquanto o ponteiro est� sobre ele. Isso evita
+    // o "pisca-pisca" causado por atualiza��es de views/posts em tempo real.
+    const activeMuralField = document.activeElement?.matches?.('[data-comment-input],[data-reply-input],[data-comment-edit],[data-reply-edit]');
+    if(activeMuralField){
+      renderDeferredByEditor = true;
+      return;
+    }
+    if(document.querySelector('.post-comment-toggle:hover')){
+      scheduleRender();
+      return;
+    }
+    render();
+  }, 200);
 }
+document.addEventListener('focusout', event=>{
+  if(!renderDeferredByEditor || !event.target.matches?.('[data-comment-input],[data-reply-input],[data-comment-edit],[data-reply-edit]')) return;
+  renderDeferredByEditor = false;
+  scheduleRender();
+});
 
 function render(){
   updateProfileBtnAvatar();
@@ -5033,8 +5100,10 @@ function render(){
     let selector = null;
     if(activeEl.matches && activeEl.matches('[data-comment-input]')) selector = `[data-comment-input="${activeEl.dataset.commentInput}"]`;
     else if(activeEl.matches && activeEl.matches('[data-reply-input]')) selector = `[data-reply-input="${activeEl.dataset.replyInput}"]`;
+    else if(activeEl.matches && activeEl.matches('[data-comment-edit]')) selector = `[data-comment-edit="${activeEl.dataset.commentEdit}"]`;
+    else if(activeEl.matches && activeEl.matches('[data-reply-edit]')) selector = `[data-reply-edit="${activeEl.dataset.replyEdit}"]`;
     if(selector){
-      muralFocusRestore = { selector, start: activeEl.selectionStart, end: activeEl.selectionEnd };
+      muralFocusRestore = { selector, value:activeEl.value, start: activeEl.selectionStart, end: activeEl.selectionEnd };
     }
   }
 
@@ -5108,44 +5177,47 @@ function render(){
           const cLiked = !!(currentUid && cLikes[currentUid]);
           const replies = objToArray(c.replies).sort((a,b)=>a.ts-b.ts);
           const replyOpen = openReplies.has(c.id);
+          const isEditingComment = editingComments.has(c.id);
           const cInfo = authorInfo(c);
           return `
           <div class="comment ${newMuralComments.has(c.id) ? 'mural-enter' : ''}" data-comment-id="${c.id}">
             ${avatarHtml(cInfo, true)}
             <div class="comment-body">
               <div class="comment-author"><span${authorNameAttr(cInfo)}>${escapeHtml(cInfo.name)}</span>${sectorTagHtml(cInfo.sector, 2)}${adminTagHtml(cInfo.isAdmin)}${supportTagHtml(cInfo.isSupport)}${devTagHtml(cInfo.isDev)} <span class="post-time" title="${formatFullDate(c.ts)}">· ${timeAgo(c.ts)} · ${formatFullDate(c.ts)}</span></div>
-              <div class="comment-text">${escapeHtml(c.text)}</div>
+              ${isEditingComment ? `<div class="comment-edit-form"><textarea class="field" rows="3" data-comment-edit="${c.id}">${escapeHtml(c.text)}</textarea><button class="btn btn-primary" data-action="save-comment-edit" data-post="${p.id}" data-id="${c.id}">Salvar</button><button class="btn-ghost" data-action="cancel-comment-edit" data-post="${p.id}" data-id="${c.id}">Cancelar</button></div>` : `<div class="comment-text">${renderMarkdown(c.text, c, '')}${c.editedAt?' <span class="post-edited-tag">(editado)</span>':''}</div>`}
               <div class="comment-actions">
                 <button class="comment-like ${cLiked?'is-liked':''}" data-action="like-comment" data-post="${p.id}" data-id="${c.id}">
                   <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.7 1.2 6 3.6C14.3 5.2 15.8 4 18 4c4 0 5.5 4 4 7.7C19.5 16.4 12 21 12 21z"/></svg>
                   ${cLikeCount>0?cLikeCount:'curtir'}
                 </button>
                 <button class="comment-reply-btn" data-action="toggle-reply" data-post="${p.id}" data-id="${c.id}">${replyOpen?'fechar':'responder'}${replies.length?` (${replies.length})`:''}</button>
-                ${canManageUserContent(c) ? `<button class="comment-remove" data-action="remove-comment" data-post="${p.id}" data-id="${c.id}">excluir</button>` : ''}
+                ${canManageUserContent(c) ? `<button class="comment-reply-btn" data-action="edit-comment" data-post="${p.id}" data-id="${c.id}">editar</button><button class="comment-remove" data-action="remove-comment" data-post="${p.id}" data-id="${c.id}">excluir</button>` : ''}
               </div>
               ${replies.length ? `
               <div class="reply-list">
                 ${replies.map(r=>{
                   const rInfo = authorInfo(r);
+                  const isEditingReply = editingReplies.has(r.id);
                   return `
                   <div class="reply ${newMuralReplies.has(r.id) ? 'mural-enter' : ''}" data-reply-id="${r.id}">
                     ${avatarHtml(rInfo, true)}
                     <div class="reply-body">
                       <div class="reply-author"><span${authorNameAttr(rInfo)}>${escapeHtml(rInfo.name)}</span>${sectorTagHtml(rInfo.sector, 2)}${adminTagHtml(rInfo.isAdmin)}${supportTagHtml(rInfo.isSupport)}${devTagHtml(rInfo.isDev)} <span class="post-time" title="${formatFullDate(r.ts)}">· ${timeAgo(r.ts)} · ${formatFullDate(r.ts)}</span></div>
-                      <div class="reply-text">${escapeHtml(r.text)}</div>
+                      ${isEditingReply ? `<div class="comment-edit-form"><textarea class="field" rows="3" data-reply-edit="${r.id}">${escapeHtml(r.text)}</textarea><button class="btn btn-primary" data-action="save-reply-edit" data-post="${p.id}" data-comment="${c.id}" data-id="${r.id}">Salvar</button><button class="btn-ghost" data-action="cancel-reply-edit" data-id="${r.id}">Cancelar</button></div>` : `<div class="reply-text">${renderMarkdown(r.text, r, '')}${r.editedAt?' <span class="post-edited-tag">(editado)</span>':''}</div>`}
+                      ${canManageUserContent(r) ? `<div class="comment-actions"><button class="comment-reply-btn" data-action="edit-reply" data-post="${p.id}" data-comment="${c.id}" data-id="${r.id}">editar</button><button class="comment-remove" data-action="remove-reply" data-post="${p.id}" data-comment="${c.id}" data-id="${r.id}">excluir</button></div>` : ''}
                     </div>
                   </div>`;}).join('')}
               </div>` : ''}
               ${replyOpen ? `
               <div class="reply-form">
-                <input class="field" type="text" placeholder="Escreva uma resposta..." data-reply-input="${c.id}">
+                <textarea class="field" rows="2" placeholder="Escreva uma resposta..." data-reply-input="${c.id}"></textarea>
                 <button class="btn-ghost" data-action="send-reply" data-post="${p.id}" data-id="${c.id}">enviar</button>
               </div>` : ''}
             </div>
           </div>`;
         }).join('') : `<div class="empty-small">Nenhum comentário ainda.</div>`}
         <div class="comment-form">
-          <input class="field" type="text" placeholder="Escreva um comentário..." data-comment-input="${p.id}">
+          <textarea class="field" rows="2" placeholder="Escreva um comentário..." data-comment-input="${p.id}"></textarea>
           <button class="btn-ghost" data-action="send-comment" data-id="${p.id}">enviar</button>
         </div>
       </div>` : ''}
@@ -5215,6 +5287,7 @@ function render(){
     if(muralFocusRestore && muralFocusRestore.selector){
       const el = document.querySelector(muralFocusRestore.selector);
       if(el){
+        if(typeof muralFocusRestore.value === 'string') el.value = muralFocusRestore.value;
         el.focus();
         if(typeof muralFocusRestore.start === 'number' && el.setSelectionRange){
           try{ el.setSelectionRange(muralFocusRestore.start, muralFocusRestore.end); }catch(err){}
@@ -5539,6 +5612,17 @@ if(muralMessageInput){
     muralMessageInput.dispatchEvent(new Event('input', { bubbles:true }));
   });
 }
+document.addEventListener('paste', event=>{
+  const input = event.target.closest?.('[data-comment-input],[data-reply-input],[data-comment-edit],[data-reply-edit]');
+  if(!input) return;
+  const html = event.clipboardData?.getData('text/html');
+  if(!html) return;
+  const markdown = richHtmlToMarkdown(html);
+  if(!markdown) return;
+  event.preventDefault();
+  input.setRangeText(markdown, input.selectionStart, input.selectionEnd, 'end');
+  input.dispatchEvent(new Event('input', { bubbles:true }));
+});
 const pollComposerToggle = document.getElementById('poll-composer-toggle');
 const pollComposerPanel = document.getElementById('poll-composer-panel');
 const pollOptionList = document.getElementById('poll-option-list');
@@ -5937,6 +6021,27 @@ document.addEventListener('click', (e)=>{
   } else if(action === 'toggle-reply'){
     if(openReplies.has(id)) openReplies.delete(id); else openReplies.add(id);
     render();
+  } else if(action === 'edit-comment'){
+    const post = allPosts().find(p=>p.id===t.dataset.post);
+    const comment = post?.comments?.[id];
+    if(!comment || !canManageUserContent(comment)) return;
+    editingComments.add(id);
+    render();
+    requestAnimationFrame(()=>document.querySelector(`[data-comment-edit="${id}"]`)?.focus());
+  } else if(action === 'cancel-comment-edit'){
+    editingComments.delete(id);
+    render();
+  } else if(action === 'save-comment-edit'){
+    const post = allPosts().find(p=>p.id===t.dataset.post);
+    const comment = post?.comments?.[id];
+    const input = document.querySelector(`[data-comment-edit="${id}"]`);
+    const text = input?.value.trim();
+    if(!post || !comment || !text || !canManageUserContent(comment)) return;
+    t.disabled = true;
+    update(ref(db, postPath(post)+'/comments/'+id), { text, editedAt:Date.now() })
+      .then(()=> editingComments.delete(id))
+      .catch(handleDbError)
+      .finally(()=> render());
   } else if(action === 'remove-comment'){
     const postId = t.dataset.post;
     const post = allPosts().find(p=>p.id===postId);
@@ -5946,7 +6051,51 @@ document.addEventListener('click', (e)=>{
       return;
     }
     remove(ref(db, postPath(post)+'/comments/'+id)).catch(handleDbError);
+    editingComments.delete(id);
     openReplies.delete(id);
+  } else if(action === 'edit-reply'){
+    const post = allPosts().find(p=>p.id===t.dataset.post);
+    const reply = post?.comments?.[t.dataset.comment]?.replies?.[id];
+    if(!reply || !canManageUserContent(reply)) return;
+    editingReplies.add(id);
+    render();
+    requestAnimationFrame(()=>document.querySelector(`[data-reply-edit="${id}"]`)?.focus());
+  } else if(action === 'cancel-reply-edit'){
+    editingReplies.delete(id);
+    render();
+  } else if(action === 'save-reply-edit'){
+    const post = allPosts().find(p=>p.id===t.dataset.post);
+    const commentId = t.dataset.comment;
+    const reply = post?.comments?.[commentId]?.replies?.[id];
+    const input = document.querySelector(`[data-reply-edit="${id}"]`);
+    const text = input?.value.trim();
+    if(!post || !reply || !text || !canManageUserContent(reply)) return;
+    t.disabled = true;
+    update(ref(db, postPath(post)+'/comments/'+commentId+'/replies/'+id), { text, editedAt:Date.now() })
+      .then(()=> editingReplies.delete(id))
+      .catch(handleDbError)
+      .finally(()=> render());
+  } else if(action === 'remove-reply'){
+    const post = allPosts().find(p=>p.id===t.dataset.post);
+    const commentId = t.dataset.comment;
+    const reply = post?.comments?.[commentId]?.replies?.[id];
+    if(!post || !reply || !canManageUserContent(reply)){
+      showDbError('Você não tem permissão para excluir esta resposta.');
+      return;
+    }
+    const originalLabel = t.textContent;
+    t.disabled = true;
+    t.textContent = 'excluindo...';
+    update(ref(db, postPath(post)+'/comments'), { [`${commentId}/replies/${id}`]:null })
+      .then(()=>{
+        editingReplies.delete(id);
+        showSuccessToast('Resposta excluída.');
+      })
+      .catch(err=>{
+        t.disabled = false;
+        t.textContent = originalLabel;
+        handleDbError(err);
+      });
   } else if(action === 'send-reply'){
     const postId = t.dataset.post, commentId = id;
     if(pendingReplies.has(commentId)) return;
@@ -5984,13 +6133,13 @@ document.addEventListener('keydown', (e)=>{
     const action=e.key==='Enter'?(e.target.id.startsWith('edit-meta-')?'save-meta-edit':'save-demanda-edit'):(e.target.id.startsWith('edit-meta-')?'cancel-meta-edit':'cancel-demanda-edit');
     container?.querySelector(`[data-action="${action}"]`)?.click();return;
   }
-  if(e.key === 'Enter' && e.target.matches('[data-comment-input]')){
+  if(e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.matches('[data-comment-input]')){
     e.preventDefault();
     const id = e.target.dataset.commentInput;
     const btn = document.querySelector(`[data-action="send-comment"][data-id="${id}"]`);
     if(btn) btn.click();
   }
-  if(e.key === 'Enter' && e.target.matches('[data-reply-input]')){
+  if(e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.matches('[data-reply-input]')){
     e.preventDefault();
     const commentId = e.target.dataset.replyInput;
     const btn = document.querySelector(`[data-action="send-reply"][data-id="${commentId}"]`);
