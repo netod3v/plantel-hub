@@ -826,6 +826,8 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .comment-reply-btn:hover{background:var(--sage);color:var(--forest);}
 .comment-remove:hover{background:#F6E4E0;color:var(--danger);}
 .reply-list{margin:8px 0 0 31px;display:flex;flex-direction:column;gap:8px;}
+.reply-list .reply-list{margin-left:18px;padding-left:8px;border-left:1px solid var(--border);}
+.reply-list .reply-list .reply-list .reply-list{margin-left:0;}
 .reply{display:flex;gap:8px;}
 .reply-body{flex:1;min-width:0;}
 .reply-author{font-size:11.5px;font-weight:600;}
@@ -5050,6 +5052,37 @@ function setupPostViewTracking(){
   document.querySelectorAll('#mural-list .post[data-post-id]').forEach(el=>postViewObserver.observe(el));
 }
 
+function renderReplyTree(replyObject, post, commentId, basePath=''){
+  const replies = objToArray(replyObject).sort((a,b)=>a.ts-b.ts);
+  if(!replies.length) return '';
+  return `<div class="reply-list">${replies.map(r=>{
+    const nodePath = basePath ? `${basePath}/replies/${r.id}` : `replies/${r.id}`;
+    const threadKey = `${commentId}:${nodePath}`;
+    const rInfo = authorInfo(r);
+    const likes = r.likes || {};
+    const likeCount = Object.keys(likes).length;
+    const liked = !!(currentUid && likes[currentUid]);
+    const replyOpen = openReplies.has(threadKey);
+    const childCount = Object.keys(r.replies || {}).length;
+    const isTopLevel = !basePath;
+    const isEditingReply = isTopLevel && editingReplies.has(r.id);
+    return `<div class="reply ${newMuralReplies.has(r.id)?'mural-enter':''}" data-reply-id="${r.id}">
+      ${avatarHtml(rInfo,true)}
+      <div class="reply-body">
+        <div class="reply-author"><span${authorNameAttr(rInfo)}>${escapeHtml(rInfo.name)}</span>${sectorTagHtml(rInfo.sector,2)}${adminTagHtml(rInfo.isAdmin)}${supportTagHtml(rInfo.isSupport)}${devTagHtml(rInfo.isDev)} <span class="post-time" title="${formatFullDate(r.ts)}">� ${timeAgo(r.ts)} � ${formatFullDate(r.ts)}</span></div>
+        ${isEditingReply ? `<div class="comment-edit-form"><textarea class="field" rows="3" data-reply-edit="${r.id}">${escapeHtml(r.text)}</textarea><button class="btn btn-primary" data-action="save-reply-edit" data-post="${post.id}" data-comment="${commentId}" data-id="${r.id}">Salvar</button><button class="btn-ghost" data-action="cancel-reply-edit" data-id="${r.id}">Cancelar</button></div>` : `<div class="reply-text">${renderMarkdown(r.text,r,'')}${r.editedAt?' <span class="post-edited-tag">(editado)</span>':''}</div>`}
+        <div class="comment-actions">
+          <button class="comment-like ${liked?'is-liked':''}" data-action="like-thread-reply" data-post="${post.id}" data-comment="${commentId}" data-path="${nodePath}" data-id="${r.id}"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.7 1.2 6 3.6C14.3 5.2 15.8 4 18 4c4 0 5.5 4 4 7.7C19.5 16.4 12 21 12 21z"/></svg>${likeCount||'curtir'}</button>
+          <button class="comment-reply-btn" data-action="toggle-thread-reply" data-key="${threadKey}" data-id="${r.id}">${replyOpen?'fechar':'responder'}${childCount?` (${childCount})`:''}</button>
+          ${isTopLevel && canManageUserContent(r) ? `<button class="comment-reply-btn" data-action="edit-reply" data-post="${post.id}" data-comment="${commentId}" data-id="${r.id}">editar</button><button class="comment-remove" data-action="remove-reply" data-post="${post.id}" data-comment="${commentId}" data-id="${r.id}">excluir</button>` : ''}
+        </div>
+        ${renderReplyTree(r.replies,post,commentId,nodePath)}
+        ${replyOpen ? `<div class="reply-form"><textarea class="field" rows="2" placeholder="Escreva uma resposta..." data-thread-reply-input="${threadKey}"></textarea><button class="btn-ghost" data-action="send-thread-reply" data-post="${post.id}" data-comment="${commentId}" data-path="${nodePath}" data-key="${threadKey}" data-id="${r.id}">enviar</button></div>` : ''}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
 // Agrupa várias chamadas de render() que cheguem no mesmo instante (ex: várias
 // "visualizações" de posts sendo gravadas enquanto alguém rola o mural) em um
 // único redesenho por frame, em vez de reconstruir a lista inteira repetidas
@@ -5063,7 +5096,7 @@ function scheduleRender(){
     renderDebounceTimer = null;
     // N�o substitui o bot�o enquanto o ponteiro est� sobre ele. Isso evita
     // o "pisca-pisca" causado por atualiza��es de views/posts em tempo real.
-    const activeMuralField = document.activeElement?.matches?.('[data-comment-input],[data-reply-input],[data-comment-edit],[data-reply-edit]');
+    const activeMuralField = document.activeElement?.matches?.('[data-comment-input],[data-reply-input],[data-thread-reply-input],[data-comment-edit],[data-reply-edit]');
     if(activeMuralField){
       renderDeferredByEditor = true;
       return;
@@ -5076,7 +5109,7 @@ function scheduleRender(){
   }, 200);
 }
 document.addEventListener('focusout', event=>{
-  if(!renderDeferredByEditor || !event.target.matches?.('[data-comment-input],[data-reply-input],[data-comment-edit],[data-reply-edit]')) return;
+  if(!renderDeferredByEditor || !event.target.matches?.('[data-comment-input],[data-reply-input],[data-thread-reply-input],[data-comment-edit],[data-reply-edit]')) return;
   renderDeferredByEditor = false;
   scheduleRender();
 });
@@ -5100,6 +5133,7 @@ function render(){
     let selector = null;
     if(activeEl.matches && activeEl.matches('[data-comment-input]')) selector = `[data-comment-input="${activeEl.dataset.commentInput}"]`;
     else if(activeEl.matches && activeEl.matches('[data-reply-input]')) selector = `[data-reply-input="${activeEl.dataset.replyInput}"]`;
+    else if(activeEl.matches && activeEl.matches('[data-thread-reply-input]')) selector = `[data-thread-reply-input="${activeEl.dataset.threadReplyInput}"]`;
     else if(activeEl.matches && activeEl.matches('[data-comment-edit]')) selector = `[data-comment-edit="${activeEl.dataset.commentEdit}"]`;
     else if(activeEl.matches && activeEl.matches('[data-reply-edit]')) selector = `[data-reply-edit="${activeEl.dataset.replyEdit}"]`;
     if(selector){
@@ -5204,7 +5238,10 @@ function render(){
                     <div class="reply-body">
                       <div class="reply-author"><span${authorNameAttr(rInfo)}>${escapeHtml(rInfo.name)}</span>${sectorTagHtml(rInfo.sector, 2)}${adminTagHtml(rInfo.isAdmin)}${supportTagHtml(rInfo.isSupport)}${devTagHtml(rInfo.isDev)} <span class="post-time" title="${formatFullDate(r.ts)}">· ${timeAgo(r.ts)} · ${formatFullDate(r.ts)}</span></div>
                       ${isEditingReply ? `<div class="comment-edit-form"><textarea class="field" rows="3" data-reply-edit="${r.id}">${escapeHtml(r.text)}</textarea><button class="btn btn-primary" data-action="save-reply-edit" data-post="${p.id}" data-comment="${c.id}" data-id="${r.id}">Salvar</button><button class="btn-ghost" data-action="cancel-reply-edit" data-id="${r.id}">Cancelar</button></div>` : `<div class="reply-text">${renderMarkdown(r.text, r, '')}${r.editedAt?' <span class="post-edited-tag">(editado)</span>':''}</div>`}
+                      <div class="comment-actions"><button class="comment-like ${currentUid&&r.likes?.[currentUid]?'is-liked':''}" data-action="like-thread-reply" data-post="${p.id}" data-comment="${c.id}" data-path="replies/${r.id}" data-id="${r.id}"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.7 1.2 6 3.6C14.3 5.2 15.8 4 18 4c4 0 5.5 4 4 7.7C19.5 16.4 12 21 12 21z"/></svg>${Object.keys(r.likes||{}).length||'curtir'}</button><button class="comment-reply-btn" data-action="toggle-thread-reply" data-key="${c.id}:replies/${r.id}" data-id="${r.id}">${openReplies.has(`${c.id}:replies/${r.id}`)?'fechar':'responder'}${Object.keys(r.replies||{}).length?` (${Object.keys(r.replies||{}).length})`:''}</button></div>
                       ${canManageUserContent(r) ? `<div class="comment-actions"><button class="comment-reply-btn" data-action="edit-reply" data-post="${p.id}" data-comment="${c.id}" data-id="${r.id}">editar</button><button class="comment-remove" data-action="remove-reply" data-post="${p.id}" data-comment="${c.id}" data-id="${r.id}">excluir</button></div>` : ''}
+                      ${renderReplyTree(r.replies,p,c.id,`replies/${r.id}`)}
+                      ${openReplies.has(`${c.id}:replies/${r.id}`)?`<div class="reply-form"><textarea class="field" rows="2" placeholder="Escreva uma resposta..." data-thread-reply-input="${c.id}:replies/${r.id}"></textarea><button class="btn-ghost" data-action="send-thread-reply" data-post="${p.id}" data-comment="${c.id}" data-path="replies/${r.id}" data-key="${c.id}:replies/${r.id}" data-id="${r.id}">enviar</button></div>`:''}
                     </div>
                   </div>`;}).join('')}
               </div>` : ''}
@@ -5613,7 +5650,7 @@ if(muralMessageInput){
   });
 }
 document.addEventListener('paste', event=>{
-  const input = event.target.closest?.('[data-comment-input],[data-reply-input],[data-comment-edit],[data-reply-edit]');
+  const input = event.target.closest?.('[data-comment-input],[data-reply-input],[data-thread-reply-input],[data-comment-edit],[data-reply-edit]');
   if(!input) return;
   const html = event.clipboardData?.getData('text/html');
   if(!html) return;
@@ -6018,6 +6055,32 @@ document.addEventListener('click', (e)=>{
   } else if(action === 'toggle-post-views'){
     if(openPostViews.has(id)) openPostViews.delete(id); else openPostViews.add(id);
     render();
+  } else if(action === 'like-thread-reply'){
+    if(!ensureProfileBeforeAction()) return;
+    const post = allPosts().find(p=>p.id===t.dataset.post);
+    const commentId = t.dataset.comment, nodePath = t.dataset.path || '';
+    if(!post || !/^replies\/[A-Za-z0-9_-]+(?:\/replies\/[A-Za-z0-9_-]+)*$/.test(nodePath)) return;
+    const likeRef = ref(db, `${postPath(post)}/comments/${commentId}/${nodePath}/likes/${currentUid}`);
+    const liked = t.classList.contains('is-liked');
+    (liked ? remove(likeRef) : set(likeRef,true)).catch(handleDbError);
+  } else if(action === 'toggle-thread-reply'){
+    const key = t.dataset.key;
+    if(!key) return;
+    if(openReplies.has(key)) openReplies.delete(key); else openReplies.add(key);
+    render();
+  } else if(action === 'send-thread-reply'){
+    if(!ensureProfileBeforeAction()) return;
+    const post = allPosts().find(p=>p.id===t.dataset.post);
+    const commentId = t.dataset.comment, nodePath = t.dataset.path || '', key = t.dataset.key;
+    const input = [...document.querySelectorAll('[data-thread-reply-input]')].find(el=>el.dataset.threadReplyInput===key);
+    const text = input?.value.trim();
+    if(!post || !text || !key || !/^replies\/[A-Za-z0-9_-]+(?:\/replies\/[A-Za-z0-9_-]+)*$/.test(nodePath)) return;
+    const replyId = uid(), profile = myProfile();
+    t.disabled = true;
+    set(ref(db, `${postPath(post)}/comments/${commentId}/${nodePath}/replies/${replyId}`), { author:profile.name, uid:currentUid, text, ts:Date.now() })
+      .then(()=>{ newMuralReplies.add(replyId); })
+      .catch(handleDbError)
+      .finally(()=>render());
   } else if(action === 'toggle-reply'){
     if(openReplies.has(id)) openReplies.delete(id); else openReplies.add(id);
     render();
@@ -6143,6 +6206,12 @@ document.addEventListener('keydown', (e)=>{
     e.preventDefault();
     const commentId = e.target.dataset.replyInput;
     const btn = document.querySelector(`[data-action="send-reply"][data-id="${commentId}"]`);
+    if(btn) btn.click();
+  }
+  if(e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.matches('[data-thread-reply-input]')){
+    e.preventDefault();
+    const key = e.target.dataset.threadReplyInput;
+    const btn = [...document.querySelectorAll('[data-action="send-thread-reply"]')].find(el=>el.dataset.key===key);
     if(btn) btn.click();
   }
   if(e.key === 'Enter' && (e.metaKey || e.ctrlKey) && e.target.matches('[id^="edit-post-textarea-"]')){
