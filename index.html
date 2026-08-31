@@ -1400,8 +1400,8 @@ body.composer-focused .note-card{
         <div class="avatar-upload">
           <div class="avatar-upload-preview" id="profile-photo-preview">?</div>
           <div class="avatar-upload-actions">
-            <input type="file" id="profile-photo-input" accept="image/*" style="display:none;">
-            <button type="button" class="btn-ghost" id="profile-photo-pick">Escolher foto</button>
+            <input type="file" id="profile-photo-input" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none;">
+            <button type="button" class="btn-ghost" id="profile-photo-pick">Foto ou GIF</button>
             <button type="button" class="btn-ghost" id="profile-photo-remove">Remover foto</button>
           </div>
         </div>
@@ -3710,10 +3710,38 @@ profilePhotoRemove.addEventListener('click', ()=>{
 profilePhotoInput.addEventListener('change', ()=>{
   const file = profilePhotoInput.files[0];
   if(!file) return;
-  if(!file.type.startsWith('image/')){
+  const isGif = file.type.toLowerCase() === 'image/gif' || /\.gif$/i.test(file.name);
+  if(!isGif && !file.type.startsWith('image/')){
     profileError.textContent = 'Escolha um arquivo de imagem.';
     return;
   }
+
+  // O canvas remove a animação. GIFs são mantidos no formato original.
+  if(isGif){
+    const maxGifSize = 600 * 1024;
+    if(file.size > maxGifSize){
+      profileError.textContent = 'O GIF precisa ter no máximo 600 KB para não deixar o Plantel lento.';
+      profilePhotoInput.value = '';
+      return;
+    }
+    const gifReader = new FileReader();
+    gifReader.onload = (e)=>{
+      const dataUrl = String(e.target?.result || '');
+      if(!dataUrl.startsWith('data:')){
+        profileError.textContent = 'Não foi possível carregar esse GIF.';
+        return;
+      }
+      pendingPhoto = dataUrl;
+      profileError.textContent = '';
+      renderPhotoPreview(profileNameInput.value, dataUrl);
+    };
+    gifReader.onerror = ()=>{
+      profileError.textContent = 'Não foi possível carregar esse GIF.';
+    };
+    gifReader.readAsDataURL(file);
+    return;
+  }
+
   const reader = new FileReader();
   reader.onload = (e)=>{
     const img = new Image();
@@ -5305,10 +5333,11 @@ function render(){
   document.getElementById('demanda-list').innerHTML = visibleDemandas.length ? visibleDemandas.map(d=>{
     const dInfo = authorInfo(d);
     const canManageDemanda = canManageWorkItem(d);
+    const canWorkOnDemanda = canAllocateDemand(d);
     const isEditingDemanda = editingDemandas.has(d.id) && canManageDemanda;
     return `
     <div class="item ${d.done?'done ':''}${newMuralDemandas.has(d.id)?'mural-enter':''}" data-demanda-id="${d.id}">
-      <div class="check ${d.done?'done':''}" data-action="${canManageDemanda?'toggle-demanda':''}" data-id="${d.id}" style="${canManageDemanda?'':'pointer-events:none;opacity:.5;'}">${CHECK_SVG}</div>
+      <div class="check ${d.done?'done':''}" data-action="${canWorkOnDemanda?'toggle-demanda':''}" data-id="${d.id}" style="${canWorkOnDemanda?'':'pointer-events:none;opacity:.5;'}">${CHECK_SVG}</div>
       <div class="item-body">
         ${isEditingDemanda ? `<div class="item-edit-form"><input class="field" id="edit-demanda-input-${d.id}" value="${escapeHtml(d.text)}" aria-label="Editar demanda"><button class="btn btn-primary" data-action="save-demanda-edit" data-id="${d.id}">Salvar</button><button class="btn-ghost" data-action="cancel-demanda-edit" data-id="${d.id}">Cancelar</button></div>` : `<div class="item-text">${renderTextWithMentions(d.text,d)}${d.editedAt?' <span class="post-edited-tag">(editado)</span>':''}</div>`}
         <div class="item-meta"><span${authorNameAttr(dInfo)}>${escapeHtml(dInfo.name)}</span>${privacyIconHtml(d._sector)} · ${timeAgo(d.ts)}</div>
@@ -5347,6 +5376,7 @@ function isLegacyWorkItemOwner(item){
   return !item?.uid && !!author && !!myName && author===myName;
 }
 function canManageWorkItem(item){return item?.uid===currentUid||isLegacyWorkItemOwner(item)||isAdmin();}
+function canAllocateDemand(item){return canManageWorkItem(item)||!!(item?.mentions&&item.mentions[currentUid]);}
 function canManageUserContent(item){return item?.uid===currentUid||isLegacyWorkItemOwner(item)||isAdmin();}
 function renderKanbanBoard(kind, items){
   const board = document.getElementById(kind+'-board');
@@ -5364,18 +5394,21 @@ function renderKanbanBoard(kind, items){
           const info = authorInfo(item);
           const idx = KANBAN_COLUMNS.findIndex(c=>c.key===col.key);
           const canManageItem = canManageWorkItem(item);
+          const canMoveItem = kind === 'demanda' ? canAllocateDemand(item) : canManageItem;
           const isEditingItem = (kind==='meta'?editingMetas:editingDemandas).has(item.id) && canManageItem;
           return `
-          <div class="kanban-card" draggable="${canManageItem&&!isEditingItem}" data-id="${item.id}" data-kind="${kind}">
+          <div class="kanban-card" draggable="${canMoveItem&&!isEditingItem}" data-id="${item.id}" data-kind="${kind}">
             ${isEditingItem?`<div class="item-edit-form"><input class="field" id="edit-${kind}-input-${item.id}" value="${escapeHtml(item.text)}"><button class="btn btn-primary" data-action="save-${kind}-edit" data-id="${item.id}">Salvar</button><button class="btn-ghost" data-action="cancel-${kind}-edit" data-id="${item.id}">Cancelar</button></div>`:`<div class="kanban-card-text">${renderTextWithMentions(item.text,item)}${item.editedAt?' <span class="post-edited-tag">(editado)</span>':''}</div>`}
             <div class="kanban-card-meta">${avatarHtml(info, true)}<span class="kanban-card-author"${authorNameAttr(info)}>${escapeHtml(info.name)}</span></div>
             <div class="kanban-card-foot">
               ${visibilityTagHtml(item._sector)}
-              ${canManageItem ? `
+              ${canMoveItem ? `
               <div class="kanban-card-move">
                 <button type="button" data-action="kanban-move" data-kind="${kind}" data-id="${item.id}" data-dir="-1" ${idx===0?'disabled':''} aria-label="Mover pra trás">‹</button>
                 <button type="button" data-action="kanban-move" data-kind="${kind}" data-id="${item.id}" data-dir="1" ${idx===KANBAN_COLUMNS.length-1?'disabled':''} aria-label="Mover pra frente">›</button>
               </div>
+              ` : ''}
+              ${canManageItem ? `
               ${!isEditingItem?`<button type="button" data-action="edit-${kind}" data-id="${item.id}">editar</button>`:''}
               <button type="button" class="kanban-card-remove" data-action="remove-${kind}" data-id="${item.id}">remover</button>
               ` : ''}
@@ -5388,7 +5421,7 @@ function renderKanbanBoard(kind, items){
 }
 function setItemStatus(kind, id, status){
   const item = (kind === 'meta' ? allMetas() : allDemandas()).find(x=>x.id===id);
-  if(!item) return;
+  if(!item || (kind === 'demanda' ? !canAllocateDemand(item) : !canManageWorkItem(item))) return;
   const path = kind === 'meta' ? metaPath(item) : demandaPath(item);
   update(ref(db, path), { status, done: status === 'done' }).catch(handleDbError);
 }
@@ -5922,7 +5955,7 @@ document.addEventListener('click', (e)=>{
     if(m){ const newDone = !m.done; update(ref(db, metaPath(m)), { done: newDone, status: newDone ? 'done' : 'todo' }).catch(handleDbError); }
   } else if(action === 'toggle-demanda'){
     const d = allDemandas().find(x=>x.id===id);
-    if(d){ const newDone = !d.done; update(ref(db, demandaPath(d)), { done: newDone, status: newDone ? 'done' : 'todo' }).catch(handleDbError); }
+    if(d && canAllocateDemand(d)){ const newDone = !d.done; update(ref(db, demandaPath(d)), { done: newDone, status: newDone ? 'done' : 'todo' }).catch(handleDbError); }
   } else if(action === 'edit-meta' || action === 'edit-demanda'){
     const kind=action==='edit-meta'?'meta':'demanda',item=(kind==='meta'?allMetas():allDemandas()).find(x=>x.id===id);
     if(!item || !canManageWorkItem(item))return;
