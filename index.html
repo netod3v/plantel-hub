@@ -5332,7 +5332,7 @@ function render(){
   document.getElementById('demanda-progress-label').textContent = `${demandaDone}/${visibleDemandas.length} concluídas (${demandaPct}%)`;
   document.getElementById('demanda-list').innerHTML = visibleDemandas.length ? visibleDemandas.map(d=>{
     const dInfo = authorInfo(d);
-    const canManageDemanda = canManageWorkItem(d);
+    const canManageDemanda = canAllocateDemand(d);
     const canWorkOnDemanda = canAllocateDemand(d);
     const isEditingDemanda = editingDemandas.has(d.id) && canManageDemanda;
     return `
@@ -5393,7 +5393,7 @@ function renderKanbanBoard(kind, items){
         ${colItems.length ? colItems.map(item=>{
           const info = authorInfo(item);
           const idx = KANBAN_COLUMNS.findIndex(c=>c.key===col.key);
-          const canManageItem = canManageWorkItem(item);
+          const canManageItem = kind === 'demanda' ? canAllocateDemand(item) : canManageWorkItem(item);
           const canMoveItem = kind === 'demanda' ? canAllocateDemand(item) : canManageItem;
           const isEditingItem = (kind==='meta'?editingMetas:editingDemandas).has(item.id) && canManageItem;
           return `
@@ -5958,14 +5958,14 @@ document.addEventListener('click', (e)=>{
     if(d && canAllocateDemand(d)){ const newDone = !d.done; update(ref(db, demandaPath(d)), { done: newDone, status: newDone ? 'done' : 'todo' }).catch(handleDbError); }
   } else if(action === 'edit-meta' || action === 'edit-demanda'){
     const kind=action==='edit-meta'?'meta':'demanda',item=(kind==='meta'?allMetas():allDemandas()).find(x=>x.id===id);
-    if(!item || !canManageWorkItem(item))return;
+    if(!item || (kind==='demanda'?!canAllocateDemand(item):!canManageWorkItem(item)))return;
     (kind==='meta'?editingMetas:editingDemandas).add(id);render();
     requestAnimationFrame(()=>{const inputs=[...document.querySelectorAll(`[id="edit-${kind}-input-${id}"]`)];const input=inputs.find(el=>el.offsetParent!==null)||inputs[0];if(input){enableEditMentions(input);input.focus();input.setSelectionRange(input.value.length,input.value.length);}});
   } else if(action === 'cancel-meta-edit' || action === 'cancel-demanda-edit'){
     (action==='cancel-meta-edit'?editingMetas:editingDemandas).delete(id);render();
   } else if(action === 'save-meta-edit' || action === 'save-demanda-edit'){
     const kind=action==='save-meta-edit'?'meta':'demanda',item=(kind==='meta'?allMetas():allDemandas()).find(x=>x.id===id),input=t.closest('.item,.kanban-card')?.querySelector('input');
-    const text=input?.value.trim();if(!item||!text||!canManageWorkItem(item))return;
+    const text=input?.value.trim();if(!item||!text||(kind==='demanda'?!canAllocateDemand(item):!canManageWorkItem(item)))return;
     const mentions=collectMentions(text),path=kind==='meta'?metaPath(item):demandaPath(item);
     (kind==='meta'?editingMetas:editingDemandas).delete(id);
     const changes={text,mentions:Object.keys(mentions).length?mentions:null,editedAt:Date.now()};if(isLegacyWorkItemOwner(item))changes.uid=currentUid;
@@ -5984,9 +5984,9 @@ document.addEventListener('click', (e)=>{
     if(linkedPost) update(ref(db, postPath(linkedPost)), { metaId: null }).catch(handleDbError);
   } else if(action === 'remove-demanda'){
     const d = allDemandas().find(x=>x.id===id);
-    if(d) remove(ref(db, demandaPath(d))).catch(handleDbError);
+    if(d && canAllocateDemand(d)) remove(ref(db, demandaPath(d))).catch(handleDbError);
     const linkedPost = allPosts().find(p=>p.demandaId===id);
-    if(linkedPost) update(ref(db, postPath(linkedPost)), { demandaId: null }).catch(handleDbError);
+    if(linkedPost && (linkedPost.uid===currentUid || isAdmin())) update(ref(db, postPath(linkedPost)), { demandaId: null }).catch(handleDbError);
   } else if(action === 'toggle-pin'){
     const post = allPosts().find(p=>p.id===id);
     if(post) update(ref(db, postPath(post)), { pinned: !post.pinned }).catch(handleDbError);
