@@ -630,6 +630,21 @@ section{margin-top:38px;}
 .section-window-controls{display:none;align-items:center;gap:4px;margin-left:8px;}
 #sections-container.free-layout .section-window-controls{display:flex;}
 #sections-container:not(.free-layout) .drag-handle{display:none;}
+@media (min-width:901px){
+  #sections-container:not(.free-layout)>.draggable-section[data-section-id="demandas"].demandas-wide{
+    position:relative;
+    left:50%;
+    width:min(1120px,calc(100vw - 48px));
+    max-width:none;
+    transform:translateX(-50%);
+    transition:width .24s ease;
+  }
+  #sections-container:not(.free-layout)>.draggable-section[data-section-id="demandas"].demandas-wide #demanda-list{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    column-gap:26px;
+  }
+}
 .section-window-btn{width:25px;height:25px;padding:0;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--text-3);display:grid;place-items:center;cursor:pointer;}
 .section-window-btn:hover{border-color:var(--border);background:var(--sage);color:var(--forest);}
 .section-window-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
@@ -5319,6 +5334,8 @@ function render(){
     </div>`;}).join('') : `<div class="empty">Nenhuma meta ainda.</div>`;
 
   const visibleDemandas = allDemandas();
+  const demandasSection = document.querySelector('[data-section-id="demandas"]');
+  if(demandasSection) demandasSection.classList.toggle('demandas-wide', visibleDemandas.length >= 6);
   const openDemandas = visibleDemandas.filter(d=>!d.done).length;
   document.getElementById('demanda-count').textContent = openDemandas + (openDemandas===1?' pendente':' pendentes');
   const demandaDone = visibleDemandas.length - openDemandas;
