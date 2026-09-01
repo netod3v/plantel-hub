@@ -897,6 +897,7 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .item-edit-form .btn,.item-edit-form .btn-ghost{padding:7px 10px;}
 .item-edit-button{background:none;border:none;color:var(--text-3);font-size:12px;padding:4px 6px;border-radius:6px;flex:none;}
 .item-edit-button:hover{background:var(--sage);color:var(--forest);}
+.item-completed-label{flex:none;padding:4px 7px;border-radius:999px;background:color-mix(in srgb,var(--forest) 12%,transparent);color:var(--forest);font-size:10.5px;font-weight:700;}
 .privacy-icon{display:inline-flex;vertical-align:-2px;margin-left:5px;color:var(--text-3);}
 .privacy-icon svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;}
 .item-remove{
@@ -5359,7 +5360,7 @@ function render(){
         ${isEditingDemanda ? `<div class="item-edit-form"><input class="field" id="edit-demanda-input-${d.id}" value="${escapeHtml(d.text)}" aria-label="Editar demanda"><button class="btn btn-primary" data-action="save-demanda-edit" data-id="${d.id}">Salvar</button><button class="btn-ghost" data-action="cancel-demanda-edit" data-id="${d.id}">Cancelar</button></div>` : `<div class="item-text">${renderTextWithMentions(d.text,d)}${d.editedAt?' <span class="post-edited-tag">(editado)</span>':''}</div>`}
         <div class="item-meta"><span${authorNameAttr(dInfo)}>${escapeHtml(dInfo.name)}</span>${privacyIconHtml(d._sector)} · ${timeAgo(d.ts)}</div>
       </div>
-      ${canManageDemanda && !isEditingDemanda ? `<button class="item-edit-button" data-action="edit-demanda" data-id="${d.id}">editar</button><button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>` : ''}
+      ${canManageDemanda && !isEditingDemanda ? `<button class="item-edit-button" data-action="edit-demanda" data-id="${d.id}">editar</button>${d.done?'<span class="item-completed-label">Concluído</span>':`<button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>`}` : ''}
     </div>`;}).join('') : `<div class="empty">Nenhuma demanda ainda.</div>`;
 
   renderKanbanBoard('demanda', visibleDemandas);
@@ -5427,7 +5428,7 @@ function renderKanbanBoard(kind, items){
               ` : ''}
               ${canManageItem ? `
               ${!isEditingItem?`<button type="button" data-action="edit-${kind}" data-id="${item.id}">editar</button>`:''}
-              <button type="button" class="kanban-card-remove" data-action="remove-${kind}" data-id="${item.id}">remover</button>
+              ${kind==='demanda'&&itemStatus(item)==='done'?'<span class="item-completed-label">Concluído</span>':`<button type="button" class="kanban-card-remove" data-action="remove-${kind}" data-id="${item.id}">remover</button>`}
               ` : ''}
             </div>
           </div>`;
@@ -6001,7 +6002,10 @@ document.addEventListener('click', (e)=>{
     if(linkedPost) update(ref(db, postPath(linkedPost)), { metaId: null }).catch(handleDbError);
   } else if(action === 'remove-demanda'){
     const d = allDemandas().find(x=>x.id===id);
-    if(d && canAllocateDemand(d)) remove(ref(db, demandaPath(d))).catch(handleDbError);
+    if(!d || !canAllocateDemand(d)) return;
+    const confirmed = confirm('Você tem certeza que deseja excluir esta demanda? Ela será removida para toda a equipe e não poderá ser recuperada.');
+    if(!confirmed) return;
+    remove(ref(db, demandaPath(d))).catch(handleDbError);
     const linkedPost = allPosts().find(p=>p.demandaId===id);
     if(linkedPost && (linkedPost.uid===currentUid || isAdmin())) update(ref(db, postPath(linkedPost)), { demandaId: null }).catch(handleDbError);
   } else if(action === 'toggle-pin'){
