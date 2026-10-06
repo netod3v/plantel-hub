@@ -1496,6 +1496,308 @@ body.composer-focused .note-card{
 @media (max-width:380px){
   #note-card.expanded{inset:0!important;border-radius:0}.note-card.expanded .note-card-header{padding-top:max(13px,env(safe-area-inset-top,0px))}.note-card.expanded .note-card-body{padding-bottom:max(13px,env(safe-area-inset-bottom,0px))}
 }
+@media (max-width:720px){
+  #dm-list-modal,#dm-thread-modal{padding:0;align-items:stretch;justify-content:stretch;background:var(--paper)}
+  #dm-list-modal .modal-box,#dm-thread-modal .dm-thread-box{width:100%!important;max-width:none!important;height:100dvh!important;min-height:100dvh!important;max-height:100dvh!important;margin:0!important;border:0;border-radius:0!important;transform:translateY(14px);box-shadow:none}
+  #dm-list-modal.modal-visible .modal-box,#dm-thread-modal.modal-visible .dm-thread-box{transform:none}
+  #dm-list-modal .modal-head,#dm-thread-modal .modal-head{padding:calc(12px + env(safe-area-inset-top,0px)) 12px 12px;background:var(--paper);position:relative;z-index:4}
+  #dm-list-body{min-height:0;flex:1 1 auto;overflow-y:auto;padding:8px 10px calc(16px + env(safe-area-inset-bottom,0px));overscroll-behavior:contain}
+  .dm-conversation-item{min-height:66px;border-bottom:1px solid var(--border);border-radius:0}.dm-conversation-item:last-child{border-bottom:0}.dm-conversation-open{padding:10px 8px}.dm-conversation-item .avatar{width:42px;height:42px}.dm-conversation-name{font-size:14px}.dm-conversation-last{font-size:11.5px}
+  #dm-thread-modal .dm-messages{min-height:0;padding:12px 10px}.dm-bubble{max-width:86%;font-size:14px}
+  #dm-thread-modal .dm-composer{padding:9px 10px calc(9px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:7px;background:var(--paper)}
+  #dm-thread-modal .dm-audio-preview{grid-column:1/-1}#dm-thread-modal .audio-record-btn{width:40px;height:42px;padding:0}#dm-thread-modal #dm-input{width:100%;min-width:0;height:42px}#dm-thread-modal #dm-send-btn{height:42px;padding-inline:13px}#dm-thread-modal .audio-record-status{grid-column:1/-1}
+}
+@media (max-width:380px){
+  #dm-thread-modal .modal-head{gap:3px}#dm-thread-modal .modal-close{width:32px;height:32px}#dm-thread-modal #dm-nickname-btn{display:none}#dm-thread-modal .dm-thread-head-info{padding-inline:2px}.dm-thread-head-info strong{font-size:12.5px}
+  #dm-thread-modal .dm-composer{grid-template-columns:38px minmax(0,1fr)}#dm-thread-modal #dm-send-btn{grid-column:1/-1;width:100%}
+}
+@media (max-width:720px){
+  #mention-notification-modal{padding:0!important;align-items:stretch!important;justify-content:stretch!important;background:var(--paper)!important;backdrop-filter:none!important}
+  #mention-notification-modal .modal-box{width:100%!important;max-width:none!important;height:100dvh!important;min-height:100dvh!important;max-height:100dvh!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;transform:translateY(14px)}
+  #mention-notification-modal.modal-visible .modal-box{transform:none}
+  #mention-notification-modal .modal-head{flex:0 0 auto;padding:calc(12px + env(safe-area-inset-top,0px)) 14px 12px;position:relative;top:auto;border-bottom:1px solid var(--border);background:var(--paper)}
+  #mention-notification-list{min-height:0;flex:1 1 auto;overflow-y:auto;padding:6px 10px calc(16px + env(safe-area-inset-bottom,0px));scroll-padding-top:0;overscroll-behavior:contain}
+  .mention-notification-item{min-height:64px;padding:10px 7px;border-radius:10px}.mention-notification-item .avatar{width:40px;height:40px}.mention-notification-copy{font-size:13px}.mention-notification-time{font-size:10px}
+}
+@media (max-width:720px){
+  #demanda-board:not(.hidden){height:min(62dvh,560px);min-height:390px;display:flex!important;align-items:stretch!important;overflow-x:auto!important;overflow-y:hidden!important;scroll-snap-type:x mandatory;scroll-behavior:smooth;padding-bottom:7px}
+  #demanda-board .kanban-col{height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden;scroll-snap-align:center;scroll-snap-stop:always}
+  #demanda-board .kanban-col-head{flex:0 0 auto;position:sticky;top:0;z-index:2;background:var(--parchment)}
+  #demanda-board .kanban-col-body{min-height:0;max-height:none;flex:1 1 auto;overflow-y:auto;overscroll-behavior-y:auto;padding-right:3px;padding-bottom:8px;scrollbar-width:thin}
+  body.demand-expanded [data-section-id="demandas"]>.card{display:flex!important;flex-direction:column!important;overflow:hidden!important}
+  body.demand-expanded [data-section-id="demandas"] .progress-wrap,body.demand-expanded [data-section-id="demandas"] .demand-toolbar,body.demand-expanded [data-section-id="demandas"] .demand-create-fields{flex:0 0 auto}
+  body.demand-expanded #demanda-board:not(.hidden){min-height:0;height:auto;flex:1 1 auto}
+}
+@media (max-width:420px){
+  #demanda-board:not(.hidden){height:58dvh;min-height:360px}#demanda-board .kanban-col{flex-basis:calc(100vw - 38px)}
+}
+@media (max-width:720px){
+  body.demand-expanded{overflow:hidden!important}
+  body.demand-expanded .header-actions{transform:translateY(115%);pointer-events:none}
+  body.demand-expanded::after{display:none!important}
+  body.demand-expanded #sections-container:not(.free-layout)>[data-section-id="demandas"],body.demand-expanded [data-section-id="demandas"]{position:fixed!important;z-index:600!important;isolation:isolate;top:0!important;right:0!important;bottom:0!important;left:0!important;inset:0!important;width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;padding:max(10px,env(safe-area-inset-top,0px)) 10px max(10px,env(safe-area-inset-bottom,0px))!important;transform:none!important;overflow:hidden!important;border:0!important;border-radius:0!important;background:var(--parchment)!important;box-shadow:none!important;display:flex!important;flex-direction:column!important}
+  body.demand-expanded [data-section-id="demandas"]>.section-head{width:100%;height:auto!important;min-height:42px;flex:0 0 auto;margin:0 0 8px!important;padding:0 2px}
+  body.demand-expanded [data-section-id="demandas"]>.card{width:100%!important;min-width:0;min-height:0;height:auto!important;max-height:none!important;flex:1 1 auto;overflow:hidden!important;border-radius:14px!important}
+  body.demand-expanded [data-section-id="demandas"] #demanda-list:not(.hidden){min-height:0;max-height:none;flex:1 1 auto;overflow-y:auto}
+  body.demand-expanded [data-section-id="demandas"] .demand-expand-btn{position:relative;z-index:2;background:var(--paper)}
+}
+/* No celular, as tres visualizacoes ficam em uma faixa rolavel e sempre acessivel. */
+@media (max-width:720px){
+  [data-section-id="demandas"]>.section-head{
+    grid-template-columns:minmax(0,1fr) auto auto auto!important;
+  }
+  [data-section-id="demandas"]>.section-head>h2{grid-column:1;grid-row:1}
+  [data-section-id="demandas"]>.section-head>#demanda-count{grid-column:2;grid-row:1}
+  [data-section-id="demandas"]>.section-head>.info-tip{grid-column:3;grid-row:1}
+  [data-section-id="demandas"]>.section-head>.demand-expand-btn{grid-column:4;grid-row:1}
+  [data-section-id="demandas"]>.section-head>.view-toggle{
+    grid-column:1/-1!important;grid-row:2!important;
+    display:flex;width:100%;max-width:100%;min-width:0;margin:0!important;
+    overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-snap-type:x proximity;
+  }
+  [data-section-id="demandas"]>.section-head>.view-toggle::-webkit-scrollbar{display:none}
+  [data-section-id="demandas"] .view-toggle-btn{
+    flex:1 0 82px;min-width:82px;scroll-snap-align:center;white-space:nowrap;
+  }
+}
+@media (max-width:370px){
+  [data-section-id="demandas"]>.section-head>.view-toggle{grid-column:1/-1!important}
+}
+/* No expandido mobile, a janela inteira rola: filtros, demandas e formulario ficam alcancaveis. */
+@media (max-width:720px){
+  body.demand-expanded #sections-container:not(.free-layout)>[data-section-id="demandas"],
+  body.demand-expanded [data-section-id="demandas"]{
+    display:block!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:contain;
+    -webkit-overflow-scrolling:touch;
+    touch-action:auto;
+  }
+  body.demand-expanded [data-section-id="demandas"]>.section-head{
+    position:sticky;top:0;z-index:20;
+    padding:4px 2px 8px!important;
+    background:var(--parchment);
+  }
+  body.demand-expanded [data-section-id="demandas"]>.card{
+    display:block!important;
+    height:auto!important;min-height:0!important;
+    overflow:visible!important;
+  }
+  body.demand-expanded [data-section-id="demandas"] #demanda-list:not(.hidden),
+  body.demand-expanded [data-section-id="demandas"] #demanda-notes:not(.hidden){
+    display:block;max-height:none!important;overflow:visible!important;
+  }
+  body.demand-expanded [data-section-id="demandas"] #demanda-board:not(.hidden){
+    height:min(64dvh,620px)!important;min-height:390px!important;flex:none!important;
+  }
+}
+/* Instrucoes de Demandas como painel legivel no celular. */
+@media (max-width:720px){
+  [data-section-id="demandas"] .info-tip-box{
+    position:fixed!important;
+    z-index:900!important;
+    top:max(76px,calc(env(safe-area-inset-top,0px) + 68px))!important;
+    right:12px!important;left:12px!important;
+    width:auto!important;min-width:0!important;max-width:none!important;
+    max-height:calc(100dvh - 100px)!important;
+    padding:16px 17px!important;
+    overflow-x:hidden;overflow-y:auto;
+    border-radius:15px!important;
+    box-shadow:0 18px 55px rgba(0,0,0,.42)!important;
+    transform:translateY(-6px)!important;
+  }
+  [data-section-id="demandas"] .info-tip:hover .info-tip-box,
+  [data-section-id="demandas"] .info-tip:focus .info-tip-box,
+  [data-section-id="demandas"] .info-tip:focus-within .info-tip-box{
+    transform:none!important;
+  }
+  [data-section-id="demandas"] .info-tip-box strong{font-size:14px;margin-bottom:9px}
+  [data-section-id="demandas"] .info-tip-box ol,
+  [data-section-id="demandas"] .info-tip-box ul{padding-left:21px}
+  [data-section-id="demandas"] .info-tip-box li{margin-bottom:7px;line-height:1.45}
+}
+/* Tablet: mais area util sem herdar a interface compacta do celular. */
+@media (min-width:721px) and (max-width:1040px){
+  :root{scroll-padding-top:132px}
+  .wrap{max-width:960px!important;padding:0 clamp(18px,3vw,30px) 56px!important}
+  header{
+    position:sticky!important;top:0;z-index:80;
+    padding:10px 0 12px!important;
+    background:color-mix(in srgb,var(--parchment) 94%,transparent);
+    backdrop-filter:blur(14px);
+  }
+  .header-top{gap:14px}.brand-row{min-width:0;flex:1}.brand-row>div{min-width:0}
+  .brand-row p{max-width:min(48vw,430px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .header-actions{flex:none;gap:5px}.header-actions .icon-btn{width:39px;height:39px}
+  .header-more-menu{max-height:calc(100dvh - 84px);overflow-y:auto}
+  .preview-row{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:8px 0 12px}
+  .preview-card{min-width:0;padding:10px}.preview-copy{min-width:0}.preview-title,.preview-sub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .social-panel{margin:0 0 14px}
+  .today-panel{margin:10px 0 18px!important;padding:16px}
+  .today-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:9px}
+  .today-highlight{grid-column:1/-1}
+  .work-nav{top:72px!important;margin-bottom:18px}.work-nav button{min-height:42px;padding-inline:8px}
+  #sections-container>section{scroll-margin-top:132px;margin-top:32px}
+  .card{padding:17px;border-radius:16px}.section-head{margin-bottom:11px}
+  .mural-toolbar{grid-template-columns:minmax(0,1fr) minmax(150px,210px) auto}
+  .composer-bottom{gap:10px;flex-wrap:wrap}.composer-bottom .field{min-width:190px}
+  .demand-toolbar{grid-template-columns:minmax(220px,1fr) minmax(150px,.55fr)}
+  .demand-toolbar>#demand-search{grid-column:1/-1}
+  .demand-filter-count{justify-self:end;align-self:center}
+  .demand-create-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .demand-create-fields>#demanda-add-input{grid-column:1/-1}
+  .demand-create-fields>#demanda-add-btn{grid-column:2;grid-row:auto;min-height:40px}
+  #demanda-board{display:flex;overflow-x:auto;scroll-snap-type:x proximity}
+  #demanda-board .kanban-col{flex:0 0 min(44vw,390px);scroll-snap-align:start}
+  .postit-wrap{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .modal-box{width:min(92vw,720px);max-height:88dvh}
+  .my-space-box,.profile-modal-box{width:min(94vw,900px);max-height:90dvh}
+  #note-card{right:20px;bottom:20px;max-width:calc(100vw - 40px)}
+  body.demand-expanded #sections-container:not(.free-layout)>[data-section-id="demandas"]{
+    top:16px!important;bottom:16px!important;width:calc(100vw - 32px)!important;padding:16px!important;
+  }
+  body.demand-expanded #demanda-board .kanban-col{min-width:280px}
+}
+@media (min-width:721px) and (max-width:820px){
+  .brand-row img{width:42px;height:42px}.brand-row h1{font-size:18px}.brand-row p{max-width:310px}
+  .header-actions .icon-btn{width:37px;height:37px}
+  .today-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.today-highlight{grid-column:1/-1}
+  .postit-wrap{grid-template-columns:1fr 1fr}
+}
+/* Tablet usa a mesma arquitetura visual do desktop: lateral + feed + contexto. */
+@media (min-width:721px) and (max-width:1040px){
+  body{background:color-mix(in srgb,var(--parchment) 94%,var(--forest))}
+  .wrap{
+    max-width:1000px!important;
+    display:grid!important;
+    grid-template-columns:160px minmax(0,1fr);
+    column-gap:16px;align-items:start;
+  }
+  header{grid-column:1/-1;grid-row:1;min-width:0}
+  .mobile-channels-toggle{display:none!important}
+  .preview-row{
+    position:fixed!important;z-index:32;
+    top:82px;left:max(clamp(18px,3vw,30px),calc((100vw - 1000px)/2 + 30px));
+    width:160px!important;max-height:calc(100dvh - 102px);
+    display:flex!important;flex-direction:column!important;gap:8px!important;
+    margin:0!important;overflow-y:auto;scrollbar-width:thin;
+  }
+  .preview-row::before{
+    content:"MINHA CONTA";display:block;margin:0 8px 3px;
+    color:var(--text-3);font:700 9px/1.2 'Space Grotesk',sans-serif;letter-spacing:.11em;
+  }
+  .sidebar-profile-card{padding:8px;border-radius:12px}.sidebar-profile-avatar{width:38px;height:38px}
+  .sidebar-profile-copy strong{font-size:11.5px}.sidebar-profile-copy small{font-size:8.5px}
+  .sidebar-people-card{padding-inline:4px}.sidebar-online-head{margin-inline:6px}
+  .sidebar-online-person{padding:6px 5px;gap:6px}.sidebar-online-person .avatar{width:27px;height:27px}
+  .social-panel{
+    position:fixed;z-index:31;top:auto;bottom:18px;
+    left:max(clamp(18px,3vw,30px),calc((100vw - 1000px)/2 + 30px));width:160px;
+  }
+  .today-panel{grid-column:2;grid-row:2;margin:0 0 16px!important;position:relative}
+  #section-restore-bar,#sections-container,footer{grid-column:2;min-width:0}
+  #sections-container{grid-row:3;display:block!important}
+  #sections-container>section{margin-top:0;margin-bottom:20px}
+  footer{grid-row:4}
+  .work-nav{top:72px!important}
+}
+@media (min-width:900px) and (max-width:1040px){
+  .wrap{grid-template-columns:160px minmax(0,1fr) 218px;column-gap:15px}
+  .today-panel{
+    grid-column:3;grid-row:2;position:sticky;top:82px;
+    max-height:calc(100dvh - 100px);overflow-y:auto;margin:0!important;padding:13px;
+  }
+  .today-grid{grid-template-columns:1fr!important}.today-highlight{grid-column:auto}
+  #section-restore-bar,#sections-container,footer{grid-column:2}
+  #sections-container{grid-row:2}footer{grid-row:3}
+}
+/* Tablets que reportam viewport de 601--720px: evita o perfil esticado em uma grade vazia. */
+@media (min-width:601px) and (max-width:720px){
+  .preview-row{
+    display:grid!important;grid-template-columns:190px minmax(0,1fr)!important;
+    align-items:start!important;gap:12px!important;margin:12px 0 16px!important;
+    max-height:none!important;overflow:visible!important;
+  }
+  .preview-row::before{content:"MINHA CONTA";grid-column:1/-1;margin:0 4px -3px;color:var(--text-3);font:700 9px/1.2 'Space Grotesk',sans-serif;letter-spacing:.11em}
+  .sidebar-profile-card{height:auto!important;min-height:0!important;align-self:start!important;padding:9px!important}
+  .sidebar-profile-avatar{width:38px;height:38px}.sidebar-profile-copy strong{font-size:12px}
+  .sidebar-people-card{height:auto!important;max-height:320px;overflow-y:auto;align-self:start!important;padding:4px 6px 8px}
+  .sidebar-offline-list{max-height:220px!important}
+}
+/* Separa verticalmente resumo, restauracao e feed no tablet em retrato. */
+@media (min-width:721px) and (max-width:899px){
+  .wrap{row-gap:16px!important}
+  .today-panel{
+    grid-column:2!important;grid-row:2!important;
+    width:100%;min-width:0;max-width:100%;margin:0!important;
+    overflow:hidden;position:relative!important;top:auto!important;
+  }
+  #section-restore-bar{grid-column:2!important;grid-row:3!important;margin:0!important}
+  #sections-container{grid-column:2!important;grid-row:4!important;min-width:0;margin:0!important}
+  #sections-container>.work-nav{position:sticky;top:72px;margin-top:0!important}
+  footer{grid-column:2!important;grid-row:5!important}
+}
+@media (min-width:601px) and (max-width:720px){
+  .today-panel{clear:both;margin-top:18px!important}
+  #sections-container{clear:both;margin-top:18px!important}
+  .work-nav{margin-top:0!important}
+}
+/* A lateral do tablet nao pode comprimir Minha conta contra Online/Offline. */
+@media (min-width:721px) and (max-width:1040px){
+  .preview-row{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    grid-template-rows:auto auto minmax(0,1fr)!important;
+    align-content:start!important;align-items:start!important;
+    gap:12px!important;overflow:hidden!important;
+  }
+  .preview-row::before{grid-row:1;margin-bottom:-4px!important}
+  .preview-row>.sidebar-profile-card{
+    grid-row:2;width:100%!important;height:auto!important;min-height:54px!important;
+    flex:none!important;align-self:start!important;margin:0!important;
+  }
+  .preview-row>.sidebar-people-card{
+    grid-row:3;width:100%!important;height:auto!important;min-height:0!important;
+    max-height:calc(100dvh - 190px)!important;align-self:start!important;
+    overflow:hidden!important;margin:0!important;
+  }
+  .sidebar-people-card .sidebar-online-list{max-height:150px;overflow-y:auto;scrollbar-width:thin}
+  .sidebar-people-card .sidebar-offline-list{
+    min-height:0!important;max-height:calc(100dvh - 355px)!important;
+    overflow-y:auto!important;overscroll-behavior:contain;padding-bottom:5px;
+  }
+  .sidebar-online-person{min-height:38px!important;flex:none}
+  .sidebar-online-person-copy{overflow:hidden}.sidebar-online-person-copy strong,.sidebar-online-person-copy small{display:block;line-height:1.25}
+}
+/* Afasta a barra lateral do feed no tablet. */
+@media (min-width:721px) and (max-width:1040px){
+  .preview-row,.social-panel{
+    left:max(6px,calc((100vw - 1000px)/2 + 18px))!important;
+  }
+  .preview-row{top:96px!important;max-height:calc(100dvh - 116px)}
+}
+/* iPad Pro 13 em retrato (1032px): composicao desktop ajustada ao espaco util. */
+@media (min-width:1000px) and (max-width:1040px){
+  .wrap{
+    width:100%;max-width:1016px!important;padding-inline:20px!important;
+    grid-template-columns:172px minmax(0,1fr) 226px!important;
+    column-gap:16px!important;
+  }
+  .preview-row{
+    left:max(4px,calc((100vw - 1016px)/2))!important;
+    top:98px!important;width:172px!important;max-height:calc(100dvh - 120px)!important;
+  }
+  .social-panel{left:max(4px,calc((100vw - 1016px)/2))!important;width:172px!important}
+  .today-panel{width:226px;max-width:226px;top:98px!important}
+  #sections-container{width:100%;min-width:0}
+  .work-nav{top:76px!important}
+}
+/* Surface Pro 10 em retrato (960px): alinha o resumo abaixo do header. */
+@media (min-width:900px) and (max-width:999px){
+  .today-panel{top:96px!important}
+}
 </style>
 </head>
 <body>
@@ -6128,6 +6430,12 @@ document.querySelectorAll('.view-toggle').forEach(toggle=>{
     const histEl = document.getElementById(target+'-history');
     if(histEl) histEl.classList.toggle('hidden', view === 'notes');
     toggle.querySelectorAll('.view-toggle-btn').forEach(b=> b.classList.toggle('active', b.dataset.view === view));
+    const activeViewBtn = toggle.querySelector('.view-toggle-btn.active');
+    requestAnimationFrame(()=>{
+      if(!activeViewBtn || toggle.scrollWidth <= toggle.clientWidth) return;
+      const centeredLeft = activeViewBtn.offsetLeft - (toggle.clientWidth - activeViewBtn.offsetWidth) / 2;
+      toggle.scrollTo({left:Math.max(0, centeredLeft),behavior:'smooth'});
+    });
     localStorage.setItem('plantel_view_'+target, view);
     if(view === 'board') renderKanbanBoard(target, target === 'meta' ? allMetas() : allDemandas());
   }
