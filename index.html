@@ -1828,6 +1828,22 @@ body.composer-focused .note-card{
 }
 /* Mantem o bloco de notas acima do teclado virtual em tablets. */
 @media (min-width:721px) and (max-width:1040px){
+  #note-card.expanded{
+    position:fixed!important;z-index:150!important;
+    top:110px!important;right:20px!important;bottom:20px!important;
+    width:min(620px,calc(100vw - 40px))!important;
+    height:auto!important;min-height:0!important;max-height:none!important;
+    display:flex!important;flex-direction:column!important;overflow:hidden!important;
+  }
+  #note-card.expanded .note-card-header{flex:0 0 auto}
+  #note-card.expanded .note-card-body{
+    min-height:0;max-height:none!important;flex:1 1 auto;
+    display:flex!important;flex-direction:column!important;overflow-y:auto!important;
+  }
+  #note-card.expanded .note-tabs,#note-card.expanded .note-tab-meta,#note-card.expanded .note-toolbar{flex:0 0 auto}
+  #note-card.expanded #note-textarea{
+    width:100%;min-height:220px;flex:1 1 320px;resize:none;font-size:16px;
+  }
   body.note-tablet-keyboard-open #note-card.expanded{
     position:fixed!important;z-index:700!important;
     top:calc(var(--note-viewport-top,0px) + 12px)!important;
