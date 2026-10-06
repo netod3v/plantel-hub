@@ -3538,23 +3538,40 @@ document.addEventListener('keydown', event=>{
 /* ===== navegação das áreas principais ===== */
 const workNav=document.getElementById('work-nav');
 if(workNav){
+  let workNavLockUntil=0;
+  const setWorkNavActive=id=>workNav.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.workSection===id));
   workNav.addEventListener('click',event=>{
     const button=event.target.closest('[data-work-section]');
     if(!button)return;
     const section=document.querySelector(`[data-section-id="${button.dataset.workSection}"]`);
     if(section){
-      workNav.querySelectorAll('button').forEach(item=>item.classList.toggle('active',item===button));
+      setWorkNavActive(button.dataset.workSection);
+      workNavLockUntil=Date.now()+900; // evita o scroll-spy sobrescrever o clique durante a rolagem suave
       section.scrollIntoView({behavior:'smooth',block:'start'});
     }
   });
-  if('IntersectionObserver' in window){
-    const sectionObserver=new IntersectionObserver(entries=>{
-      const visible=entries.filter(entry=>entry.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
-      if(!visible)return;
-      workNav.querySelectorAll('button').forEach(button=>button.classList.toggle('active',button.dataset.workSection===visible.target.dataset.sectionId));
-    },{rootMargin:'-145px 0px -55% 0px',threshold:[0,.2,.5]});
-    document.querySelectorAll('.draggable-section[data-section-id]').forEach(section=>sectionObserver.observe(section));
-  }
+  const updateWorkNavFromScroll=()=>{
+    if(Date.now()<workNavLockUntil)return;
+    const sections=[...document.querySelectorAll('.draggable-section[data-section-id]')]
+      .filter(sec=>workNav.querySelector(`[data-work-section="${sec.dataset.sectionId}"]`)&&sec.offsetParent!==null);
+    if(!sections.length)return;
+    const line=window.innerHeight*0.35; // seção ativa = a última cujo topo já passou dessa linha
+    let current=sections[0];
+    sections.forEach(sec=>{if(sec.getBoundingClientRect().top<=line)current=sec;});
+    // no fim da página, as últimas seções nunca chegam à linha: ativa a última visível
+    if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-4){
+      const last=sections[sections.length-1];
+      if(last.getBoundingClientRect().top<window.innerHeight)current=last;
+    }
+    setWorkNavActive(current.dataset.sectionId);
+  };
+  let workNavTicking=false;
+  window.addEventListener('scroll',()=>{
+    if(workNavTicking)return;
+    workNavTicking=true;
+    requestAnimationFrame(()=>{workNavTicking=false;updateWorkNavFromScroll();});
+  },{passive:true});
+  window.addEventListener('resize',updateWorkNavFromScroll);
 }
 
 /* ===== painel de Instagram ===== */
