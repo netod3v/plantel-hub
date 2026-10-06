@@ -1861,6 +1861,31 @@ body.composer-focused .note-card{
     min-height:130px;font-size:16px;scroll-margin-bottom:18px;
   }
 }
+/* Conversa acompanha a area visivel e deixa o compositor acima do teclado. */
+@media (max-width:1040px){
+  body.dm-keyboard-open #dm-thread-modal{
+    position:fixed!important;z-index:750!important;
+    top:var(--dm-viewport-top,0px)!important;
+    right:0!important;bottom:var(--dm-keyboard-offset,0px)!important;left:0!important;
+    width:100%!important;height:auto!important;min-height:0!important;
+    padding:12px!important;align-items:stretch!important;justify-content:stretch!important;
+  }
+  body.dm-keyboard-open #dm-thread-modal .dm-thread-box{
+    width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;
+    margin:0!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;
+  }
+  body.dm-keyboard-open #dm-thread-modal .modal-head{flex:0 0 auto}
+  body.dm-keyboard-open #dm-thread-modal .dm-messages{min-height:0;flex:1 1 auto;overflow-y:auto!important}
+  body.dm-keyboard-open #dm-thread-modal .dm-composer{
+    position:relative;z-index:3;flex:0 0 auto;background:var(--paper);
+    padding-bottom:10px!important;
+  }
+  body.dm-keyboard-open #dm-thread-modal #dm-input{font-size:16px!important}
+}
+@media (max-width:720px){
+  body.dm-keyboard-open #dm-thread-modal{padding:0!important}
+  body.dm-keyboard-open #dm-thread-modal .dm-thread-box{border-radius:0!important;border:0!important}
+}
 </style>
 </head>
 <body>
@@ -5215,6 +5240,32 @@ const dmInput = document.getElementById('dm-input');
 const dmSendBtn = document.getElementById('dm-send-btn');
 const dmBtn = document.getElementById('dm-btn');
 const dmBadge = document.getElementById('dm-badge');
+const syncDmKeyboardViewport = ()=>{
+  const responsive = window.matchMedia('(max-width:1040px)').matches;
+  const focused = document.activeElement === dmInput;
+  const viewport = window.visualViewport;
+  const viewportTop = viewport ? Math.max(0, viewport.offsetTop) : 0;
+  const keyboardOffset = viewport
+    ? Math.max(0, window.innerHeight - viewport.height - viewportTop)
+    : 0;
+  const keyboardOpen = responsive && focused && !dmThreadModal?.classList.contains('hidden') && keyboardOffset > 60;
+  document.body.classList.toggle('dm-keyboard-open', keyboardOpen);
+  document.documentElement.style.setProperty('--dm-keyboard-offset', `${keyboardOffset}px`);
+  document.documentElement.style.setProperty('--dm-viewport-top', `${viewportTop}px`);
+  if(keyboardOpen) requestAnimationFrame(()=>{
+    dmMessages.scrollTop = dmMessages.scrollHeight;
+    dmInput.scrollIntoView({block:'nearest'});
+  });
+};
+dmInput?.addEventListener('focus', ()=>{
+  syncDmKeyboardViewport();
+  setTimeout(syncDmKeyboardViewport, 180);
+  setTimeout(syncDmKeyboardViewport, 420);
+});
+dmInput?.addEventListener('blur', ()=>setTimeout(syncDmKeyboardViewport, 120));
+window.visualViewport?.addEventListener('resize', syncDmKeyboardViewport);
+window.visualViewport?.addEventListener('scroll', syncDmKeyboardViewport);
+window.addEventListener('orientationchange', ()=>setTimeout(syncDmKeyboardViewport, 180));
 let dmConversations = {};
 let dmThreadUid = null;
 let dmThreadUnsub = null;
