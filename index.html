@@ -561,6 +561,60 @@ section{margin-top:38px;}
 
 .view-toggle{margin-left:auto;display:flex;background:var(--sage);border-radius:9px;padding:3px;flex:none;}
 .view-toggle-btn{border:none;background:transparent;color:var(--text-2);font-size:12px;font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer;}
+
+/* ===== Demandas em formato de post-its ===== */
+.info-tip{position:relative;display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;color:var(--text-3);cursor:help;outline:none;flex:none;}
+.info-tip svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;}
+.info-tip:hover,.info-tip:focus{color:var(--forest);}
+.info-tip-box{position:absolute;top:calc(100% + 8px);left:-8px;z-index:60;width:min(340px,82vw);padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--paper,#0d1410);color:var(--text,#e8efe9);box-shadow:0 14px 34px rgba(0,0,0,.45);font-size:12px;line-height:1.45;font-weight:400;text-align:left;opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .15s,transform .15s,visibility .15s;pointer-events:none;}
+.info-tip:hover .info-tip-box,.info-tip:focus .info-tip-box,.info-tip:focus-within .info-tip-box{opacity:1;visibility:visible;transform:none;}
+.info-tip-box strong{display:block;margin-bottom:6px;font-size:12.5px;}
+.info-tip:not([data-view="list"]) .tip-v-list,.info-tip:not([data-view="board"]) .tip-v-board,.info-tip:not([data-view="notes"]) .tip-v-notes{display:none;}
+.info-tip-box ol,.info-tip-box ul{margin:0 0 8px;padding-left:18px;}
+.info-tip-box .tip-sub{margin:10px 0 4px;font-size:12px;color:var(--forest);}
+.info-tip-box{max-height:min(70vh,520px);overflow-y:auto;}
+.info-tip-box li{margin:0 0 4px;}
+.info-tip-box p{margin:6px 0 0;color:var(--text-2);font-size:11.5px;}
+.info-tip-box .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin:0 3px 0 6px;vertical-align:-1px;}
+.info-tip-box .dot:first-child{margin-left:0;}
+.info-tip-box .d-urgent{background:#fca5a5}.info-tip-box .d-high{background:#fdba74}.info-tip-box .d-medium{background:#fde68a}.info-tip-box .d-low{background:#bbf7d0}
+.demand-finalize-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px;}
+.demand-finalize-bar .btn,.demand-finalize-bar .btn-ghost{font-size:12px;padding:7px 12px;}
+.demand-finalize-bar .btn:disabled{opacity:.45;cursor:not-allowed;}
+.demand-finalize-hint{font-size:11px;color:var(--text-3);}
+.postit-batch{margin:8px 0;border:1px solid var(--border);border-radius:12px;padding:6px 10px;}
+.postit-batch>summary{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--text-2);list-style:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 0;}
+.postit-batch>summary::-webkit-details-marker{display:none;}
+.postit-batch>summary::before{content:"▸";transition:transform .15s;}
+.postit-batch[open]>summary::before{transform:rotate(90deg);}
+.postit-batch .batch-reopen{margin-left:auto;border:1px solid var(--border);background:transparent;color:var(--text-2);border-radius:999px;font-size:11px;padding:3px 10px;cursor:pointer;}
+.postit-wrap{padding:6px 2px 4px;}
+.postit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:18px;padding:8px 4px 14px;}
+.postit{--pi:#fde68a;position:relative;min-height:150px;padding:14px 14px 10px;background:var(--pi);color:#2b2410;border-radius:3px 3px 12px 3px;box-shadow:0 8px 14px -6px rgba(0,0,0,.45),inset 0 -18px 22px -18px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:8px;transform:rotate(var(--rot,0deg));transition:transform .18s ease,box-shadow .18s ease;animation:postit-in .32s cubic-bezier(.2,.9,.2,1) both;}
+.postit:hover{transform:rotate(0deg) translateY(-3px) scale(1.02);z-index:2;}
+.postit.p-urgent{--pi:#fca5a5;}.postit.p-high{--pi:#fdba74;}.postit.p-medium{--pi:#fde68a;}.postit.p-low{--pi:#bbf7d0;}
+.postit-text{flex:1;font-size:14px;line-height:1.4;font-weight:600;word-break:break-word;}
+.postit-text .mention,.postit-text [class*="mention"]{background:rgba(0,0,0,.1)!important;color:#1b3a1b!important;border-color:transparent!important;}
+.postit-meta{font-size:11px;color:rgba(43,36,16,.72);display:flex;flex-wrap:wrap;gap:4px 8px;}
+.postit-actions{display:flex;align-items:center;gap:6px;margin-top:2px;}
+.postit-done-btn{border:1.5px solid rgba(43,36,16,.55);background:rgba(255,255,255,.45);color:#2b2410;border-radius:999px;padding:4px 10px;font-size:11.5px;font-weight:700;cursor:pointer;}
+.postit-done-btn:hover{background:#fff;}
+.postit-link{border:none;background:transparent;color:rgba(43,36,16,.7);font-size:11px;cursor:pointer;text-decoration:underline;padding:2px 4px;}
+.postit-link:hover{color:#000;}
+.postit-actions .postit-link:first-of-type{margin-left:auto;}
+.postit .field{background:rgba(255,255,255,.7);color:#2b2410;border-color:rgba(0,0,0,.2);}
+.postit .item-edit-form{display:flex;flex-direction:column;gap:6px;}
+.postit-empty{padding:26px 10px;text-align:center;color:var(--text-3);font-size:13px;}
+.postit-archive{margin-top:10px;border-top:1px dashed var(--line,rgba(255,255,255,.14));padding-top:10px;}
+.postit-archive>summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--text-2);list-style:none;display:flex;align-items:center;gap:8px;padding:4px 2px;}
+.postit-archive>summary::-webkit-details-marker{display:none;}
+.postit-archive>summary::before{content:"▸";transition:transform .15s;}
+.postit-archive[open]>summary::before{transform:rotate(90deg);}
+.postit.is-done{--pi:#d6d3c4;opacity:.62;min-height:110px;box-shadow:0 4px 8px -6px rgba(0,0,0,.4);}
+.postit.is-done .postit-text{text-decoration:line-through;text-decoration-thickness:1.5px;font-weight:500;}
+.postit.is-done:hover{opacity:1;}
+@keyframes postit-in{from{opacity:0;transform:scale(.9) rotate(var(--rot,0deg));}to{opacity:1;transform:rotate(var(--rot,0deg));}}
+@media (prefers-reduced-motion:reduce){.postit{animation:none!important;transition:none!important;}}
 .view-toggle-btn.active{background:var(--paper);color:var(--forest);box-shadow:0 1px 3px rgba(0,0,0,.08);}
 
 .kanban-board.hidden{display:none;}
@@ -1854,9 +1908,44 @@ body.composer-focused .note-card{
     <div class="section-head">
       <span class="drag-handle" title="Arrastar pra reordenar"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></span>
       <h2>Demandas</h2><span id="demanda-count">0 pendentes</span>
+      <span class="info-tip" data-view="list" tabindex="0" role="button" aria-label="Como funcionam as Demandas">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>
+        <span class="info-tip-box" role="tooltip">
+          <div class="tip-v tip-v-list">
+            <strong>Demandas · Lista</strong>
+            <ol>
+              <li><b>Escreva</b> a demanda no campo lá embaixo.</li>
+              <li><b>Conclua</b> marcando o círculo à esquerda da demanda.</li>
+              <li>Por padrão só aparecem as <b>em aberto</b>. Use o filtro "Concluídas" para ver as feitas.</li>
+              <li><b>Finalizar tudo</b> guarda as concluídas no <i>Histórico</i> (abaixo da lista). Reabra com <i>↺ reabrir</i>.</li>
+            </ol>
+          </div>
+          <div class="tip-v tip-v-board">
+            <strong>Demandas · Quadro</strong>
+            <ol>
+              <li><b>Escreva</b> a demanda no campo lá embaixo: ela entra em <i>A fazer</i>.</li>
+              <li><b>Mova</b> o card com ‹ › ou arrastando: <i>A fazer</i> → <i>Fazendo</i> → <i>Concluído</i>.</li>
+              <li>O que está em <i>Concluído</i> conta como concluído na barra de progresso.</li>
+              <li><b>Finalizar tudo</b> guarda os concluídos no <i>Histórico</i> (abaixo do quadro). Reabra com <i>↺ reabrir</i> e o card volta para <i>A fazer</i>.</li>
+            </ol>
+          </div>
+          <div class="tip-v tip-v-notes">
+            <strong>Demandas · Post-its</strong>
+            <ol>
+              <li><b>Escreva</b> a demanda no campo lá embaixo: ela vira uma notinha.</li>
+              <li><b>Conclua</b> com <i>✓ Concluir</i>. Ela vai para "Concluídas aguardando finalizar".</li>
+              <li><b>Finalizar tudo</b> manda as concluídas para o <i>Histórico</i>, no fim da página. Nada é apagado.</li>
+              <li><b>Reabra</b> uma nota (<i>↺ Reabrir</i>) ou o grupo todo (<i>↺ Reabrir todas</i>).</li>
+            </ol>
+            <p>Cores: <span class="dot d-urgent"></span>urgente <span class="dot d-high"></span>alta <span class="dot d-medium"></span>média <span class="dot d-low"></span>baixa.</p>
+          </div>
+          <p>Só quem criou, foi marcado, é o responsável ou admin pode concluir.</p>
+        </span>
+      </span>
       <div class="view-toggle" data-target="demanda">
         <button type="button" class="view-toggle-btn active" data-view="list">Lista</button>
         <button type="button" class="view-toggle-btn" data-view="board">Quadro</button>
+        <button type="button" class="view-toggle-btn" data-view="notes">Post-its</button>
       </div>
       <button class="demand-expand-btn" id="demand-expand-btn" type="button" title="Expandir demandas" aria-label="Expandir demandas" aria-expanded="false">
         <svg class="expand-icon" viewBox="0 0 24 24"><path d="M9 4H4v5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
@@ -1878,8 +1967,15 @@ body.composer-focused .note-card{
         </select>
         <span class="demand-filter-count" id="demand-filter-count">0 exibidas</span>
       </div>
+      <div class="demand-finalize-bar">
+        <button class="btn btn-primary" id="demand-finalize-btn" type="button" data-action="finalize-demandas" disabled>Finalizar tudo</button>
+        <button class="btn-ghost" id="demand-history-btn" type="button" data-action="open-history">Histórico (0)</button>
+        <span class="demand-finalize-hint">Finalizar guarda as concluídas no histórico, sem apagar. Dá para reabrir quando quiser.</span>
+      </div>
       <div id="demanda-list"></div>
       <div id="demanda-board" class="kanban-board hidden"></div>
+      <div id="demanda-notes" class="postit-wrap hidden"></div>
+      <div id="demanda-history" class="demand-history"></div>
       <div class="demand-create-fields">
         <input class="field" id="demanda-add-input" placeholder="Adicionar demanda diretamente...">
         <div class="mention-suggestions hidden" id="demanda-mention-suggestions"></div>
@@ -5630,7 +5726,7 @@ function render(){
           <summary aria-label="Mais ações">•••</summary>
           <div class="post-more-menu">
             ${p.metaId ? `<button class="btn-ghost" data-action="undo-meta" data-id="${p.id}">Desfazer meta</button>` : `<button class="btn-ghost" data-action="to-meta" data-id="${p.id}">Virar meta</button>`}
-            ${p.demandaId ? `<button class="btn-ghost" data-action="undo-demanda" data-id="${p.id}">Desfazer demanda</button>` : `<button class="btn-ghost" data-action="to-demanda" data-id="${p.id}">Virar demanda</button>`}
+            ${p.demandaId ? (allDemandas().find(x=>x.id===p.demandaId)?.done ? `<span class="item-completed-label" title="Demandas concluídas ficam guardadas em Demandas > Post-its">Demanda concluída ✓</span>` : `<button class="btn-ghost" data-action="undo-demanda" data-id="${p.id}">Desfazer demanda</button>`) : `<button class="btn-ghost" data-action="to-demanda" data-id="${p.id}">Virar demanda</button>`}
             <button class="btn-ghost pin-toggle ${p.pinned?'is-pinned':''}" data-action="toggle-pin" data-id="${p.id}">${p.pinned ? 'Desafixar' : 'Fixar'}</button>
             ${p.uid === currentUid ? `<button class="btn-ghost" data-action="edit-post" data-id="${p.id}">Editar</button>` : ''}
             ${(p.uid === currentUid || isAdmin()) ? `<button class="btn-ghost post-remove" data-action="remove-post" data-id="${p.id}">Excluir</button>` : ''}
@@ -5725,7 +5821,8 @@ function render(){
       ${canManageMeta && !isEditingMeta ? `<button class="item-edit-button" data-action="edit-meta" data-id="${m.id}">editar</button><button class="item-remove" data-action="remove-meta" data-id="${m.id}">remover</button>` : ''}
     </div>`;}).join('') : `<div class="empty">Nenhuma meta ainda.</div>`;
 
-  const visibleDemandas = allDemandas();
+  const visibleDemandas = allDemandas().filter(d=>!d.archived);
+  const archivedDemandas = allDemandas().filter(d=>d.archived);
   const openDemandas = visibleDemandas.filter(d=>!d.done).length;
   document.getElementById('demanda-count').textContent = openDemandas + (openDemandas===1?' pendente':' pendentes');
   const demandaDone = visibleDemandas.length - openDemandas;
@@ -5764,7 +5861,26 @@ function render(){
       ${canManageDemanda && !isEditingDemanda ? `<button class="item-edit-button" data-action="edit-demanda" data-id="${d.id}">editar</button>${d.done?'<span class="item-completed-label">Concluído</span>':`<button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>`}` : ''}
     </div>`;}).join('') : `<div class="empty">Nenhuma demanda encontrada com esses filtros.</div>`;
 
-  renderKanbanBoard('demanda', filteredDemandas);
+  const boardDemandas = demandStatusFilter==='open'
+    ? visibleDemandas.filter(matchesDemandFilters).sort((a,b)=>(priorityWeight[a.priority||'medium']-priorityWeight[b.priority||'medium'])||((a.dueDate||'9999-99-99').localeCompare(b.dueDate||'9999-99-99'))||((b.ts||0)-(a.ts||0)))
+    : filteredDemandas;
+  renderKanbanBoard('demanda', boardDemandas);
+  renderDemandHistory(archivedDemandas.filter(matchesDemandFilters));
+  const finalizable = visibleDemandas.filter(d=>d.done && canAllocateDemand(d)).length;
+  const finBtn = document.getElementById('demand-finalize-btn'), histBtn = document.getElementById('demand-history-btn');
+  if(finBtn){ finBtn.disabled = finalizable === 0; finBtn.textContent = finalizable ? `Finalizar tudo (${finalizable})` : 'Finalizar tudo'; }
+  if(histBtn) histBtn.textContent = `Histórico (${archivedDemandas.length})`;
+  renderPostits(visibleDemandas.filter(d=>{
+    const assignee=demandAssigneeUid(d),assigneeName=state.users[assignee]?.name||'',haystack=`${d.text||''} ${assigneeName} ${authorInfo(d).name||''}`.toLocaleLowerCase('pt-BR');
+    if(demandSearch&&!haystack.includes(demandSearch))return false;
+    if(demandPriorityFilter&&(d.priority||'medium')!==demandPriorityFilter)return false;
+    return true;
+  }).sort((a,b)=>((b.ts||0)-(a.ts||0))), archivedDemandas.filter(d=>{
+    const assignee=demandAssigneeUid(d),assigneeName=state.users[assignee]?.name||'',haystack=`${d.text||''} ${assigneeName} ${authorInfo(d).name||''}`.toLocaleLowerCase('pt-BR');
+    if(demandSearch&&!haystack.includes(demandSearch))return false;
+    if(demandPriorityFilter&&(d.priority||'medium')!==demandPriorityFilter)return false;
+    return true;
+  }));
   requestAnimationFrame(()=>document.querySelectorAll('[id^="edit-meta-input-"],[id^="edit-demanda-input-"]').forEach(enableEditMentions));
   requestAnimationFrame(()=>{
     document.querySelectorAll('[data-comment-input]').forEach(input=>{const draft=commentDrafts.get(input.dataset.commentInput);if(draft!==undefined&&input.value!==draft)input.value=draft;});
@@ -5838,11 +5954,67 @@ function renderKanbanBoard(kind, items){
     </div>`;
   }).join('');
 }
+
+/* ===== post-its (Demandas): abertas viram notas; concluídas ficam guardadas no arquivo ===== */
+let postitArchiveOpen=false;
+function postitRot(id){let n=0;String(id).split('').forEach(ch=>{n=(n*31+ch.charCodeAt(0))%97;});return ((n%7)-3)*0.6;}
+let postitHistoryOpen=false, demandHistoryOpen=false;
+function matchesDemandFilters(d){
+  const assignee=demandAssigneeUid(d),assigneeName=state.users[assignee]?.name||'',haystack=`${d.text||''} ${assigneeName} ${authorInfo(d).name||''}`.toLocaleLowerCase('pt-BR');
+  if(demandSearch&&!haystack.includes(demandSearch))return false;
+  if(demandPriorityFilter&&(d.priority||'medium')!==demandPriorityFilter)return false;
+  return true;
+}
+function renderDemandHistory(archived){
+  const el=document.getElementById('demanda-history');
+  if(!el)return;
+  const fmt=(ts,withYear)=>ts?new Date(Number(ts)).toLocaleDateString('pt-BR',withYear?{day:'2-digit',month:'short',year:'numeric'}:{day:'2-digit',month:'short'}):'';
+  const batches=new Map();
+  archived.forEach(d=>{const k=d.archiveBatch||d.archivedAt||0;if(!batches.has(k))batches.set(k,[]);batches.get(k).push(d);});
+  const rowHtml=d=>{
+    const info=authorInfo(d),can=canAllocateDemand(d),pr=DEMAND_PRIORITIES[d.priority]||DEMAND_PRIORITIES.medium;
+    return `<div class="item done" data-demanda-id="${d.id}"><div class="check done" style="pointer-events:none;">${CHECK_SVG}</div><div class="item-body"><div class="item-text">${renderTextWithMentions(d.text,d)}</div><div class="item-meta"><span>${escapeHtml(info.name)}</span> · ${pr[0]}${d.doneAt?` · concluída em ${fmt(d.doneAt)}`:''}</div></div>${can?`<button class="item-edit-button" data-action="toggle-demanda" data-id="${d.id}">↺ reabrir</button>`:''}</div>`;
+  };
+  const body=batches.size?[...batches.entries()].sort((a,b)=>b[0]-a[0]).map(([k,list])=>{
+    list.sort((a,b)=>(b.doneAt||b.ts||0)-(a.doneAt||a.ts||0));
+    return `<details class="postit-batch"><summary>Finalizadas em ${k?fmt(k,true):'data desconhecida'} · ${list.length} ${list.length===1?'demanda':'demandas'}<button type="button" class="batch-reopen" data-action="reopen-batch" data-batch="${k}">↺ Reabrir todas</button></summary>${list.map(rowHtml).join('')}</details>`;
+  }).join(''):'<div class="postit-empty">Nada finalizado ainda. Quando você usar "Finalizar tudo", as demandas ficam guardadas aqui.</div>';
+  el.innerHTML=`<details class="postit-archive" id="demand-history-details" ${demandHistoryOpen?'open':''}><summary>Histórico de finalizadas (${archived.length})</summary>${body}</details>`;
+}
+function renderPostits(items, archived=[]){
+  const el=document.getElementById('demanda-notes');
+  if(!el)return;
+  const open=items.filter(d=>!d.done),done=items.filter(d=>d.done).sort((a,b)=>(b.doneAt||b.ts||0)-(a.doneAt||a.ts||0));
+  const noteHtml=d=>{
+    const can=canAllocateDemand(d),info=authorInfo(d),pr=d.priority||'medium',assignee=demandAssigneeUid(d),due=d.dueDate||'';
+    const overdue=!!due&&!d.done&&due<demandToday();
+    const dueText=due?new Date(`${due}T12:00:00`).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}):'';
+    const editing=editingDemandas.has(d.id)&&can;
+    const doneAt=d.doneAt||0;
+    const body=editing
+      ?`<div class="item-edit-form"><input class="field" id="edit-demanda-input-${d.id}" value="${escapeHtml(d.text)}" aria-label="Editar demanda">${demandEditFieldsHtml(d)}<div class="postit-actions"><button class="postit-done-btn" data-action="save-demanda-edit" data-id="${d.id}">Salvar</button><button class="postit-link" data-action="cancel-demanda-edit" data-id="${d.id}">Cancelar</button></div></div>`
+      :`<div class="postit-text">${renderTextWithMentions(d.text,d)}${d.editedAt?' <span class="post-edited-tag">(editado)</span>':''}</div>
+        <div class="postit-meta"><span>${escapeHtml(info.name)}</span>${assignee?`<span>→ ${escapeHtml(state.users[assignee]?.name||'Usuário')}</span>`:''}${due?`<span>${overdue?'⚠ Atrasada':'Prazo'} · ${dueText}</span>`:''}${d.done?`<span>✓ Concluída ${doneAt?new Date(doneAt).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}):''}</span>`:`<span>${timeAgo(d.ts)}</span>`}</div>
+        ${can?`<div class="postit-actions">${d.done?`<button class="postit-done-btn" data-action="toggle-demanda" data-id="${d.id}">↺ Reabrir</button>`:`<button class="postit-done-btn" data-action="toggle-demanda" data-id="${d.id}">✓ Concluir</button><button class="postit-link" data-action="edit-demanda" data-id="${d.id}">editar</button><button class="postit-link" data-action="remove-demanda" data-id="${d.id}">remover</button>`}</div>`:(d.done?'':'<div class="postit-meta">Só quem criou, foi marcado ou é admin pode concluir.</div>')}`;
+    return `<div class="postit p-${pr} ${d.done?'is-done':''}" data-demanda-id="${d.id}" style="--rot:${postitRot(d.id)}deg">${body}</div>`;
+  };
+  const batches=new Map();
+  archived.forEach(d=>{const k=d.archiveBatch||d.archivedAt||0;if(!batches.has(k))batches.set(k,[]);batches.get(k).push(d);});
+  const historyHtml=batches.size?[...batches.entries()].sort((a,b)=>b[0]-a[0]).map(([k,list])=>{
+    list.sort((a,b)=>(b.doneAt||b.ts||0)-(a.doneAt||a.ts||0));
+    const when=k?new Date(Number(k)).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}):'data desconhecida';
+    return `<details class="postit-batch"><summary>Finalizadas em ${when} · ${list.length} ${list.length===1?'demanda':'demandas'}<button type="button" class="batch-reopen" data-action="reopen-batch" data-batch="${k}">↺ Reabrir todas</button></summary><div class="postit-grid">${list.map(noteHtml).join('')}</div></details>`;
+  }).join(''):'<div class="postit-empty">Nada finalizado ainda. Quando você usar "Finalizar tudo", as demandas ficam guardadas aqui.</div>';
+  el.innerHTML=`<div class="postit-grid">${open.length?open.map(noteHtml).join(''):''}</div>${open.length?'':'<div class="postit-empty">Nenhum post-it em aberto. Escreva uma demanda abaixo 👇</div>'}
+    <details class="postit-archive" id="postit-archive" ${postitArchiveOpen?'open':''}><summary>Concluídas aguardando finalizar (${done.length})</summary>${done.length?`<div class="postit-grid">${done.map(noteHtml).join('')}</div>`:'<div class="postit-empty">Ao concluir um post-it, ele aparece aqui. Use "Finalizar tudo" para mandar para o histórico.</div>'}</details>
+    <details class="postit-archive" id="postit-history" ${postitHistoryOpen?'open':''}><summary>Histórico de finalizadas (${archived.length})</summary>${historyHtml}</details>`;
+}
+document.addEventListener('toggle',e=>{if(!e.target)return;if(e.target.id==='postit-archive')postitArchiveOpen=e.target.open;if(e.target.id==='postit-history')postitHistoryOpen=e.target.open;if(e.target.id==='demand-history-details')demandHistoryOpen=e.target.open;},true);
 function setItemStatus(kind, id, status){
   const item = (kind === 'meta' ? allMetas() : allDemandas()).find(x=>x.id===id);
   if(!item || (kind === 'demanda' ? !canAllocateDemand(item) : !canManageWorkItem(item))) return;
   const path = kind === 'meta' ? metaPath(item) : demandaPath(item);
-  update(ref(db, path), { status, done: status === 'done' }).catch(handleDbError);
+  update(ref(db, path), kind === 'demanda' ? Object.assign({ status, done: status === 'done', doneAt: status === 'done' ? Date.now() : null }, status === 'done' ? {} : { archived: false, archivedAt: null, archiveBatch: null }) : { status, done: status === 'done' }).catch(handleDbError);
 }
 
 /* ===== alternar Lista / Quadro (Metas e Demandas) =====
@@ -5852,11 +6024,18 @@ document.querySelectorAll('.view-toggle').forEach(toggle=>{
   const target = toggle.dataset.target; // 'meta' | 'demanda'
   const listEl = document.getElementById(target+'-list');
   const boardEl = document.getElementById(target+'-board');
+  const notesEl = document.getElementById(target+'-notes');
   const saved = localStorage.getItem('plantel_view_'+target) || 'list';
   function applyView(view){
     toggle.querySelectorAll('.view-toggle-btn').forEach(b=> b.classList.toggle('active', b.dataset.view === view));
-    listEl.classList.toggle('hidden', view === 'board');
+    if(view === 'notes' && !notesEl) view = 'list';
+    listEl.classList.toggle('hidden', view !== 'list');
     boardEl.classList.toggle('hidden', view !== 'board');
+    if(notesEl) notesEl.classList.toggle('hidden', view !== 'notes');
+    if(target === 'demanda') document.querySelector('[data-section-id="demandas"] .info-tip')?.setAttribute('data-view', view);
+    const histEl = document.getElementById(target+'-history');
+    if(histEl) histEl.classList.toggle('hidden', view === 'notes');
+    toggle.querySelectorAll('.view-toggle-btn').forEach(b=> b.classList.toggle('active', b.dataset.view === view));
     localStorage.setItem('plantel_view_'+target, view);
     if(view === 'board') renderKanbanBoard(target, target === 'meta' ? allMetas() : allDemandas());
   }
@@ -6386,6 +6565,8 @@ document.addEventListener('click', (e)=>{
     const post = allPosts().find(p=>p.id===id);
     if(post && post.demandaId){
       const demanda = allDemandas().find(d=>d.id===post.demandaId);
+      if(demanda && demanda.done) return; // concluídas ficam guardadas: nunca apagar por aqui
+      if(demanda && !confirm('Desfazer a demanda vai apagá-la para toda a equipe. Continuar?')) return;
       if(demanda) remove(ref(db, demandaPath(demanda))).catch(handleDbError);
       update(ref(db, postPath(post)), { demandaId: null }).catch(handleDbError);
     }
@@ -6395,9 +6576,29 @@ document.addEventListener('click', (e)=>{
   } else if(action === 'toggle-meta'){
     const m = allMetas().find(x=>x.id===id);
     if(m){ const newDone = !m.done; update(ref(db, metaPath(m)), { done: newDone, status: newDone ? 'done' : 'todo' }).catch(handleDbError); }
+  } else if(action === 'finalize-demandas'){
+    const list = allDemandas().filter(d=>d.done && !d.archived && canAllocateDemand(d));
+    if(!list.length) return;
+    if(!confirm(`Finalizar ${list.length} ${list.length===1?'demanda concluída':'demandas concluídas'}?\n\nElas saem do quadro, mas ficam guardadas no Histórico e podem ser reabertas quando você quiser.`)) return;
+    const batch = Date.now();
+    list.forEach(d=>update(ref(db, demandaPath(d)), { archived: true, archivedAt: batch, archiveBatch: batch }).catch(handleDbError));
+  } else if(action === 'open-history'){
+    postitHistoryOpen = true; demandHistoryOpen = true;
+    render();
+    requestAnimationFrame(()=>{
+      const target=[document.getElementById('postit-history'),document.getElementById('demand-history-details')].find(x=>x&&x.offsetParent!==null);
+      target?.scrollIntoView({behavior:'smooth',block:'center'});
+    });
+  } else if(action === 'reopen-batch'){
+    e.preventDefault();
+    const batch = t.dataset.batch;
+    const list = allDemandas().filter(d=>d.archived && String(d.archiveBatch||d.archivedAt||0)===batch && canAllocateDemand(d));
+    if(!list.length) return;
+    if(!confirm(`Reabrir ${list.length} ${list.length===1?'demanda':'demandas'}? Elas voltam para "A fazer".`)) return;
+    list.forEach(d=>update(ref(db, demandaPath(d)), { done:false, status:'todo', doneAt:null, archived:false, archivedAt:null, archiveBatch:null }).catch(handleDbError));
   } else if(action === 'toggle-demanda'){
     const d = allDemandas().find(x=>x.id===id);
-    if(d && canAllocateDemand(d)){ const newDone = !d.done; update(ref(db, demandaPath(d)), { done: newDone, status: newDone ? 'done' : 'todo' }).catch(handleDbError); }
+    if(d && canAllocateDemand(d)){ const newDone = !d.done; update(ref(db, demandaPath(d)), Object.assign({ done: newDone, status: newDone ? 'done' : 'todo', doneAt: newDone ? Date.now() : null }, newDone ? {} : { archived: false, archivedAt: null, archiveBatch: null })).catch(handleDbError); }
   } else if(action === 'edit-meta' || action === 'edit-demanda'){
     const kind=action==='edit-meta'?'meta':'demanda',item=(kind==='meta'?allMetas():allDemandas()).find(x=>x.id===id);
     if(!item || (kind==='demanda'?!canAllocateDemand(item):!canManageWorkItem(item)))return;
@@ -6406,7 +6607,7 @@ document.addEventListener('click', (e)=>{
   } else if(action === 'cancel-meta-edit' || action === 'cancel-demanda-edit'){
     (action==='cancel-meta-edit'?editingMetas:editingDemandas).delete(id);render();
   } else if(action === 'save-meta-edit' || action === 'save-demanda-edit'){
-    const kind=action==='save-meta-edit'?'meta':'demanda',item=(kind==='meta'?allMetas():allDemandas()).find(x=>x.id===id),container=t.closest('.item,.kanban-card'),input=container?.querySelector(`[id^="edit-${kind}-input-"]`);
+    const kind=action==='save-meta-edit'?'meta':'demanda',item=(kind==='meta'?allMetas():allDemandas()).find(x=>x.id===id),container=t.closest('.item,.kanban-card,.postit'),input=container?.querySelector(`[id^="edit-${kind}-input-"]`);
     const text=input?.value.trim();if(!item||!text||(kind==='demanda'?!canAllocateDemand(item):!canManageWorkItem(item)))return;
     const mentions=collectMentions(text),path=kind==='meta'?metaPath(item):demandaPath(item);
     (kind==='meta'?editingMetas:editingDemandas).delete(id);
