@@ -1886,6 +1886,18 @@ body.composer-focused .note-card{
   body.dm-keyboard-open #dm-thread-modal{padding:0!important}
   body.dm-keyboard-open #dm-thread-modal .dm-thread-box{border-radius:0!important;border:0!important}
 }
+@media (min-width:721px) and (max-width:1040px){
+  body.dm-keyboard-open #dm-thread-modal{
+    top:calc(var(--dm-viewport-top,0px) + 12px)!important;
+    bottom:calc(var(--dm-keyboard-offset,0px) + 12px)!important;
+    padding:0!important;display:flex!important;
+    align-items:stretch!important;justify-content:center!important;
+  }
+  body.dm-keyboard-open #dm-thread-modal .dm-thread-box{
+    width:min(560px,calc(100vw - 32px))!important;max-width:560px!important;
+    height:100%!important;margin:0 auto!important;border-radius:16px!important;
+  }
+}
 </style>
 </head>
 <body>
@@ -5254,7 +5266,7 @@ const syncDmKeyboardViewport = ()=>{
   document.documentElement.style.setProperty('--dm-viewport-top', `${viewportTop}px`);
   if(keyboardOpen) requestAnimationFrame(()=>{
     dmMessages.scrollTop = dmMessages.scrollHeight;
-    dmInput.scrollIntoView({block:'nearest'});
+    dmInput.scrollIntoView({block:'nearest',inline:'nearest'});
   });
 };
 dmInput?.addEventListener('focus', ()=>{
