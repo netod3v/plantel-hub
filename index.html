@@ -5865,7 +5865,7 @@ function render(){
     ? visibleDemandas.filter(matchesDemandFilters).sort((a,b)=>(priorityWeight[a.priority||'medium']-priorityWeight[b.priority||'medium'])||((a.dueDate||'9999-99-99').localeCompare(b.dueDate||'9999-99-99'))||((b.ts||0)-(a.ts||0)))
     : filteredDemandas;
   renderKanbanBoard('demanda', boardDemandas);
-  renderDemandHistory(archivedDemandas.filter(matchesDemandFilters));
+  renderDemandHistory(archivedDemandas.filter(matchesDemandFilters), visibleDemandas.filter(d=>d.done).filter(matchesDemandFilters));
   const finalizable = visibleDemandas.filter(d=>d.done && canAllocateDemand(d)).length;
   const finBtn = document.getElementById('demand-finalize-btn'), histBtn = document.getElementById('demand-history-btn');
   if(finBtn){ finBtn.disabled = finalizable === 0; finBtn.textContent = finalizable ? `Finalizar tudo (${finalizable})` : 'Finalizar tudo'; }
@@ -5958,14 +5958,14 @@ function renderKanbanBoard(kind, items){
 /* ===== post-its (Demandas): abertas viram notas; concluídas ficam guardadas no arquivo ===== */
 let postitArchiveOpen=false;
 function postitRot(id){let n=0;String(id).split('').forEach(ch=>{n=(n*31+ch.charCodeAt(0))%97;});return ((n%7)-3)*0.6;}
-let postitHistoryOpen=false, demandHistoryOpen=false;
+let postitHistoryOpen=false, demandHistoryOpen=false, demandDoneOpen=false;
 function matchesDemandFilters(d){
   const assignee=demandAssigneeUid(d),assigneeName=state.users[assignee]?.name||'',haystack=`${d.text||''} ${assigneeName} ${authorInfo(d).name||''}`.toLocaleLowerCase('pt-BR');
   if(demandSearch&&!haystack.includes(demandSearch))return false;
   if(demandPriorityFilter&&(d.priority||'medium')!==demandPriorityFilter)return false;
   return true;
 }
-function renderDemandHistory(archived){
+function renderDemandHistory(archived, waiting=[]){
   const el=document.getElementById('demanda-history');
   if(!el)return;
   const fmt=(ts,withYear)=>ts?new Date(Number(ts)).toLocaleDateString('pt-BR',withYear?{day:'2-digit',month:'short',year:'numeric'}:{day:'2-digit',month:'short'}):'';
@@ -5979,7 +5979,10 @@ function renderDemandHistory(archived){
     list.sort((a,b)=>(b.doneAt||b.ts||0)-(a.doneAt||a.ts||0));
     return `<details class="postit-batch"><summary>Finalizadas em ${k?fmt(k,true):'data desconhecida'} · ${list.length} ${list.length===1?'demanda':'demandas'}<button type="button" class="batch-reopen" data-action="reopen-batch" data-batch="${k}">↺ Reabrir todas</button></summary>${list.map(rowHtml).join('')}</details>`;
   }).join(''):'<div class="postit-empty">Nada finalizado ainda. Quando você usar "Finalizar tudo", as demandas ficam guardadas aqui.</div>';
-  el.innerHTML=`<details class="postit-archive" id="demand-history-details" ${demandHistoryOpen?'open':''}><summary>Histórico de finalizadas (${archived.length})</summary>${body}</details>`;
+  const waitingSorted=[...waiting].sort((a,b)=>(b.doneAt||b.ts||0)-(a.doneAt||a.ts||0));
+  const waitingBody=waitingSorted.length?waitingSorted.map(rowHtml).join(''):'<div class="postit-empty">Ao concluir uma demanda, ela aparece aqui. Use "Finalizar tudo" para mandar para o histórico.</div>';
+  el.innerHTML=`<details class="postit-archive" id="demand-done-details" ${demandDoneOpen?'open':''}><summary>Concluídas aguardando finalizar (${waitingSorted.length})</summary>${waitingBody}</details>
+  <details class="postit-archive" id="demand-history-details" ${demandHistoryOpen?'open':''}><summary>Histórico de finalizadas (${archived.length})</summary>${body}</details>`;
 }
 function renderPostits(items, archived=[]){
   const el=document.getElementById('demanda-notes');
@@ -6009,7 +6012,7 @@ function renderPostits(items, archived=[]){
     <details class="postit-archive" id="postit-archive" ${postitArchiveOpen?'open':''}><summary>Concluídas aguardando finalizar (${done.length})</summary>${done.length?`<div class="postit-grid">${done.map(noteHtml).join('')}</div>`:'<div class="postit-empty">Ao concluir um post-it, ele aparece aqui. Use "Finalizar tudo" para mandar para o histórico.</div>'}</details>
     <details class="postit-archive" id="postit-history" ${postitHistoryOpen?'open':''}><summary>Histórico de finalizadas (${archived.length})</summary>${historyHtml}</details>`;
 }
-document.addEventListener('toggle',e=>{if(!e.target)return;if(e.target.id==='postit-archive')postitArchiveOpen=e.target.open;if(e.target.id==='postit-history')postitHistoryOpen=e.target.open;if(e.target.id==='demand-history-details')demandHistoryOpen=e.target.open;},true);
+document.addEventListener('toggle',e=>{if(!e.target)return;if(e.target.id==='postit-archive')postitArchiveOpen=e.target.open;if(e.target.id==='postit-history')postitHistoryOpen=e.target.open;if(e.target.id==='demand-history-details')demandHistoryOpen=e.target.open;if(e.target.id==='demand-done-details')demandDoneOpen=e.target.open;},true);
 function setItemStatus(kind, id, status){
   const item = (kind === 'meta' ? allMetas() : allDemandas()).find(x=>x.id===id);
   if(!item || (kind === 'demanda' ? !canAllocateDemand(item) : !canManageWorkItem(item))) return;
