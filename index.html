@@ -1798,6 +1798,53 @@ body.composer-focused .note-card{
 @media (min-width:900px) and (max-width:999px){
   .today-panel{top:96px!important}
 }
+/* O menu de secoes deve grudar abaixo, nunca por tras do header do tablet. */
+@media (min-width:721px) and (max-width:1040px){
+  :root{scroll-padding-top:154px}
+  #sections-container>.work-nav{
+    position:sticky!important;top:98px!important;z-index:72!important;
+    margin-top:0!important;
+    background:color-mix(in srgb,var(--paper) 97%,transparent)!important;
+    box-shadow:0 7px 22px rgba(20,35,28,.09)!important;
+  }
+  #sections-container>section{scroll-margin-top:154px!important}
+  .header-more-menu{
+    width:196px!important;padding:7px!important;
+    display:grid!important;grid-template-columns:1fr!important;gap:4px!important;
+  }
+  .header-more-menu .icon-btn{
+    width:100%!important;height:40px!important;padding:0 10px!important;
+    display:grid!important;grid-template-columns:28px minmax(0,1fr)!important;
+    align-items:center!important;justify-items:start!important;gap:8px!important;
+    border-radius:9px!important;
+  }
+  .header-more-menu .icon-btn svg{grid-column:1;width:17px;height:17px;justify-self:center}
+  .header-more-menu .header-menu-label{
+    display:block!important;grid-column:2;
+    color:var(--text)!important;font-size:12px!important;font-weight:600!important;
+    line-height:1.2!important;white-space:nowrap!important;
+  }
+  .header-more-menu #logout-btn .header-menu-label{color:var(--danger)!important}
+}
+/* Mantem o bloco de notas acima do teclado virtual em tablets. */
+@media (min-width:721px) and (max-width:1040px){
+  body.note-tablet-keyboard-open #note-card.expanded{
+    position:fixed!important;z-index:700!important;
+    top:calc(var(--note-viewport-top,0px) + 12px)!important;
+    right:16px!important;bottom:calc(var(--note-keyboard-offset,0px) + 12px)!important;
+    width:min(620px,calc(100vw - 32px))!important;max-width:none!important;
+    max-height:none!important;display:flex!important;flex-direction:column!important;
+    overflow:hidden!important;box-shadow:0 24px 70px rgba(0,0,0,.36)!important;
+  }
+  body.note-tablet-keyboard-open #note-card.expanded .note-card-header{flex:0 0 auto}
+  body.note-tablet-keyboard-open #note-card.expanded .note-card-body{
+    min-height:0;max-height:none!important;flex:1 1 auto;
+    overflow-y:auto!important;overscroll-behavior:contain;
+  }
+  body.note-tablet-keyboard-open #note-card.expanded #note-textarea{
+    min-height:130px;font-size:16px;scroll-margin-bottom:18px;
+  }
+}
 </style>
 </head>
 <body>
@@ -3684,6 +3731,29 @@ window.addEventListener('resize',()=>{
 });
 if(noteTextarea){
   noteTextarea.addEventListener('input', updateActiveTabContent);
+  const syncTabletNoteKeyboard = ()=>{
+    const tablet = window.matchMedia('(min-width:721px) and (max-width:1040px)').matches;
+    const focused = document.activeElement === noteTextarea;
+    const viewport = window.visualViewport;
+    const viewportTop = viewport ? Math.max(0, viewport.offsetTop) : 0;
+    const keyboardOffset = viewport
+      ? Math.max(0, window.innerHeight - viewport.height - viewportTop)
+      : 0;
+    const keyboardOpen = tablet && focused && noteCard?.classList.contains('expanded') && keyboardOffset > 60;
+    document.body.classList.toggle('note-tablet-keyboard-open', keyboardOpen);
+    document.documentElement.style.setProperty('--note-keyboard-offset', `${keyboardOffset}px`);
+    document.documentElement.style.setProperty('--note-viewport-top', `${viewportTop}px`);
+    if(keyboardOpen) requestAnimationFrame(()=>noteTextarea.scrollIntoView({block:'nearest'}));
+  };
+  noteTextarea.addEventListener('focus', ()=>{
+    syncTabletNoteKeyboard();
+    setTimeout(syncTabletNoteKeyboard, 180);
+    setTimeout(syncTabletNoteKeyboard, 420);
+  });
+  noteTextarea.addEventListener('blur', ()=>setTimeout(syncTabletNoteKeyboard, 120));
+  window.visualViewport?.addEventListener('resize', syncTabletNoteKeyboard);
+  window.visualViewport?.addEventListener('scroll', syncTabletNoteKeyboard);
+  window.addEventListener('orientationchange', ()=>setTimeout(syncTabletNoteKeyboard, 180));
 }
 if(noteTabTitleInput){
   noteTabTitleInput.addEventListener('input', updateActiveTabTitle);
