@@ -1910,6 +1910,19 @@ body.composer-focused .note-card{
     box-shadow:0 3px 16px rgba(20,35,28,.055);
     backdrop-filter:blur(14px);
   }
+  html[data-labs="true"] header{
+    margin:0!important;padding:10px 0 12px!important;
+    border:0!important;border-radius:0!important;
+    background:transparent!important;box-shadow:none!important;
+  }
+  html[data-labs="true"] header::before{
+    background:linear-gradient(135deg,
+      color-mix(in srgb,var(--paper) 95%,var(--forest)),
+      color-mix(in srgb,var(--paper) 97%,var(--gold))
+    )!important;
+    border-bottom:1px solid color-mix(in srgb,var(--forest) 20%,var(--border));
+    box-shadow:0 3px 18px rgba(58,38,128,.09);
+  }
 }
 </style>
 </head>
