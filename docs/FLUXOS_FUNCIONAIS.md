@@ -16,14 +16,16 @@ Este documento descreve os fluxos visíveis no código-base `c42a269` somados à
 1. A pessoa cria uma demanda com texto, visibilidade opcional, prioridade, prazo e responsável obrigatório. A primeira menção `@Pessoa` preenche a seleção automaticamente; a pessoa pode escolher outro responsável.
 2. A gravação vai para `demandas/{id}` ou `demandas_private/{setor}/{id}`.
 3. O criador é registrado em `uid` e `author`; responsável é guardado separadamente em `assignedTo`.
-4. A demanda pode ser editada, concluída/reaberta e movida entre “A fazer”, “Fazendo” e “Concluído”.
-5. O quadro suporta arrastar e soltar e também botões de movimentação.
-6. A tela oferece busca, filtro por estado, prioridade, responsável específico, minhas demandas, sem responsável, atrasadas e prazo nesta semana. Busca, prioridade, pessoa e semana também filtram quadro, post-its e histórico.
+4. A demanda pode ser editada e movida entre “Backlog”, “A fazer”, “Fazendo”, “Revisão” e “Concluído”. Backlog não significa conclusão. Status antigos `todo`, `doing` e `done` mantêm a interpretação anterior; sem status, `done` continua determinando o resultado.
+5. O quadro de Demandas suporta arrastar e soltar e botões de movimentação. Metas continuam com três colunas.
+6. A tela oferece busca, filtro por estado, prioridade, responsável, minhas demandas, sem responsável, atrasadas, bloqueadas e prazo nesta semana. Busca, prioridade, pessoa e semana filtram quadro, post-its e histórico sem ampliar as coleções autorizadas carregadas pela sessão.
 7. A barra semanal conta demandas não removidas com prazo entre segunda e domingo da semana corrente; mostra quantas foram concluídas sobre esse total. Demandas sem prazo não entram no cálculo. O intervalo usa a data local do navegador.
-8. Demandas concluídas podem ser arquivadas em lote e reabertas pelo histórico.
+8. A coluna Concluído mostra demandas cuja data `doneAt` (ou `archivedAt`, se necessário) cai na semana local atual. Concluídas fora dessa janela aparecem no histórico pesquisável; datas antigas ausentes ficam identificadas como desconhecidas. Essa separação não migra dados. Demandas concluídas podem ser arquivadas em lote e reabertas pelo histórico.
 9. A ação “remover demanda” pede confirmação e marca a demanda com `deletedAt` e `deletedBy`. A demanda deixa as listas operacionais e fica disponível na lixeira por 30 dias.
 10. Quem pode alocar a demanda pode restaurá-la dentro do prazo; administradores também podem restaurar fora dele e excluir definitivamente itens com mais de 30 dias. A exclusão definitiva usa `remove()`.
 11. Registros antigos sem responsável recebem um aviso e podem ser localizados pelo filtro “Sem responsável”; a interface não os atribui em massa. Edição, conclusão, reabertura e movimentação exigem primeiro escolher um responsável.
+12. Demandas podem ser bloqueadas com motivo obrigatório sem uma coluna adicional. O motivo fica visível a quem já pode carregar o item; filtro e contagem usam apenas dados carregados. Desbloquear ou editar o motivo segue a permissão de alocação existente.
+13. Fazendo mostra ocupação e limite WIP configurável no navegador. Ao alcançar ou ultrapassar o limite, exibe aviso sem impedir movimentações. O limite é local ao dispositivo e não é compartilhado pela equipe.
 
 ## Metas
 

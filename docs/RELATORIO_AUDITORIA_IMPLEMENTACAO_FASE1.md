@@ -68,9 +68,24 @@ Essas verificações não executam nem simulam o navegador, autenticação, regr
 4. Exportar ou listar demandas sem responsável e informar a pessoa responsável por cada uma; então atualizar os registros com aprovação da equipe.
 5. Confirmar o destino de branch, revisar o diff, commitar, e só então decidir sobre publicação e smoke test pós-deploy.
 
+## Complemento de auditoria — quadro de Demandas (09/10/2026)
+
+Este complemento registra a implementação local posterior à auditoria inicial, baseada na proposta visual de cinco colunas. O commit-base desta etapa é `8f76ab7`; as alterações desta etapa estão locais e ainda não commitadas. Não houve acesso ao Firebase, publicação ou alteração de dados reais.
+
+| Item | Implementação observada | Situação |
+| --- | --- | --- |
+| Quadro de Demandas | Colunas Backlog, A fazer, Fazendo, Revisão e Concluído; Metas preservam o quadro de três colunas. Controles existentes e drag-and-drop usam as colunas por tipo. | Implementado localmente; teste visual/funcional pendente |
+| Compatibilidade | `todo`, `doing` e `done` preservados; status ausente segue derivado de `done`. Sem migração em massa. Backlog não define `done`. | Revisado estaticamente |
+| Conclusão e arquivo | Coluna Concluído mostra itens com `doneAt` ou fallback `archivedAt` na semana local. Outros concluídos aparecem no histórico; datas ausentes ficam como desconhecidas. A separação é computada, não gravada. | Revisado estaticamente; conferir registros legados em homologação |
+| Bloqueio | Campos aditivos `blocked`, `blockReason`, `blockedAt`, `blockedBy`; motivo obrigatório (máximo 500 caracteres), edição/desbloqueio, destaque e filtro. Bloqueadas não podem ser concluídas sem desbloquear. | Implementado localmente; regras e perfis não validados |
+| WIP | Campo configurável na coluna Fazendo; chave `plantel_demand_wip_limit` em `localStorage`; aviso ao atingir/superar limite, sem travar movimentação. | Implementado localmente; configuração é individual por navegador |
+| Filtros e privacidade | Filtro de bloqueadas e contagem calculada sobre demandas já carregadas pela sessão; filtros anteriores mantidos. | Revisado estaticamente; privacidade exige teste com regras e contas separadas |
+
+O novo quadro e o bloqueio **não** são considerados homologados nem prontos para produção. A autorização do frontend não substitui as regras RTDB. Consultar também `MANUAL_NOVO_QUADRO_DEMANDAS.md`.
+
 ## Escopo do PDF ainda não implementado
 
-O relatório cobre os itens da Fase 1 trabalhados nesta conversa. As seguintes melhorias da proposta permanecem no backlog e não devem ser consideradas concluídas: motivo obrigatório para bloqueio; demandas recorrentes; ligação entre demandas e metas com progresso calculado; cartões gerenciais de atrasadas/bloqueadas; projetos e marcos; notificações automáticas. Também não estão confirmadas as validações de hospedagem, deploy e rollback.
+O bloqueio com motivo obrigatório e o quadro de cinco colunas foram implementados localmente, mas precisam de homologação. Permanecem no backlog: demandas recorrentes; ligação entre demandas e metas com progresso calculado; cartões gerenciais de atrasadas/bloqueadas; projetos e marcos; notificações automáticas. Também não estão confirmadas as validações de hospedagem, deploy e rollback.
 
 ## Documentos relacionados
 
@@ -78,6 +93,7 @@ O relatório cobre os itens da Fase 1 trabalhados nesta conversa. As seguintes m
 - `FLUXOS_FUNCIONAIS.md` — fluxos existentes no código.
 - `BACKLOG_TECNICO.md` — tarefas, dependências e status.
 - `MANUAL_IMPLEMENTACAO_LIXEIRA_DEMANDAS.md` — funcionamento e pontos de alteração.
+- `MANUAL_NOVO_QUADRO_DEMANDAS.md` — colunas, bloqueio, WIP, compatibilidade e pontos de configuração.
 - `RISCOS_TECNICOS.md` — riscos e validações pendentes.
 - `VIABILIDADE_HOSTINGER.md` — avaliação preliminar da hospedagem.
 - `PROMPT_CONTINUIDADE_CODEX.md` — contexto para continuidade do trabalho.

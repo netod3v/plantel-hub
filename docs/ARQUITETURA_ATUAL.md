@@ -50,9 +50,9 @@ O código observa dados em tempo real com `onValue` e grava por `set`, `update` 
 
 ## Modelo atual de demandas
 
-Campos observados: `text` (conteúdo/título), `author` e `uid` (criador), `ts`, `done`, `status`, `priority`, `dueDate`, `assignedTo`, `mentions`, `doneAt`, `archived`, `archivedAt`, `archiveBatch`, `deletedAt` e `deletedBy`. Os dois últimos são adicionados pela implementação local da lixeira lógica. A localização privada é representada pelo caminho do banco e pelo setor associado ao objeto carregado.
+Campos observados: `text` (conteúdo/título), `author` e `uid` (criador), `ts`, `done`, `status`, `priority`, `dueDate`, `assignedTo`, `mentions`, `doneAt`, `archived`, `archivedAt`, `archiveBatch`, `deletedAt`, `deletedBy`, `blocked`, `blockReason`, `blockedAt` e `blockedBy`. Lixeira e bloqueio são implementações locais aditivas; regras Firebase não estão versionadas nem verificadas. A localização privada é representada pelo caminho do banco e pelo setor associado ao objeto carregado.
 
-Compatibilidade observada: demandas sem `status` usam `done` para derivar o status; prioridade ausente usa `medium`; prazo e responsável são opcionais. `assignedTo` guarda o UID como chave de um objeto. As prioridades aceitas pelo formulário incluem `urgent`, `high`, `medium` e `low`.
+Compatibilidade observada: demandas sem `status` usam `done` para derivar o status; `todo`, `doing` e `done` mantêm a interpretação existente. O quadro local de Demandas também aceita `backlog` e `review`; Metas continuam com três colunas. Prioridade ausente usa `medium`; prazo e responsável podem faltar em dados legados. `assignedTo` guarda o UID como chave de um objeto. As prioridades aceitas pelo formulário incluem `urgent`, `high`, `medium` e `low`. A preferência do limite WIP fica no `localStorage` por navegador, não no banco.
 
 Metas usam `text`, `author`, `uid`, `ts`, `done` e `mentions`. Não foi encontrada ligação de dados entre demanda e meta nem cálculo de progresso da meta a partir de demandas.
 

@@ -7,6 +7,8 @@ Quero continuar o trabalho no projeto Plantel Hub nesta cópia local. Na auditor
 
 Leia primeiro os documentos em docs/ARQUITETURA_ATUAL.md, docs/FLUXOS_FUNCIONAIS.md, docs/RISCOS_TECNICOS.md, docs/BACKLOG_TECNICO.md, docs/VIABILIDADE_HOSTINGER.md e docs/MANUAL_IMPLEMENTACAO_LIXEIRA_DEMANDAS.md. Depois confira o estado real do git e o diff antes de alterar qualquer coisa.
 
+Leia também docs/MANUAL_NOVO_QUADRO_DEMANDAS.md e o complemento de 09/10/2026 em docs/RELATORIO_AUDITORIA_IMPLEMENTACAO_FASE1.md. A implementação local mais recente inclui quadro de Demandas com cinco colunas, bloqueio com motivo obrigatório, filtro Bloqueadas e aviso de WIP configurável por navegador. A validação em Firebase de homologação continua pendente; não confunda o limite WIP local com uma configuração compartilhada.
+
 O que já foi feito localmente:
 - Adicionei uma lixeira lógica para demandas em index.html.
 - Ao remover uma demanda, a implementação grava deletedAt e deletedBy, e ela deixa as listas normais.
@@ -16,6 +18,7 @@ O que já foi feito localmente:
 - Atualizei indicadores, listas e referências de mural relacionados a demandas excluídas.
 - Corrigi o card “Último aviso” do resumo para renderizar Markdown pelo renderizador já existente.
 - Escrevi os documentos de auditoria e implementação em docs/.
+- Mantive Metas em três colunas e alterei apenas o quadro de Demandas para Backlog, A fazer, Fazendo, Revisão e Concluído; concluídas fora da semana corrente aparecem no histórico por regra de exibição, sem migração.
 - A sintaxe do módulo JavaScript e git diff --check passaram; não foram executados testes funcionais/integrados.
 
 Restrições e próximos passos:

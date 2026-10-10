@@ -12,7 +12,8 @@ As estimativas são iniciais e dependem da obtenção das regras Firebase e de u
 | S1-OWNER | Tornar responsável obrigatório e sugerir a primeira pessoa mencionada | Alta | Definição de tratamento de demandas antigas | 2–3 h | Nova demanda exige responsável; primeira menção seleciona a pessoa; mudanças de estado bloqueadas sem responsável | Criar com/sem menção, trocar responsável, concluir, reabrir, card antigo sem responsável e demanda privada | Alto | Implementado localmente; validar no Firebase de teste |
 | S1-WEEK | Calcular progresso semanal por prazo | Média | Definição do denominador semanal | 1–2 h | Barra usa demandas ativas com prazo de segunda a domingo da semana corrente; percentual é concluídas/total | Semana vazia, prazos nas bordas, concluída e em aberto; conferir fuso local | Médio | Implementado localmente; validar na interface |
 | S1-FILTER | Completar filtros de demandas por pessoa e semana | Média | S1-OWNER, S1-WEEK | 1–2 h | Pessoa e semana filtram lista, quadro, post-its e histórico junto à busca/prioridade | Cada visualização; combinação de filtros e perfil com dados privados | Alto | Implementado localmente; validar no Firebase de teste |
-| S2-BLOCK | Bloqueio de demanda com motivo obrigatório | Alta | Regras e desenho do modelo aprovados | 4–6 h | Demanda bloqueada exige motivo e fica visível no filtro/resumo aprovado | Motivo vazio/preenchido, dados antigos e visibilidade privada | Médio | Backlog |
+| S2-BLOCK | Bloqueio de demanda com motivo obrigatório | Alta | Revisar regras e homologar | 4–6 h | Demanda bloqueada exige motivo e aparece no filtro sem ampliar visibilidade | Motivo vazio/preenchido, dados antigos e visibilidade privada | Alto | Implementado localmente; regras e homologação pendentes |
+| S2-KANBAN | Quadro de Demandas com cinco colunas, histórico semanal e WIP | Alta | Revisar regras e homologar | 6–10 h | Preservar status existentes; mover por controles/drag-and-drop; concluídos fora da semana no histórico; WIP avisa sem bloquear | Compatibilidade legada, arraste, reabertura, semana, responsividade e permissões | Alto | Implementado localmente; validação funcional pendente |
 | S2-META | Vincular demandas a metas e calcular progresso | Alta | Modelo aprovado; regras; UX definida | 6–10 h | Progresso calculado apenas com demandas vinculadas e não excluídas | Adição/remoção de vínculo, conclusão, restauração e privacidade | Alto | Backlog |
 | S2-REC | Modelos recorrentes com geração idempotente | Alta | Decisão de execução agendada/backend e regras | 8–12 h | No máximo uma demanda por ciclo; pausa e encerramento preservam histórico | Reexecução, fuso `America/Sao_Paulo`, virada de ciclo e falha parcial | Alto | Backlog |
 | S3-SUM | Resumo gerencial de atrasadas e bloqueadas respeitando visibilidade | Média | S1-TRASH, S2-BLOCK; regras confirmadas | 4–6 h | Cartões levam a listas filtradas e não revelam dados privados | Comparar resumo para perfis/setores distintos | Alto | Backlog |
@@ -23,7 +24,7 @@ As estimativas são iniciais e dependem da obtenção das regras Firebase e de u
 
 - Prazo, prioridade e filtro de atrasadas (implementação já existente).
 - Busca e filtros por estado/“minhas”; filtros por pessoa e semana foram completados localmente nesta revisão.
-- Quadro de três colunas com movimentação por botões e arrastar e soltar.
+- Quadro de Metas com três colunas e quadro de Demandas com cinco colunas; ambos têm movimentação por botões e arrastar e soltar.
 - Arquivo e reabertura de demandas concluídas.
 - Renderizador Markdown para texto do mural.
 

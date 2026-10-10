@@ -621,6 +621,7 @@ section{margin-top:38px;}
 
 .kanban-board.hidden{display:none;}
 .kanban-board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(275px,1fr);grid-template-columns:none;gap:12px;align-items:start;overflow-x:auto;overscroll-behavior-x:contain;padding:2px 2px 10px;scroll-snap-type:x proximity;scrollbar-width:thin;}
+#demanda-board.kanban-board{grid-auto-columns:minmax(185px,1fr)}#demanda-board .kanban-col{min-height:360px}
 @media (max-width:720px){ .kanban-board{grid-auto-flow:row;grid-auto-columns:auto;grid-template-columns:1fr;overflow-x:visible;scroll-snap-type:none;} }
 .kanban-col{background:var(--parchment);border:1px solid var(--border);border-radius:12px;padding:10px;min-height:70px;transition:background .12s ease,border-color .12s ease;}
 .kanban-col{scroll-snap-align:start}.kanban-col-body{max-height:520px;overflow-y:auto;padding-right:2px;scrollbar-width:thin}
@@ -647,6 +648,8 @@ section{margin-top:38px;}
 .kanban-card-remove{background:transparent;border:none;color:var(--text-3);cursor:pointer;font-size:11px;padding:2px 4px;}
 .kanban-card-remove:hover{color:var(--danger);}
 .kanban-empty{font-size:11.5px;color:var(--text-3);text-align:center;padding:10px 4px;}
+.kanban-col-head{gap:8px;flex-wrap:wrap}.kanban-col-title{display:flex;align-items:center;gap:6px;min-width:0}.kanban-col-tools{display:flex;align-items:center;gap:6px;flex:none}.kanban-wip-label{font-size:9px;color:var(--text-3);font-weight:600;white-space:nowrap}.kanban-wip-input{width:52px;height:25px;padding:3px 5px;border:1px solid var(--border);border-radius:7px;background:var(--paper);color:var(--text-2);font-size:11px;text-align:center}.kanban-wip-warning{padding:8px 9px;border:1px dashed var(--border);border-radius:9px;color:var(--text-3);font-size:10px;line-height:1.4}.kanban-wip-warning.is-reached{border-color:var(--warning,#c89a35);background:color-mix(in srgb,#e9b83f 10%,var(--paper));color:var(--text-2)}
+.kanban-card.is-blocked,.item.is-blocked{border-color:var(--danger);box-shadow:0 0 0 1px color-mix(in srgb,var(--danger) 35%,transparent)}.demand-block-reason{margin:0 0 8px;padding:6px 8px;border-radius:6px;background:color-mix(in srgb,var(--danger) 12%,var(--paper));color:var(--danger);font-size:10px;line-height:1.4;overflow-wrap:anywhere}.demand-block-actions{display:inline-flex;gap:5px;align-items:center;flex-wrap:wrap}.demand-block-actions button{background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text-2);font-size:10px;cursor:pointer}.demand-block-actions button:hover{border-color:var(--danger);color:var(--danger)}
 .section-head h2{font-size:17px;margin-right:auto;}
 .section-head span{font-size:12px;color:var(--text-2);}
 .card{background:var(--paper);border:1px solid var(--border);border-radius:14px;padding:16px 18px;}
@@ -1009,7 +1012,7 @@ input.field:focus,select.field:focus{border-color:var(--moss);}
 .add-inline input{flex:1;}
 .add-inline select{flex:none;width:150px;}
 .demand-create-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:center;margin-top:12px;position:relative}.demand-create-fields .mention-suggestions{position:absolute;left:0;right:0;bottom:calc(100% + 4px)}.demand-create-fields>#demanda-add-input{grid-column:1/4;min-width:0}.demand-create-fields>#demanda-add-btn{grid-column:4;grid-row:1;width:100%;height:100%}.demand-create-fields>.field{width:100%;min-width:0}
-.demand-badges{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:6px}.demand-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;background:var(--sage);color:var(--text-2);font-size:9px;font-weight:700}.demand-badge.priority-high,.demand-badge.priority-urgent,.demand-badge.overdue,.demand-badge.unassigned{background:color-mix(in srgb,var(--danger) 13%,var(--paper));color:var(--danger)}.demand-badge.priority-medium{background:color-mix(in srgb,#d49a24 16%,var(--paper));color:#9a6810}.demand-badge.priority-low{color:var(--forest)}
+.demand-badges{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:6px}.demand-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;background:var(--sage);color:var(--text-2);font-size:9px;font-weight:700}.demand-badge.priority-high,.demand-badge.priority-urgent,.demand-badge.overdue,.demand-badge.unassigned,.demand-badge.blocked{background:color-mix(in srgb,var(--danger) 13%,var(--paper));color:var(--danger)}.demand-badge.priority-medium{background:color-mix(in srgb,#d49a24 16%,var(--paper));color:#9a6810}.demand-badge.priority-low{color:var(--forest)}
 .demand-edit-fields{display:grid;grid-template-columns:120px 150px minmax(160px,1fr);gap:7px;width:100%}.demand-edit-fields select,.demand-edit-fields input{min-width:0}
 .demand-toolbar{position:sticky;top:0;z-index:8;display:grid;grid-template-columns:minmax(150px,1fr) minmax(125px,150px) minmax(125px,150px);gap:7px;align-items:center;margin:10px 0 8px;padding:8px;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--paper) 96%,transparent);backdrop-filter:blur(10px)}.demand-toolbar .field{min-width:0;height:36px;padding:7px 9px;font-size:11px}.demand-filter-count{min-width:66px;color:var(--text-3);font-size:10px;text-align:right;white-space:nowrap;justify-self:end}
 #demanda-list{max-height:620px;overflow-y:auto;overscroll-behavior-y:auto;padding-right:4px;scrollbar-width:thin}
@@ -2438,8 +2441,10 @@ body.composer-focused .note-card{
             <strong>Demandas · Quadro</strong>
             <ol>
               <li><b>Escreva</b> a demanda no campo lá embaixo: ela entra em <i>A fazer</i>.</li>
-              <li><b>Mova</b> o card com ‹ › ou arrastando: <i>A fazer</i> → <i>Fazendo</i> → <i>Concluído</i>.</li>
-              <li>O que está em <i>Concluído</i> conta como concluído na barra de progresso.</li>
+              <li><b>Mova</b> o card com ‹ › ou arrastando entre <i>Backlog</i>, <i>A fazer</i>, <i>Fazendo</i>, <i>Revisão</i> e <i>Concluído</i>.</li>
+              <li>Em <i>Fazendo</i>, o limite WIP mostra um aviso quando alcançado; não bloqueia a movimentação.</li>
+              <li>Marque um card como <i>Bloqueado</i> e informe um motivo. Ele continua na coluna atual até ser desbloqueado.</li>
+              <li><i>Concluído</i> mostra itens concluídos nesta semana; os mais antigos ficam no histórico.</li>
               <li><b>Finalizar tudo</b> guarda os concluídos no <i>Histórico</i> (abaixo do quadro). Reabra com <i>↺ reabrir</i> e o card volta para <i>A fazer</i>.</li>
             </ol>
           </div>
@@ -2474,7 +2479,7 @@ body.composer-focused .note-card{
       <div class="demand-toolbar" aria-label="Filtrar demandas">
         <input class="field" id="demand-search" type="search" placeholder="Buscar demanda ou responsável...">
         <select class="field" id="demand-status-filter" aria-label="Filtrar por situação">
-          <option value="open">Em aberto</option><option value="all">Todas</option><option value="week">Esta semana</option><option value="overdue">Atrasadas</option><option value="mine">Atribuídas a mim</option><option value="unassigned">Sem responsável</option><option value="done">Concluídas</option>
+          <option value="open">Em aberto</option><option value="all">Todas</option><option value="week">Esta semana</option><option value="overdue">Atrasadas</option><option value="blocked">Bloqueadas</option><option value="mine">Atribuídas a mim</option><option value="unassigned">Sem responsável</option><option value="done">Concluídas</option>
         </select>
         <select class="field" id="demand-assignee-filter" aria-label="Filtrar por pessoa"><option value="">Todas as pessoas</option></select>
         <select class="field" id="demand-priority-filter" aria-label="Filtrar por prioridade">
@@ -5911,10 +5916,35 @@ function demandWeekRange(){
   return {start:fmt(monday),end:fmt(sunday)};
 }
 function demandDueThisWeek(d){const {start,end}=demandWeekRange();return !!d.dueDate&&d.dueDate>=start&&d.dueDate<=end}
+function demandCompletedThisWeek(d){
+  const ts=Number(d?.doneAt||d?.archivedAt||0);
+  if(!ts)return false;
+  const date=new Date(ts),day=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  const {start,end}=demandWeekRange();
+  return day>=start&&day<=end;
+}
+function isDemandInHistory(d){return !!d.archived||((!!d.done||itemStatus(d)==='done')&&!demandCompletedThisWeek(d))}
+function demandHistoryGroupKey(d){
+  const archivedAt=Number(d.archiveBatch||d.archivedAt||0);
+  if(archivedAt)return String(archivedAt);
+  const completedAt=Number(d.doneAt||0);
+  if(!completedAt)return '0';
+  const date=new Date(completedAt);date.setHours(0,0,0,0);
+  return String(date.getTime());
+}
+const DEMAND_WIP_LIMIT_KEY='plantel_demand_wip_limit';
+function getDemandWipLimit(){const n=Number(localStorage.getItem(DEMAND_WIP_LIMIT_KEY));return Number.isInteger(n)&&n>0?n:0}
+document.addEventListener('change',e=>{
+  if(e.target?.id!=='demand-wip-limit')return;
+  const n=Number(e.target.value);
+  if(Number.isInteger(n)&&n>0)localStorage.setItem(DEMAND_WIP_LIMIT_KEY,String(n));
+  else localStorage.removeItem(DEMAND_WIP_LIMIT_KEY);
+  render();
+});
 function demandDetailsHtml(item){
   const priority=DEMAND_PRIORITIES[item.priority]||DEMAND_PRIORITIES.medium,assignee=demandAssigneeUid(item),due=item.dueDate||'',overdue=!!due&&!item.done&&due<demandToday();
   const dueText=due?new Date(`${due}T12:00:00`).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}):'';
-  return `<div class="demand-badges"><span class="demand-badge ${priority[1]}">${priority[0]}</span>${due?`<span class="demand-badge ${overdue?'overdue':''}">${overdue?'Atrasada':'Prazo'} · ${dueText}</span>`:''}${assignee?`<span class="demand-badge">Responsável · ${escapeHtml(state.users[assignee]?.name||'Usuário')}</span>`:`<span class="demand-badge unassigned">Sem responsável</span>`}</div>`;
+  return `<div class="demand-badges"><span class="demand-badge ${priority[1]}">${priority[0]}</span>${due?`<span class="demand-badge ${overdue?'overdue':''}">${overdue?'Atrasada':'Prazo'} · ${dueText}</span>`:''}${assignee?`<span class="demand-badge">Responsável · ${escapeHtml(state.users[assignee]?.name||'Usuário')}</span>`:`<span class="demand-badge unassigned">Sem responsável</span>`}${item.blocked?'<span class="demand-badge blocked">Bloqueada</span>':''}</div>${item.blocked?`<div class="demand-block-reason"><strong>Motivo do bloqueio:</strong> ${escapeHtml(item.blockReason||'Motivo não informado')}</div>`:''}`;
 }
 function demandEditFieldsHtml(item){const priority=item.priority||'medium',assignee=demandAssigneeUid(item);return `<div class="demand-edit-fields"><select class="field" data-edit-priority><option value="low" ${priority==='low'?'selected':''}>Baixa</option><option value="medium" ${priority==='medium'?'selected':''}>Média</option><option value="high" ${priority==='high'?'selected':''}>Alta</option><option value="urgent" ${priority==='urgent'?'selected':''}>Urgente</option></select><input class="field" data-edit-due type="date" value="${escapeHtml(item.dueDate||'')}"><select class="field" data-edit-assignee><option value="">Sem responsável</option>${demandUserOptions(assignee)}</select></div>`}
 
@@ -6436,8 +6466,8 @@ function render(){
       ${canManageMeta && !isEditingMeta ? `<button class="item-edit-button" data-action="edit-meta" data-id="${m.id}">editar</button><button class="item-remove" data-action="remove-meta" data-id="${m.id}">remover</button>` : ''}
     </div>`;}).join('') : `<div class="empty">Nenhuma meta ainda.</div>`;
 
-  const visibleDemandas = activeDemandas().filter(d=>!d.archived);
-  const archivedDemandas = activeDemandas().filter(d=>d.archived);
+  const visibleDemandas = activeDemandas().filter(d=>!isDemandInHistory(d));
+  const archivedDemandas = activeDemandas().filter(isDemandInHistory);
   const openDemandas = visibleDemandas.filter(d=>!d.done).length;
   document.getElementById('demanda-count').textContent = openDemandas + (openDemandas===1?' pendente':' pendentes');
   const weeklyDemandas=activeDemandas().filter(demandDueThisWeek);
@@ -6445,6 +6475,10 @@ function render(){
   const demandaPct=weeklyDemandas.length?Math.round((demandaDone/weeklyDemandas.length)*100):0;
   document.getElementById('demanda-progress-fill').style.width = demandaPct + '%';
   document.getElementById('demanda-progress-label').textContent = `${demandaDone}/${weeklyDemandas.length} concluídas nesta semana (${demandaPct}%)`;
+  const overdueCount=visibleDemandas.filter(d=>!d.done&&d.dueDate&&d.dueDate<demandToday()).length;
+  const blockedCount=visibleDemandas.filter(d=>d.blocked&&!d.done).length;
+  const statusOptions=demandStatusSelect?.options;
+  if(statusOptions){for(const option of statusOptions){if(option.value==='overdue')option.textContent=`Atrasadas (${overdueCount})`;if(option.value==='blocked')option.textContent=`Bloqueadas (${blockedCount})`;}}
   const priorityWeight={urgent:0,high:1,medium:2,low:3};
   const filteredDemandas=visibleDemandas.filter(d=>{
     const assignee=demandAssigneeUid(d),assigneeName=state.users[assignee]?.name||'',haystack=`${d.text||''} ${assigneeName} ${authorInfo(d).name||''}`.toLocaleLowerCase('pt-BR');
@@ -6457,6 +6491,7 @@ function render(){
     if(demandStatusFilter==='mine'&&assignee!==currentUid&&!(d.mentions&&d.mentions[currentUid]))return false;
     if(demandStatusFilter==='unassigned'&&assignee)return false;
     if(demandStatusFilter==='overdue'&&(d.done||!d.dueDate||d.dueDate>=demandToday()))return false;
+    if(demandStatusFilter==='blocked'&&(!d.blocked||d.done))return false;
     return true;
   }).sort((a,b)=>(priorityWeight[a.priority||'medium']-priorityWeight[b.priority||'medium'])||((a.dueDate||'9999-99-99').localeCompare(b.dueDate||'9999-99-99'))||((b.ts||0)-(a.ts||0)));
   document.getElementById('demand-filter-count').textContent=`${filteredDemandas.length} de ${visibleDemandas.length}`;
@@ -6466,19 +6501,20 @@ function render(){
     const canWorkOnDemanda = canAllocateDemand(d);
     const isEditingDemanda = editingDemandas.has(d.id) && canManageDemanda;
     return `
-    <div class="item ${d.done?'done ':''}${newMuralDemandas.has(d.id)?'mural-enter':''}" data-demanda-id="${d.id}">
+    <div class="item ${d.done?'done ':''}${d.blocked?'is-blocked ':''}${newMuralDemandas.has(d.id)?'mural-enter':''}" data-demanda-id="${d.id}">
       <div class="check ${d.done?'done':''}" data-action="${canWorkOnDemanda?'toggle-demanda':''}" data-id="${d.id}" style="${canWorkOnDemanda?'':'pointer-events:none;opacity:.5;'}">${CHECK_SVG}</div>
       <div class="item-body">
         ${isEditingDemanda ? `<div class="item-edit-form"><input class="field" id="edit-demanda-input-${d.id}" value="${escapeHtml(d.text)}" aria-label="Editar demanda">${demandEditFieldsHtml(d)}<button class="btn btn-primary" data-action="save-demanda-edit" data-id="${d.id}">Salvar</button><button class="btn-ghost" data-action="cancel-demanda-edit" data-id="${d.id}">Cancelar</button></div>` : `<div class="item-text">${renderTextWithMentions(d.text,d)}${d.editedAt?' <span class="post-edited-tag">(editado)</span>':''}</div>${demandDetailsHtml(d)}`}
         <div class="item-meta"><span${authorNameAttr(dInfo)}>${escapeHtml(dInfo.name)}</span>${privacyIconHtml(d._sector)} · ${timeAgo(d.ts)}</div>
       </div>
-      ${canManageDemanda && !isEditingDemanda ? `<button class="item-edit-button" data-action="edit-demanda" data-id="${d.id}">editar</button>${d.done?'<span class="item-completed-label">Concluído</span>':`<button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>`}` : ''}
+      ${canManageDemanda && !isEditingDemanda ? `<button class="item-edit-button" data-action="edit-demanda" data-id="${d.id}">editar</button>${d.done?'<span class="item-completed-label">Concluído</span>':`<button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>`}${demandBlockActionsHtml(d)}` : ''}
     </div>`;}).join('') : `<div class="empty">Nenhuma demanda encontrada com esses filtros.</div>`;
 
   const boardDemandas = demandStatusFilter==='open'
     ? visibleDemandas.filter(d=>!d.done&&matchesDemandFilters(d)).sort((a,b)=>(priorityWeight[a.priority||'medium']-priorityWeight[b.priority||'medium'])||((a.dueDate||'9999-99-99').localeCompare(b.dueDate||'9999-99-99'))||((b.ts||0)-(a.ts||0)))
     : filteredDemandas;
-  renderKanbanBoard('demanda', boardDemandas);
+  const wipCount=visibleDemandas.filter(d=>itemStatus(d)==='doing').length;
+  renderKanbanBoard('demanda', boardDemandas,{wipCount});
   renderDemandHistory(archivedDemandas.filter(matchesDemandFilters), visibleDemandas.filter(d=>d.done).filter(matchesDemandFilters));
   const finalizable = visibleDemandas.filter(d=>d.done && canAllocateDemand(d)).length;
   const finBtn = document.getElementById('demand-finalize-btn'), histBtn = document.getElementById('demand-history-btn');
@@ -6511,6 +6547,14 @@ const KANBAN_COLUMNS = [
   { key: 'doing', label: 'Fazendo' },
   { key: 'done', label: 'Concluído' }
 ];
+const DEMAND_KANBAN_COLUMNS = [
+  { key: 'backlog', label: 'Backlog' },
+  { key: 'todo', label: 'A fazer' },
+  { key: 'doing', label: 'Fazendo' },
+  { key: 'review', label: 'Revisão' },
+  { key: 'done', label: 'Concluído' }
+];
+function kanbanColumnsFor(kind){return kind==='demanda'?DEMAND_KANBAN_COLUMNS:KANBAN_COLUMNS}
 function itemStatus(item){
   return item.status || (item.done ? 'done' : 'todo');
 }
@@ -6531,26 +6575,37 @@ function moveDemandToTrash(item){
     .then(()=>{showSuccessToast('Demanda movida para a lixeira. Você pode restaurá-la por 30 dias.');return true;})
     .catch(err=>{handleDbError(err);return false;});
 }
-function renderKanbanBoard(kind, items){
+function demandBlockActionsHtml(item){
+  if(item.done||item.archived||!canAllocateDemand(item))return '';
+  return item.blocked
+    ?`<span class="demand-block-actions"><button type="button" data-action="block-demanda" data-id="${item.id}">Editar motivo</button><button type="button" data-action="unblock-demanda" data-id="${item.id}">Desbloquear</button></span>`
+    :`<span class="demand-block-actions"><button type="button" data-action="block-demanda" data-id="${item.id}">Bloquear</button></span>`;
+}
+function renderKanbanBoard(kind, items, options={}){
   const board = document.getElementById(kind+'-board');
   if(!board || board.classList.contains('hidden')) return; // não gasta trabalho escondido
-  const byStatus = { todo: [], doing: [], done: [] };
+  const columns=kanbanColumnsFor(kind);
+  const byStatus=Object.fromEntries(columns.map(col=>[col.key,[]]));
   items.forEach(item => { (byStatus[itemStatus(item)] || byStatus.todo).push(item); });
 
-  board.innerHTML = KANBAN_COLUMNS.map(col=>{
+  board.innerHTML = columns.map(col=>{
     const colItems = byStatus[col.key];
+    const wipLimit=kind==='demanda'&&col.key==='doing'?getDemandWipLimit():0;
+    const wipCount=kind==='demanda'&&col.key==='doing'?Number(options.wipCount??colItems.length):0;
+    const wipReached=!!wipLimit&&wipCount>=wipLimit;
     return `
     <div class="kanban-col" data-status="${col.key}">
-      <div class="kanban-col-head"><span>${col.label}</span><span class="count">${colItems.length}</span></div>
+      <div class="kanban-col-head"><span class="kanban-col-title">${col.label}<span class="count">${colItems.length}</span></span>${kind==='demanda'&&col.key==='doing'?`<span class="kanban-col-tools"><label class="kanban-wip-label" for="demand-wip-limit">Limite WIP</label><input class="kanban-wip-input" id="demand-wip-limit" type="number" min="1" step="1" value="${wipLimit||''}" placeholder="∞" aria-label="Limite WIP da coluna Fazendo" title="Limite salvo neste navegador; vazio significa sem limite"></span>`:''}</div>
       <div class="kanban-col-body">
+        ${kind==='demanda'&&col.key==='doing'?`<div class="kanban-wip-warning ${wipReached?'is-reached':''}" role="status" aria-live="polite">${wipLimit?(wipReached?`Limite WIP alcançado (${wipCount}/${wipLimit}). O aviso não bloqueia novas movimentações.`:`WIP: ${wipCount}/${wipLimit} demandas em andamento.`):`WIP: ${wipCount} demandas em andamento · sem limite configurado.`}</div>`:''}
         ${colItems.length ? colItems.map(item=>{
           const info = authorInfo(item);
-          const idx = KANBAN_COLUMNS.findIndex(c=>c.key===col.key);
+          const idx = columns.findIndex(c=>c.key===col.key);
           const canManageItem = kind === 'demanda' ? canAllocateDemand(item) : canManageWorkItem(item);
           const canMoveItem = kind === 'demanda' ? canAllocateDemand(item) : canManageItem;
           const isEditingItem = (kind==='meta'?editingMetas:editingDemandas).has(item.id) && canManageItem;
           return `
-          <div class="kanban-card" draggable="${canMoveItem&&!isEditingItem}" data-id="${item.id}" data-kind="${kind}">
+          <div class="kanban-card ${kind==='demanda'&&item.blocked?'is-blocked':''}" draggable="${canMoveItem&&!isEditingItem}" data-id="${item.id}" data-kind="${kind}">
             ${isEditingItem?`<div class="item-edit-form"><input class="field" id="edit-${kind}-input-${item.id}" value="${escapeHtml(item.text)}">${kind==='demanda'?demandEditFieldsHtml(item):''}<button class="btn btn-primary" data-action="save-${kind}-edit" data-id="${item.id}">Salvar</button><button class="btn-ghost" data-action="cancel-${kind}-edit" data-id="${item.id}">Cancelar</button></div>`:`<div class="kanban-card-text">${renderTextWithMentions(item.text,item)}${item.editedAt?' <span class="post-edited-tag">(editado)</span>':''}</div>${kind==='demanda'?demandDetailsHtml(item):''}`}
             <div class="kanban-card-meta">${avatarHtml(info, true)}<span class="kanban-card-author"${authorNameAttr(info)}>${escapeHtml(info.name)}</span></div>
             <div class="kanban-card-foot">
@@ -6558,13 +6613,14 @@ function renderKanbanBoard(kind, items){
               ${canMoveItem ? `
               <div class="kanban-card-move">
                 <button type="button" data-action="kanban-move" data-kind="${kind}" data-id="${item.id}" data-dir="-1" ${idx===0?'disabled':''} aria-label="Mover pra trás">‹</button>
-                <button type="button" data-action="kanban-move" data-kind="${kind}" data-id="${item.id}" data-dir="1" ${idx===KANBAN_COLUMNS.length-1?'disabled':''} aria-label="Mover pra frente">›</button>
+                <button type="button" data-action="kanban-move" data-kind="${kind}" data-id="${item.id}" data-dir="1" ${idx===columns.length-1?'disabled':''} aria-label="Mover pra frente">›</button>
               </div>
               ` : ''}
               ${canManageItem ? `
               ${!isEditingItem?`<button type="button" data-action="edit-${kind}" data-id="${item.id}">editar</button>`:''}
               ${kind==='demanda'&&itemStatus(item)==='done'?'<span class="item-completed-label">Concluído</span>':`<button type="button" class="kanban-card-remove" data-action="remove-${kind}" data-id="${item.id}">remover</button>`}
               ` : ''}
+              ${kind==='demanda'?demandBlockActionsHtml(item):''}
             </div>
           </div>`;
         }).join('') : `<div class="kanban-empty">Vazio</div>`}
@@ -6583,6 +6639,7 @@ function matchesDemandFilters(d){
   if(demandPriorityFilter&&(d.priority||'medium')!==demandPriorityFilter)return false;
   if(demandAssigneeFilter&&assignee!==demandAssigneeFilter)return false;
   if(demandStatusFilter==='week'&&!demandDueThisWeek(d))return false;
+  if(demandStatusFilter==='blocked'&&(!d.blocked||d.done))return false;
   return true;
 }
 function renderDemandHistory(archived, waiting=[]){
@@ -6590,7 +6647,7 @@ function renderDemandHistory(archived, waiting=[]){
   if(!el)return;
   const fmt=(ts,withYear)=>ts?new Date(Number(ts)).toLocaleDateString('pt-BR',withYear?{day:'2-digit',month:'short',year:'numeric'}:{day:'2-digit',month:'short'}):'';
   const batches=new Map();
-  archived.forEach(d=>{const k=d.archiveBatch||d.archivedAt||0;if(!batches.has(k))batches.set(k,[]);batches.get(k).push(d);});
+  archived.forEach(d=>{const k=demandHistoryGroupKey(d);if(!batches.has(k))batches.set(k,[]);batches.get(k).push(d);});
   const rowHtml=d=>{
     const info=authorInfo(d),can=canAllocateDemand(d),pr=DEMAND_PRIORITIES[d.priority]||DEMAND_PRIORITIES.medium,isEditing=editingDemandas.has(d.id)&&can;
     const body=isEditing?`<div class="item-edit-form"><input class="field" id="edit-demanda-input-${d.id}" value="${escapeHtml(d.text)}" aria-label="Editar demanda">${demandEditFieldsHtml(d)}<button class="btn btn-primary" data-action="save-demanda-edit" data-id="${d.id}">Salvar</button><button class="btn-ghost" data-action="cancel-demanda-edit" data-id="${d.id}">Cancelar</button></div>`:`<div class="item-text">${renderTextWithMentions(d.text,d)}</div><div class="item-meta"><span>${escapeHtml(info.name)}</span> · ${pr[0]}${d.doneAt?` · concluída em ${fmt(d.doneAt)}`:''}</div>`;
@@ -6633,12 +6690,13 @@ function renderPostits(items, archived=[]){
     const body=editing
       ?`<div class="item-edit-form"><input class="field" id="edit-demanda-input-${d.id}" value="${escapeHtml(d.text)}" aria-label="Editar demanda">${demandEditFieldsHtml(d)}<div class="postit-actions"><button class="postit-done-btn" data-action="save-demanda-edit" data-id="${d.id}">Salvar</button><button class="postit-link" data-action="cancel-demanda-edit" data-id="${d.id}">Cancelar</button></div></div>`
       :`<div class="postit-text">${renderTextWithMentions(d.text,d)}${d.editedAt?' <span class="post-edited-tag">(editado)</span>':''}</div>
-        <div class="postit-meta"><span>${escapeHtml(info.name)}</span>${assignee?`<span>→ ${escapeHtml(state.users[assignee]?.name||'Usuário')}</span>`:''}${due?`<span>${overdue?'⚠ Atrasada':'Prazo'} · ${dueText}</span>`:''}${d.done?`<span>✓ Concluída ${doneAt?new Date(doneAt).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}):''}</span>`:`<span>${timeAgo(d.ts)}</span>`}</div>
-        ${can?`<div class="postit-actions">${d.done?`<button class="postit-done-btn" data-action="toggle-demanda" data-id="${d.id}">↺ Reabrir</button>`:`<button class="postit-done-btn" data-action="toggle-demanda" data-id="${d.id}">✓ Concluir</button><button class="postit-link" data-action="edit-demanda" data-id="${d.id}">editar</button><button class="postit-link" data-action="remove-demanda" data-id="${d.id}">remover</button>`}</div>`:(d.done?'':'<div class="postit-meta">Só quem criou, foi marcado ou é admin pode concluir.</div>')}`;
-    return `<div class="postit p-${pr} ${d.done?'is-done':''}" data-demanda-id="${d.id}" style="--rot:${postitRot(d.id)}deg">${body}</div>`;
+        <div class="postit-meta"><span>${escapeHtml(info.name)}</span>${assignee?`<span>→ ${escapeHtml(state.users[assignee]?.name||'Usuário')}</span>`:''}${due?`<span>${overdue?'⚠ Atrasada':'Prazo'} · ${dueText}</span>`:''}${d.blocked?'<span class="demand-badge blocked">Bloqueada</span>':''}${d.done?`<span>✓ Concluída ${doneAt?new Date(doneAt).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}):''}</span>`:`<span>${timeAgo(d.ts)}</span>`}</div>
+        ${d.blocked?`<div class="demand-block-reason"><strong>Motivo do bloqueio:</strong> ${escapeHtml(d.blockReason||'Motivo não informado')}</div>`:''}
+        ${can?`<div class="postit-actions">${d.done?`<button class="postit-done-btn" data-action="toggle-demanda" data-id="${d.id}">↺ Reabrir</button>`:`<button class="postit-done-btn" data-action="toggle-demanda" data-id="${d.id}">✓ Concluir</button><button class="postit-link" data-action="edit-demanda" data-id="${d.id}">editar</button><button class="postit-link" data-action="remove-demanda" data-id="${d.id}">remover</button>`}${demandBlockActionsHtml(d)}</div>`:(d.done?'':'<div class="postit-meta">Só quem criou, foi marcado ou é admin pode concluir.</div>')}`;
+    return `<div class="postit p-${pr} ${d.done?'is-done':''} ${d.blocked?'is-blocked':''}" data-demanda-id="${d.id}" style="--rot:${postitRot(d.id)}deg">${body}</div>`;
   };
   const batches=new Map();
-  archived.forEach(d=>{const k=d.archiveBatch||d.archivedAt||0;if(!batches.has(k))batches.set(k,[]);batches.get(k).push(d);});
+  archived.forEach(d=>{const k=demandHistoryGroupKey(d);if(!batches.has(k))batches.set(k,[]);batches.get(k).push(d);});
   const historyHtml=batches.size?[...batches.entries()].sort((a,b)=>b[0]-a[0]).map(([k,list])=>{
     list.sort((a,b)=>(b.doneAt||b.ts||0)-(a.doneAt||a.ts||0));
     const when=k?new Date(Number(k)).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}):'data desconhecida';
@@ -6652,7 +6710,9 @@ document.addEventListener('toggle',e=>{if(!e.target)return;if(e.target.id==='pos
 function setItemStatus(kind, id, status){
   const item = (kind === 'meta' ? allMetas() : activeDemandas()).find(x=>x.id===id);
   if(!item || (kind === 'demanda' ? !canAllocateDemand(item) : !canManageWorkItem(item))) return;
+  if(!kanbanColumnsFor(kind).some(col=>col.key===status))return;
   if(kind==='demanda'&&!demandAssigneeUid(item)){showDbError('Defina um responsável antes de alterar esta demanda.');return;}
+  if(kind==='demanda'&&status==='done'&&item.blocked){showDbError('Desbloqueie a demanda antes de concluí-la.');return;}
   const path = kind === 'meta' ? metaPath(item) : demandaPath(item);
   update(ref(db, path), kind === 'demanda' ? Object.assign({ status, done: status === 'done', doneAt: status === 'done' ? Date.now() : null }, status === 'done' ? {} : { archived: false, archivedAt: null, archiveBatch: null }) : { status, done: status === 'done' }).catch(handleDbError);
 }
@@ -6721,6 +6781,7 @@ document.addEventListener('drop', (e)=>{
   let data;
   try{ data = JSON.parse(e.dataTransfer.getData('text/plain') || '{}'); }catch(err){ return; }
   if(!data.id || !data.kind) return;
+  if(col.closest('.kanban-board')?.id!==`${data.kind}-board`)return;
   setItemStatus(data.kind, data.id, col.dataset.status);
 });
 
@@ -7233,7 +7294,7 @@ document.addEventListener('click', (e)=>{
     const m = allMetas().find(x=>x.id===id);
     if(m){ const newDone = !m.done; update(ref(db, metaPath(m)), { done: newDone, status: newDone ? 'done' : 'todo' }).catch(handleDbError); }
   } else if(action === 'finalize-demandas'){
-    const list = activeDemandas().filter(d=>d.done && !d.archived && canAllocateDemand(d));
+    const list = activeDemandas().filter(d=>d.done && !d.archived && demandCompletedThisWeek(d) && canAllocateDemand(d));
     if(!list.length) return;
     if(!confirm(`Finalizar ${list.length} ${list.length===1?'demanda concluída':'demandas concluídas'}?\n\nElas saem do quadro, mas ficam guardadas no Histórico e podem ser reabertas quando você quiser.`)) return;
     const batch = Date.now();
@@ -7263,17 +7324,31 @@ document.addEventListener('click', (e)=>{
       const linkedPosts=allPosts().filter(p=>p.demandaId===id&&(p.uid===currentUid||isAdmin()));
       return Promise.all(linkedPosts.map(p=>update(ref(db,postPath(p)),{demandaId:null})));
     }).then(()=>showSuccessToast('Demanda apagada definitivamente.')).catch(handleDbError);
+  } else if(action === 'block-demanda'){
+    const d=activeDemandas().find(x=>x.id===id);
+    if(!d||d.done||d.archived||!canAllocateDemand(d))return;
+    const answer=window.prompt(d.blocked?'Edite o motivo do bloqueio:':'Informe o motivo do bloqueio:',d.blockReason||'');
+    if(answer===null)return;
+    const blockReason=answer.trim();
+    if(!blockReason){showDbError('Informe um motivo para bloquear esta demanda.');return;}
+    if(blockReason.length>500){showDbError('O motivo do bloqueio deve ter no máximo 500 caracteres.');return;}
+    update(ref(db,demandPath(d)),{blocked:true,blockReason,blockedAt:Date.now(),blockedBy:currentUid}).catch(handleDbError);
+  } else if(action === 'unblock-demanda'){
+    const d=activeDemandas().find(x=>x.id===id);
+    if(!d||!d.blocked||d.done||d.archived||!canAllocateDemand(d))return;
+    if(!confirm('Desbloquear esta demanda? O motivo será removido.'))return;
+    update(ref(db,demandPath(d)),{blocked:false,blockReason:null,blockedAt:null,blockedBy:null}).catch(handleDbError);
   } else if(action === 'reopen-batch'){
     e.preventDefault();
     const batch = t.dataset.batch;
-    const list = activeDemandas().filter(d=>d.archived && String(d.archiveBatch||d.archivedAt||0)===batch && canAllocateDemand(d));
+    const list = activeDemandas().filter(d=>isDemandInHistory(d) && demandHistoryGroupKey(d)===batch && canAllocateDemand(d));
     if(!list.length) return;
     if(list.some(d=>!demandAssigneeUid(d))){showDbError('Atribua um responsável às demandas sem responsável antes de reabrir o lote.');return;}
     if(!confirm(`Reabrir ${list.length} ${list.length===1?'demanda':'demandas'}? Elas voltam para "A fazer".`)) return;
     list.forEach(d=>update(ref(db, demandaPath(d)), { done:false, status:'todo', doneAt:null, archived:false, archivedAt:null, archiveBatch:null }).catch(handleDbError));
   } else if(action === 'toggle-demanda'){
     const d = activeDemandas().find(x=>x.id===id);
-    if(d && canAllocateDemand(d)){ const newDone = !d.done;if(!demandAssigneeUid(d)){showDbError('Defina um responsável antes de concluir ou reabrir esta demanda.');return;}update(ref(db, demandaPath(d)), Object.assign({ done: newDone, status: newDone ? 'done' : 'todo', doneAt: newDone ? Date.now() : null }, newDone ? {} : { archived: false, archivedAt: null, archiveBatch: null })).catch(handleDbError); }
+    if(d && canAllocateDemand(d)){ const newDone = !d.done;if(!demandAssigneeUid(d)){showDbError('Defina um responsável antes de concluir ou reabrir esta demanda.');return;}if(newDone&&d.blocked){showDbError('Desbloqueie a demanda antes de concluí-la.');return;}update(ref(db, demandaPath(d)), Object.assign({ done: newDone, status: newDone ? 'done' : 'todo', doneAt: newDone ? Date.now() : null }, newDone ? {} : { archived: false, archivedAt: null, archiveBatch: null })).catch(handleDbError); }
   } else if(action === 'edit-meta' || action === 'edit-demanda'){
     const kind=action==='edit-meta'?'meta':'demanda',item=(kind==='meta'?allMetas():activeDemandas()).find(x=>x.id===id);
     if(!item || (kind==='demanda'?!canAllocateDemand(item):!canManageWorkItem(item)))return;
@@ -7301,9 +7376,9 @@ document.addEventListener('click', (e)=>{
     const kind = t.dataset.kind, dir = parseInt(t.dataset.dir, 10);
     const item = (kind === 'meta' ? allMetas() : activeDemandas().filter(d=>!d.archived)).find(x=>x.id===id);
     if(!item) return;
-    const curIdx = KANBAN_COLUMNS.findIndex(c=>c.key === itemStatus(item));
-    const nextIdx = Math.min(KANBAN_COLUMNS.length-1, Math.max(0, curIdx + dir));
-    setItemStatus(kind, id, KANBAN_COLUMNS[nextIdx].key);
+    const columns=kanbanColumnsFor(kind),curIdx=columns.findIndex(c=>c.key===itemStatus(item));
+    const nextIdx=Math.min(columns.length-1,Math.max(0,curIdx+dir));
+    setItemStatus(kind,id,columns[nextIdx].key);
   } else if(action === 'remove-meta'){
     const m = allMetas().find(x=>x.id===id);
     if(m) remove(ref(db, metaPath(m))).catch(handleDbError);
