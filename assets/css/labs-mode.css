@@ -1,0 +1,44 @@
+/* Efeitos visuais exclusivos do Plantel Labs. O estado é controlado por html[data-labs="true"]. */
+:root { --labs-glow: #22C55E; }
+html[data-labs="true"] .brand-logo-default { display:none !important; }
+html[data-labs="true"] .brand-row .brand-logo-labs { display:block; }
+.brand-row .brand-logo-labs { display:none; }
+html[data-labs="true"] .brand-row .brand-logo-labs {
+  width:48px;height:64px;object-fit:contain;border-radius:8px;
+  background:#07130C;box-shadow:0 0 0 1px color-mix(in srgb,var(--labs-glow) 55%,transparent),
+  0 0 0 4px color-mix(in srgb,var(--labs-glow) 12%,transparent),0 0 24px color-mix(in srgb,var(--labs-glow) 24%,transparent);
+}
+
+/* Cursor temático: não substitui os cursores de arraste nem o de seleção de texto. */
+html[data-labs="true"] body {
+  cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='32' viewBox='0 0 28 32'%3E%3Cpath d='M4 2 23 19l-8 1-4 8z' fill='%2307130C' stroke='%2322C55E' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") 4 2, auto;
+}
+html[data-labs="true"] a,html[data-labs="true"] button,html[data-labs="true"] select,
+html[data-labs="true"] summary,html[data-labs="true"] [role="button"],
+html[data-labs="true"] .chip,html[data-labs="true"] .card-clickable,
+html[data-labs="true"] .icon-btn,html[data-labs="true"] input[type="checkbox"],
+html[data-labs="true"] input[type="radio"] {
+  cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M10 15V7a2 2 0 0 1 4 0v7-9a2 2 0 0 1 4 0v9-7a2 2 0 0 1 4 0v9-5a2 2 0 0 1 4 0v10c0 6-4 10-10 10h-1c-3 0-5-1-7-4l-4-6a2.2 2.2 0 0 1 3.5-2.6L10 21z' fill='%2307130C' stroke='%2322C55E' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E") 12 5, pointer;
+}
+html[data-labs="true"] [draggable="true"],html[data-labs="true"] .kanban-card,
+html[data-labs="true"] .note-tab,html[data-labs="true"] .is-dragging { cursor:grab !important; }
+html[data-labs="true"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-labs="true"] textarea,[contenteditable="true"] { caret-color:var(--labs-glow); }
+
+/* Brilho radial que acompanha o ponteiro sobre a grade já existente no fundo Labs. */
+html[data-labs="true"] body::before {
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(circle 175px at var(--labs-x,-300px) var(--labs-y,-300px),
+    color-mix(in srgb,var(--labs-glow) 13%,transparent),transparent 72%);
+  opacity:var(--labs-glow-opacity,0);transition:opacity .24s ease;
+}
+html[data-labs="true"] .wrap { position:relative;z-index:1; }
+html[data-labs="true"] body::before { will-change:background-position,opacity; }
+@media (pointer:coarse), (max-width:700px) {
+  html[data-labs="true"] body::before { display:none; }
+  html[data-labs="true"] body,html[data-labs="true"] a,html[data-labs="true"] button,
+  html[data-labs="true"] select,html[data-labs="true"] [role="button"] { cursor:auto; }
+}
+@media (prefers-reduced-motion:reduce) {
+  html[data-labs="true"] body::before { transition:none; }
+}
