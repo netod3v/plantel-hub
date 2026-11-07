@@ -3904,7 +3904,7 @@ function render(){
         ${isEditingDemanda ? `<div class="item-edit-form"><input class="field" id="edit-demanda-input-${d.id}" value="${escapeHtml(d.text)}" aria-label="Editar demanda">${demandEditFieldsHtml(d)}<button class="btn btn-primary" data-action="save-demanda-edit" data-id="${d.id}">Salvar</button><button class="btn-ghost" data-action="cancel-demanda-edit" data-id="${d.id}">Cancelar</button></div>` : `<div class="item-text">${renderTextWithMentions(d.text,d)}${d.editedAt?' <span class="post-edited-tag">(editado)</span>':''}</div>${demandDetailsHtml(d)}`}
         <div class="item-meta"><span${authorNameAttr(dInfo)}>${escapeHtml(dInfo.name)}</span>${privacyIconHtml(d._sector)} · ${timeAgo(d.ts)}</div>
       </div>
-      ${canManageDemanda && !isEditingDemanda ? `<button class="item-edit-button" data-action="edit-demanda" data-id="${d.id}">editar</button>${d.done?'<span class="item-completed-label">Concluído</span>':`<button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>`}${demandBlockActionsHtml(d)}` : ''}
+      ${canManageDemanda && !isEditingDemanda ? `<button class="item-edit-button" data-action="edit-demanda" data-id="${d.id}">editar</button>${d.done?'<span class="item-completed-label">Concluído</span>':''}<button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>${demandBlockActionsHtml(d)}` : ''}
     </div>`;}).join('') : `<div class="empty">Nenhuma demanda encontrada com esses filtros.</div>`;
 
   const boardDemandas = demandStatusFilter==='open'
@@ -3968,7 +3968,7 @@ function demandTrashAge(item){return Date.now()-Number(item?.deletedAt||0);}
 function canRestoreDemand(item){return canAllocateDemand(item)&&(demandTrashAge(item)<=DEMANDA_TRASH_RETENTION_MS||isAdmin());}
 function moveDemandToTrash(item){
   if(!item||item.deletedAt||!canAllocateDemand(item))return Promise.resolve(false);
-  return update(ref(db,demandPath(item)),{deletedAt:Date.now(),deletedBy:currentUid})
+  return update(ref(db,demandaPath(item)),{deletedAt:Date.now(),deletedBy:currentUid})
     .then(()=>{showSuccessToast('Demanda movida para a lixeira. Você pode restaurá-la por 30 dias.');return true;})
     .catch(err=>{handleDbError(err);return false;});
 }
@@ -4048,11 +4048,11 @@ function renderDemandHistory(archived, waiting=[]){
   const rowHtml=d=>{
     const info=authorInfo(d),can=canAllocateDemand(d),pr=DEMAND_PRIORITIES[d.priority]||DEMAND_PRIORITIES.medium,isEditing=editingDemandas.has(d.id)&&can;
     const body=isEditing?`<div class="item-edit-form"><input class="field" id="edit-demanda-input-${d.id}" value="${escapeHtml(d.text)}" aria-label="Editar demanda">${demandEditFieldsHtml(d)}<button class="btn btn-primary" data-action="save-demanda-edit" data-id="${d.id}">Salvar</button><button class="btn-ghost" data-action="cancel-demanda-edit" data-id="${d.id}">Cancelar</button></div>`:`<div class="item-text">${renderTextWithMentions(d.text,d)}</div><div class="item-meta"><span>${escapeHtml(info.name)}</span> · ${pr[0]}${d.doneAt?` · concluída em ${fmt(d.doneAt)}`:''}</div>`;
-    return `<div class="item done" data-demanda-id="${d.id}"><div class="check done" style="pointer-events:none;">${CHECK_SVG}</div><div class="item-body">${body}</div>${can?(isEditing?'':`<button class="item-edit-button" data-action="edit-demanda" data-id="${d.id}">editar</button><button class="item-edit-button" data-action="toggle-demanda" data-id="${d.id}">↺ reabrir</button>`):''}</div>`;
+    return `<div class="item done" data-demanda-id="${d.id}"><div class="check done" style="pointer-events:none;">${CHECK_SVG}</div><div class="item-body">${body}</div>${can?(isEditing?'':`<button class="item-edit-button" data-action="edit-demanda" data-id="${d.id}">editar</button><button class="item-edit-button" data-action="toggle-demanda" data-id="${d.id}">↺ reabrir</button><button class="item-remove" data-action="remove-demanda" data-id="${d.id}">remover</button>`):''}</div>`;
   };
   const body=batches.size?[...batches.entries()].sort((a,b)=>b[0]-a[0]).map(([k,list])=>{
     list.sort((a,b)=>(b.doneAt||b.ts||0)-(a.doneAt||a.ts||0));
-    return `<details class="postit-batch"><summary>Finalizadas em ${k?fmt(k,true):'data desconhecida'} · ${list.length} ${list.length===1?'demanda':'demandas'}<button type="button" class="batch-reopen" data-action="reopen-batch" data-batch="${k}">↺ Reabrir todas</button></summary>${list.map(rowHtml).join('')}</details>`;
+    return `<details class="postit-batch"><summary>Finalizadas em ${Number(k)?fmt(k,true):'data desconhecida'} · ${list.length} ${list.length===1?'demanda':'demandas'}<button type="button" class="batch-reopen" data-action="reopen-batch" data-batch="${k}">↺ Reabrir todas</button></summary>${list.map(rowHtml).join('')}</details>`;
   }).join(''):'<div class="postit-empty">Nada finalizado ainda. Quando você usar "Finalizar tudo", as demandas ficam guardadas aqui.</div>';
   const waitingSorted=[...waiting].sort((a,b)=>(b.doneAt||b.ts||0)-(a.doneAt||a.ts||0));
   const waitingBody=waitingSorted.length?waitingSorted.map(rowHtml).join(''):'<div class="postit-empty">Ao concluir uma demanda, ela aparece aqui. Use "Finalizar tudo" para mandar para o histórico.</div>';
@@ -4089,14 +4089,14 @@ function renderPostits(items, archived=[]){
       :`<div class="postit-text">${renderTextWithMentions(d.text,d)}${d.editedAt?' <span class="post-edited-tag">(editado)</span>':''}</div>
         <div class="postit-meta"><span>${escapeHtml(info.name)}</span>${assignee?`<span>→ ${escapeHtml(state.users[assignee]?.name||'Usuário')}</span>`:''}${due?`<span>${overdue?'⚠ Atrasada':'Prazo'} · ${dueText}</span>`:''}${d.blocked?'<span class="demand-badge blocked">Bloqueada</span>':''}${d.done?`<span>✓ Concluída ${doneAt?new Date(doneAt).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}):''}</span>`:`<span>${timeAgo(d.ts)}</span>`}</div>
         ${d.blocked?`<div class="demand-block-reason"><strong>Motivo do bloqueio:</strong> ${escapeHtml(d.blockReason||'Motivo não informado')}</div>`:''}
-        ${can?`<div class="postit-actions">${d.done?`<button class="postit-done-btn" data-action="toggle-demanda" data-id="${d.id}">↺ Reabrir</button>`:`<button class="postit-done-btn" data-action="toggle-demanda" data-id="${d.id}">✓ Concluir</button><button class="postit-link" data-action="edit-demanda" data-id="${d.id}">editar</button><button class="postit-link" data-action="remove-demanda" data-id="${d.id}">remover</button>`}${demandBlockActionsHtml(d)}</div>`:(d.done?'':'<div class="postit-meta">Só quem criou, foi marcado ou é admin pode concluir.</div>')}`;
+        ${can?`<div class="postit-actions">${d.done?`<button class="postit-done-btn" data-action="toggle-demanda" data-id="${d.id}">↺ Reabrir</button><button class="postit-link" data-action="remove-demanda" data-id="${d.id}">remover</button>`:`<button class="postit-done-btn" data-action="toggle-demanda" data-id="${d.id}">✓ Concluir</button><button class="postit-link" data-action="edit-demanda" data-id="${d.id}">editar</button><button class="postit-link" data-action="remove-demanda" data-id="${d.id}">remover</button>`}${demandBlockActionsHtml(d)}</div>`:(d.done?'':'<div class="postit-meta">Só quem criou, foi marcado ou é admin pode concluir.</div>')}`;
     return `<div class="postit p-${pr} ${d.done?'is-done':''} ${d.blocked?'is-blocked':''}" data-demanda-id="${d.id}" style="--rot:${postitRot(d.id)}deg">${body}</div>`;
   };
   const batches=new Map();
   archived.forEach(d=>{const k=demandHistoryGroupKey(d);if(!batches.has(k))batches.set(k,[]);batches.get(k).push(d);});
   const historyHtml=batches.size?[...batches.entries()].sort((a,b)=>b[0]-a[0]).map(([k,list])=>{
     list.sort((a,b)=>(b.doneAt||b.ts||0)-(a.doneAt||a.ts||0));
-    const when=k?new Date(Number(k)).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}):'data desconhecida';
+    const when=Number(k)?new Date(Number(k)).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}):'data desconhecida';
     return `<details class="postit-batch"><summary>Finalizadas em ${when} · ${list.length} ${list.length===1?'demanda':'demandas'}<button type="button" class="batch-reopen" data-action="reopen-batch" data-batch="${k}">↺ Reabrir todas</button></summary><div class="postit-grid">${list.map(noteHtml).join('')}</div></details>`;
   }).join(''):'<div class="postit-empty">Nada finalizado ainda. Quando você usar "Finalizar tudo", as demandas ficam guardadas aqui.</div>';
   el.innerHTML=`<div class="postit-grid">${open.length?open.map(noteHtml).join(''):''}</div>${open.length?'':'<div class="postit-empty">Nenhum post-it em aberto. Escreva uma demanda abaixo 👇</div>'}
@@ -4108,7 +4108,7 @@ function setItemStatus(kind, id, status){
   const item = (kind === 'meta' ? allMetas() : activeDemandas()).find(x=>x.id===id);
   if(!item || (kind === 'demanda' ? !canAllocateDemand(item) : !canManageWorkItem(item))) return;
   if(!kanbanColumnsFor(kind).some(col=>col.key===status))return;
-  if(kind==='demanda'&&!demandAssigneeUid(item)){showDbError('Defina um responsável antes de alterar esta demanda.');return;}
+  if(kind==='demanda'&&!demandAssigneeUid(item)&&!isAdmin()){showDbError('Defina um responsável antes de alterar esta demanda.');return;}
   if(kind==='demanda'&&status==='done'&&item.blocked){showDbError('Desbloqueie a demanda antes de concluí-la.');return;}
   const path = kind === 'meta' ? metaPath(item) : demandaPath(item);
   update(ref(db, path), kind === 'demanda' ? Object.assign({ status, done: status === 'done', doneAt: status === 'done' ? Date.now() : null }, status === 'done' ? {} : { archived: false, archivedAt: null, archiveBatch: null }) : { status, done: status === 'done' }).catch(handleDbError);
@@ -4140,7 +4140,7 @@ document.querySelectorAll('.view-toggle').forEach(toggle=>{
       toggle.scrollTo({left:Math.max(0, centeredLeft),behavior:'smooth'});
     });
     localStorage.setItem('plantel_view_'+target, view);
-    if(view === 'board') renderKanbanBoard(target, target === 'meta' ? allMetas() : activeDemandas().filter(d=>!d.archived));
+    if(view === 'board') renderKanbanBoard(target, target === 'meta' ? allMetas() : activeDemandas().filter(d=>!isDemandInHistory(d)));
   }
   toggle.querySelectorAll('.view-toggle-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{ applyView(btn.dataset.view); render(); });
@@ -4710,14 +4710,14 @@ document.addEventListener('click', (e)=>{
   } else if(action === 'restore-demanda'){
     const d=allDemandas().find(x=>x.id===id);
     if(!d||!d.deletedAt||!canRestoreDemand(d))return;
-    update(ref(db,demandPath(d)),{deletedAt:null,deletedBy:null})
+    update(ref(db,demandaPath(d)),{deletedAt:null,deletedBy:null})
       .then(()=>showSuccessToast('Demanda restaurada.'))
       .catch(handleDbError);
   } else if(action === 'purge-demanda'){
     const d=allDemandas().find(x=>x.id===id);
     if(!d||!d.deletedAt||!isAdmin()||demandTrashAge(d)<DEMANDA_TRASH_RETENTION_MS)return;
     if(!confirm('Apagar esta demanda definitivamente? Esta ação não pode ser desfeita.'))return;
-    remove(ref(db,demandPath(d))).then(()=>{
+    remove(ref(db,demandaPath(d))).then(()=>{
       const linkedPosts=allPosts().filter(p=>p.demandaId===id&&(p.uid===currentUid||isAdmin()));
       return Promise.all(linkedPosts.map(p=>update(ref(db,postPath(p)),{demandaId:null})));
     }).then(()=>showSuccessToast('Demanda apagada definitivamente.')).catch(handleDbError);
@@ -4729,23 +4729,22 @@ document.addEventListener('click', (e)=>{
     const blockReason=answer.trim();
     if(!blockReason){showDbError('Informe um motivo para bloquear esta demanda.');return;}
     if(blockReason.length>500){showDbError('O motivo do bloqueio deve ter no máximo 500 caracteres.');return;}
-    update(ref(db,demandPath(d)),{blocked:true,blockReason,blockedAt:Date.now(),blockedBy:currentUid}).catch(handleDbError);
+    update(ref(db,demandaPath(d)),{blocked:true,blockReason,blockedAt:Date.now(),blockedBy:currentUid}).catch(handleDbError);
   } else if(action === 'unblock-demanda'){
     const d=activeDemandas().find(x=>x.id===id);
     if(!d||!d.blocked||d.done||d.archived||!canAllocateDemand(d))return;
     if(!confirm('Desbloquear esta demanda? O motivo será removido.'))return;
-    update(ref(db,demandPath(d)),{blocked:false,blockReason:null,blockedAt:null,blockedBy:null}).catch(handleDbError);
+    update(ref(db,demandaPath(d)),{blocked:false,blockReason:null,blockedAt:null,blockedBy:null}).catch(handleDbError);
   } else if(action === 'reopen-batch'){
     e.preventDefault();
     const batch = t.dataset.batch;
     const list = activeDemandas().filter(d=>isDemandInHistory(d) && demandHistoryGroupKey(d)===batch && canAllocateDemand(d));
     if(!list.length) return;
-    if(list.some(d=>!demandAssigneeUid(d))){showDbError('Atribua um responsável às demandas sem responsável antes de reabrir o lote.');return;}
     if(!confirm(`Reabrir ${list.length} ${list.length===1?'demanda':'demandas'}? Elas voltam para "A fazer".`)) return;
     list.forEach(d=>update(ref(db, demandaPath(d)), { done:false, status:'todo', doneAt:null, archived:false, archivedAt:null, archiveBatch:null }).catch(handleDbError));
   } else if(action === 'toggle-demanda'){
     const d = activeDemandas().find(x=>x.id===id);
-    if(d && canAllocateDemand(d)){ const newDone = !d.done;if(!demandAssigneeUid(d)){showDbError('Defina um responsável antes de concluir ou reabrir esta demanda.');return;}if(newDone&&d.blocked){showDbError('Desbloqueie a demanda antes de concluí-la.');return;}update(ref(db, demandaPath(d)), Object.assign({ done: newDone, status: newDone ? 'done' : 'todo', doneAt: newDone ? Date.now() : null }, newDone ? {} : { archived: false, archivedAt: null, archiveBatch: null })).catch(handleDbError); }
+    if(d && canAllocateDemand(d)){ const newDone = !d.done;if(newDone&&!demandAssigneeUid(d)&&!isAdmin()){showDbError('Defina um responsável antes de concluir esta demanda.');return;}if(newDone&&d.blocked){showDbError('Desbloqueie a demanda antes de concluí-la.');return;}update(ref(db, demandaPath(d)), Object.assign({ done: newDone, status: newDone ? 'done' : 'todo', doneAt: newDone ? Date.now() : null }, newDone ? {} : { archived: false, archivedAt: null, archiveBatch: null })).catch(handleDbError); }
   } else if(action === 'edit-meta' || action === 'edit-demanda'){
     const kind=action==='edit-meta'?'meta':'demanda',item=(kind==='meta'?allMetas():activeDemandas()).find(x=>x.id===id);
     if(!item || (kind==='demanda'?!canAllocateDemand(item):!canManageWorkItem(item)))return;
@@ -4771,7 +4770,7 @@ document.addEventListener('click', (e)=>{
     update(ref(db,path),changes).catch(handleDbError);render();
   } else if(action === 'kanban-move'){
     const kind = t.dataset.kind, dir = parseInt(t.dataset.dir, 10);
-    const item = (kind === 'meta' ? allMetas() : activeDemandas().filter(d=>!d.archived)).find(x=>x.id===id);
+    const item = (kind === 'meta' ? allMetas() : activeDemandas().filter(d=>!isDemandInHistory(d))).find(x=>x.id===id);
     if(!item) return;
     const columns=kanbanColumnsFor(kind),curIdx=columns.findIndex(c=>c.key===itemStatus(item));
     const nextIdx=Math.min(columns.length-1,Math.max(0,curIdx+dir));
